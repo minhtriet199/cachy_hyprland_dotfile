@@ -187,17 +187,13 @@ class ScreenPage(Gtk.Box):
         self.res_row = Adw.ComboRow(title="Display resolution")
         self.hz_row = Adw.ComboRow(title="Refresh rate")
         self.scale_row = Adw.ComboRow(title="Scale", subtitle="Size of text, apps and other items")
-        self.rot_row = Adw.ComboRow(title="Orientation", model=Gtk.StringList.new(
-            ["Landscape", "Portrait (90°)", "Landscape (flipped)", "Portrait (270°)"]))
-        self.rot_row.set_selected(s["transform"])
-        for r in (self.res_row, self.hz_row, self.scale_row, self.rot_row):
+        for r in (self.res_row, self.hz_row, self.scale_row):
             layout.add(r)
         self.append(layout)
         self.fill_modes(s["width"], s["height"], s["refresh"], s["scale"])
         self.res_row.connect("notify::selected", self.on_res)
         self.hz_row.connect("notify::selected", self.on_mode_change)
         self.scale_row.connect("notify::selected", self.on_mode_change)
-        self.rot_row.connect("notify::selected", self.on_rotate)
 
         self.show_value(s["pct"])
         self.scale.connect("value-changed", lambda w: self.set_value(int(w.get_value())))
@@ -326,29 +322,18 @@ class ScreenPage(Gtk.Box):
         self.fill_scales(w, h, sc)
         self.syncing = False
 
-    def on_rotate(self, *_):
-        if self.syncing:
-            return
-        self.win.apply_rotation(self, self.rot_row.get_selected())
-
-    def show_rotation(self, transform):
-        self.syncing = True
-        self.rot_row.set_selected(transform)
-        self.syncing = False
-
 
 class Arrangement(Gtk.Box):
     """Screens drawn to scale in their real layout, like Windows. Click one to select it."""
     W, H = 420, 110
 
-    def __init__(self, screens, on_pick, on_move):
+    def __init__(self, screens, on_pick):
         super().__init__()
         self.add_css_class("arrangement")
         self.fixed = Gtk.Fixed(halign=Gtk.Align.CENTER, hexpand=True)
         self.append(self.fixed)
         self.buttons = []
         self.on_pick = on_pick
-        self.on_move = on_move
         self.layout(screens)
 
     def layout(self, screens):
@@ -377,52 +362,12 @@ class Arrangement(Gtk.Box):
             b.set_tooltip_text(f'{s["name"]} ({s["output"]})')
             b.set_size_request(max(int(w * k) - gap, 40), max(int(h * k) - gap, 30))
             b.connect("clicked", lambda _b, i=i: self.on_pick(i))
-            bx, by = (x - minx) * k + gap / 2, (y - miny) * k + gap / 2
-            self.fixed.put(b, bx, by)
+            self.fixed.put(b, (x - minx) * k + gap / 2, (y - miny) * k + gap / 2)
             self.buttons.append(b)
-            if len(screens) > 1:
-                drag = Gtk.GestureDrag()
-                drag.connect("drag-begin", lambda g, sx, sy, i=i: self._drag_begin(i))
-                drag.connect("drag-update", lambda g, ox, oy, i=i: self._drag_move(i, ox, oy))
-                drag.connect("drag-end", lambda g, ox, oy, i=i: self._drag_end(i, ox, oy))
-                b.add_controller(drag)
-        self._screens = screens
-        self._origin = (minx, miny)
-        self._k = k
 
     def select(self, i):
         for j, b in enumerate(self.buttons):
             (b.add_css_class if j == i else b.remove_css_class)("selected")
-
-    def _base(self, i):
-        s = self._screens[i]; minx, miny = self._origin; gap = 6
-        return (s["x"] - minx) * self._k + gap / 2, (s["y"] - miny) * self._k + gap / 2
-
-    def _drag_begin(self, i):
-        self.on_pick(i)
-        self._bx, self._by = self._base(i)
-
-    def _drag_move(self, i, ox, oy):
-        self.fixed.move(self.buttons[i], self._bx + ox, self._by + oy)
-
-    def _logical(self, s):
-        w, h = s["width"] / s["scale"], s["height"] / s["scale"]
-        return (h, w) if s["transform"] % 2 else (w, h)
-
-    def _drag_end(self, i, ox, oy):
-        if len(self._screens) != 2:          # snap back; multi-monitor drag not supported
-            self.fixed.move(self.buttons[i], self._bx, self._by); return
-        other = 1 - i
-        a, b = self._screens[other], self._screens[i]   # a = anchor, b = dragged
-        aw, ah = self._logical(a); bw, bh = self._logical(b)
-        if abs(ox) >= abs(oy):                # side by side
-            if ox >= 0:  posA, posB = (0, 0), (int(aw), 0)      # b to the right
-            else:        posA, posB = (int(bw), 0), (0, 0)      # b to the left
-        else:                                 # stacked
-            if oy >= 0:  posA, posB = (0, 0), (0, int(ah))      # b below
-            else:        posA, posB = (0, int(bh)), (0, 0)      # b above
-        pos = {a["output"]: f"{posA[0]}x{posA[1]}", b["output"]: f"{posB[0]}x{posB[1]}"}
-        self.on_move(pos)
 
 
 class Popup(Adw.ApplicationWindow):
@@ -454,24 +399,8 @@ class Popup(Adw.ApplicationWindow):
         if not self.screens:
             outer.append(Adw.StatusPage(icon_name="video-display-symbolic", title="No screens found"))
         else:
-            self.arrangement = Arrangement(self.screens, self.pick, self.on_move)
+            self.arrangement = Arrangement(self.screens, self.pick)
             outer.append(self.arrangement)
-            if len(self.screens) > 1:
-                self.mode_btns = {}
-                seg = Gtk.Box(halign=Gtk.Align.CENTER)
-                seg.add_css_class("linked")
-                def add_mode(key, label):
-                    b = Gtk.ToggleButton(label=label, focus_on_click=False)
-                    if self.mode_btns:
-                        b.set_group(next(iter(self.mode_btns.values())))
-                    b.connect("toggled", lambda btn, k=key: btn.get_active() and self.on_mode_btn(k))
-                    seg.append(b); self.mode_btns[key] = b
-                add_mode(("extend",), "Extend")
-                add_mode(("duplicate",), "Duplicate")
-                for i, sc in enumerate(self.screens):
-                    add_mode(("only", sc["output"]), f"Only {i + 1}")
-                outer.append(seg)
-                self.sync_mode_buttons()
 
             # "keep these display settings?" bar
             self.keep_label = Gtk.Label(xalign=0)
@@ -512,105 +441,51 @@ class Popup(Adw.ApplicationWindow):
         self.arrangement.select(i)
         self.stack.set_visible_child(self.pages[i])
 
-    # ----- changes with a 15-second keep-or-revert, like Windows -----
-    def begin_change(self, key, revert_fn):
-        if self.pending:
-            if self.pending[3] == key:        # same control still pending: keep its first revert
-                self.hold_focus(REVERT_SECS + 5)
-                return
-            self.keep_mode()                  # a different change was pending: treat it as kept
-        self.pending = [revert_fn, REVERT_SECS, 0, key]
+    # ----- resolution / refresh / scale with keep-or-revert -----
+    def apply_mode(self, page, w, h, hz, sc):
+        if self.pending and self.pending[0] is not page:
+            self.keep_mode()  # another screen was still pending: treat it as kept
+        if not self.pending:
+            s = page.s
+            self.pending = [page, (s["width"], s["height"], s["refresh"], s["scale"]), REVERT_SECS, 0]
         self.hold_focus(REVERT_SECS + 5)
+        self.send_mode(page, w, h, hz, sc, self.start_countdown)
 
-    def send(self, key, args, then=None, lock=None):
-        if lock:
-            lock.set_sensitive(False)
+    def send_mode(self, page, w, h, hz, sc, then=None):
+        page.set_sensitive(False)
+
         def done(_out):
-            if lock:
-                lock.set_sensitive(True)
+            page.set_sensitive(True)
             self.relayout()
             if then:
                 then()
             return False
-        self.applier.request(key, args, done)
-
-    def apply_mode(self, page, w, h, hz, sc):
-        s0 = page.s
-        old = (s0["width"], s0["height"], s0["refresh"], s0["scale"])
-        self.begin_change(("mode", page.out), lambda: (page.show_mode(*old),
-            self.send(("mode", page.out), ("mode", page.out, f"{old[0]}x{old[1]}@{old[2]}", old[3]))))
-        self.send(("mode", page.out), ("mode", page.out, f"{w}x{h}@{hz}", sc),
-                  then=self.start_countdown, lock=page)
-
-    def apply_rotation(self, page, transform):
-        old = page.s["transform"]
-        self.begin_change(("rotate", page.out), lambda: (page.show_rotation(old),
-            self.send(("rotate", page.out), ("rotate", page.out, old * 90))))
-        self.send(("rotate", page.out), ("rotate", page.out, transform * 90),
-                  then=self.start_countdown, lock=page)
-
-    def apply_arrange(self, mode, out=None):
-        prev = self.current_arrange()
-        self.begin_change("arrange", lambda: self.send("arrange", ("arrange",) + prev,
-                                                       then=self.sync_mode_buttons))
-        self.send("arrange", ("arrange", mode) + ((out,) if out else ()), then=self.start_countdown)
-
-    def apply_layout(self, positions):
-        prev = {sc["output"]: f'{sc["x"]}x{sc["y"]}' for sc in self.screens}
-        flat = lambda d: tuple(v for out, p in d.items() for v in (out, p))
-        self.begin_change("layout", lambda: self.send("layout", ("layout",) + flat(prev)))
-        self.send("layout", ("layout",) + flat(positions), then=self.start_countdown)
-
-    def on_move(self, positions):
-        self.apply_layout(positions)
-
-    def on_mode_btn(self, key):
-        if getattr(self, "_sync_modes", False):
-            return
-        self.apply_arrange(*key)
-
-    def current_arrange(self):
-        offs = [sc for sc in self.screens if sc["off"]]
-        if offs and len(self.screens) - len(offs) >= 1 and len(offs) == len(self.screens) - 1:
-            on = next(sc for sc in self.screens if not sc["off"])
-            return ("only", on["output"])
-        if any(sc["mirror"] for sc in self.screens):
-            return ("duplicate",)
-        return ("extend",)
-
-    def sync_mode_buttons(self):
-        if not hasattr(self, "mode_btns"):
-            return
-        cur = self.current_arrange()
-        self._sync_modes = True
-        for key, b in self.mode_btns.items():
-            b.set_active(key == cur)
-        self._sync_modes = False
+        self.applier.request(("mode", page.out), ("mode", page.out, f"{w}x{h}@{hz}", sc), done)
 
     def start_countdown(self):
         if not self.pending:
             return
-        if self.pending[2]:
-            GLib.source_remove(self.pending[2])
-        self.pending[1] = REVERT_SECS
+        if self.pending[3]:
+            GLib.source_remove(self.pending[3])
+        self.pending[2] = REVERT_SECS
         self.keep_revealer.set_reveal_child(True)
         self.tick()
-        self.pending[2] = GLib.timeout_add_seconds(1, self.tick)
+        self.pending[3] = GLib.timeout_add_seconds(1, self.tick)
 
     def tick(self):
         if not self.pending:
             return False
-        if self.pending[1] <= 0:
-            self.pending[2] = 0
+        if self.pending[2] <= 0:
+            self.pending[3] = 0
             self.revert_mode()
             return False
-        self.keep_label.set_label(f"Reverting to the previous settings in {self.pending[1]} s")
-        self.pending[1] -= 1
+        self.keep_label.set_label(f"Reverting to the previous settings in {self.pending[2]} s")
+        self.pending[2] -= 1
         return True
 
     def keep_mode(self):
-        if self.pending and self.pending[2]:
-            GLib.source_remove(self.pending[2])
+        if self.pending and self.pending[3]:
+            GLib.source_remove(self.pending[3])
         self.pending = None
         self.keep_revealer.set_reveal_child(False)
         self.hold_focus(1)
@@ -618,13 +493,14 @@ class Popup(Adw.ApplicationWindow):
     def revert_mode(self):
         if not self.pending:
             return
-        revert_fn, _, timer, _ = self.pending
+        page, (w, h, hz, sc), _, timer = self.pending
         if timer:
             GLib.source_remove(timer)
         self.pending = None
         self.keep_revealer.set_reveal_child(False)
+        page.show_mode(w, h, hz, sc)
         self.hold_focus(5)
-        revert_fn()
+        self.send_mode(page, w, h, hz, sc)
 
     def relayout(self):
         # sizes/positions changed: redraw the arrangement and refresh each page's info
@@ -635,7 +511,6 @@ class Popup(Adw.ApplicationWindow):
         self.screens = [p.s for p in self.pages]
         self.arrangement.layout(self.screens)
         self.arrangement.select(self.pages.index(self.stack.get_visible_child()))
-        self.sync_mode_buttons()
 
     # ----- window behaviour -----
     def hold_focus(self, secs):

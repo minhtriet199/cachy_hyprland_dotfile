@@ -40,9 +40,6 @@ local function screenSpec(desc, s, d)
         position = s.pos   or d.pos   or "auto",
         scale    = s.scale or d.scale or "auto",
     }
-    if s.transform and s.transform ~= "0" then spec.transform = tonumber(s.transform) end
-    if s.mirror and s.mirror ~= "" then spec.mirror = s.mirror end
-    if s.off == "1" then spec.disabled = true end
     -- HDR10. Monitors lock their own brightness in HDR, so desktop brightness is sdr_max_luminance instead.
     if s.hdr == "1" then
         spec.bitdepth          = 10
