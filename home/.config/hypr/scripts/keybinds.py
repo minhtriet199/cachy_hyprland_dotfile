@@ -4,7 +4,7 @@
 # reloads Hyprland and rolls back automatically if the new config has errors.
 #   keybinds.py             open the editor
 #   keybinds.py generate    rebuild binds.lua from keybinds.json (and reload)
-import json, os, shutil, subprocess, sys, time
+import json, os, shutil, subprocess, sys, time, uuid
 
 HYPR = os.path.expanduser("~/.config/hypr")
 DATA = os.path.join(HYPR, "keybinds.json")
@@ -456,6 +456,20 @@ def run_gui():
             if not b["keys"] or (kind == "text" and not b["arg"]):
                 self.win.toast("Add a shortcut and what it should do first")
                 return
+            b.setdefault("id", uuid.uuid4().hex[:8])
+            other = self.win.conflicts(b)
+            if other:
+                keys = " + ".join(pretty(p) for p in key_parts(b))
+                d = Adw.AlertDialog(heading="That combination is already used",
+                    body=f"{keys} is already assigned to: {', '.join(other)}.\n\n"
+                         "If you save, both actions run when you press it. Save anyway?")
+                d.add_response("cancel", "Pick different keys")
+                d.add_response("save", "Save anyway")
+                d.set_response_appearance("save", Adw.ResponseAppearance.DESTRUCTIVE)
+                d.set_default_response("cancel")
+                d.connect("response", lambda _d, r: r == "save" and (self.on_save(b), self.close()))
+                d.present(self)
+                return
             self.on_save(b)
             self.close()
 
@@ -463,6 +477,8 @@ def run_gui():
         def __init__(self, app):
             super().__init__(application=app, title="Keyboard Shortcuts", default_width=760, default_height=760)
             self.binds = load()
+            for _b in self.binds:
+                _b.setdefault("id", uuid.uuid4().hex[:8])
             self.toasts = Adw.ToastOverlay()
             tv = Adw.ToolbarView()
             hb = Adw.HeaderBar()

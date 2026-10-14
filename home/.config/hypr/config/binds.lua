@@ -97,7 +97,6 @@ hl.bind("SUPER + I", hl.dsp.exec_cmd("~/.config/hypr/scripts/profile.sh"), { des
 hl.bind("SUPER + B", hl.dsp.exec_cmd("noctalia msg panel-toggle control-center bluetooth"), { description = "Bluetooth" })
 
 -- Screen
-hl.bind("SUPER + CONTROL + H", hl.dsp.exec_cmd("~/.config/hypr/scripts/hdr.sh toggle"), { description = "HDR on / off (focused external screen)" })
 hl.bind("SUPER + ALT + Up", hl.dsp.exec_cmd("~/.config/hypr/scripts/hdr.sh up"), { repeating = true, description = "External screen brighter" })
 hl.bind("SUPER + ALT + Down", hl.dsp.exec_cmd("~/.config/hypr/scripts/hdr.sh down"), { repeating = true, description = "External screen dimmer" })
 hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("noctalia msg brightness-up"), { locked = true, repeating = true, description = "Brightness up" })

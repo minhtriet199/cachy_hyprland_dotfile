@@ -522,15 +522,6 @@
   "repeating": false
  },
  {
-  "keys": "SUPER + CONTROL + H",
-  "action": "exec",
-  "arg": "~/.config/hypr/scripts/hdr.sh toggle",
-  "category": "Screen",
-  "desc": "HDR on / off (focused external screen)",
-  "locked": false,
-  "repeating": false
- },
- {
   "keys": "SUPER + ALT + Up",
   "action": "exec",
   "arg": "~/.config/hypr/scripts/hdr.sh up",
