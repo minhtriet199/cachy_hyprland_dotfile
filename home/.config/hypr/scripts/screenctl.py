@@ -218,12 +218,19 @@ def mon_lua(out, d, st_entry):
 
 
 def apply_live(st, desired):
-    """desired: {output: {mode,pos,scale,transform,mirror,off}} -> apply each via hyprctl eval."""
-    by_desc = {m["description"]: entry(st, m) for m in monitors_all()}
-    out_to_desc = {m["name"]: m["description"] for m in monitors_all()}
-    for out, d in desired.items():
-        se = by_desc.get(out_to_desc.get(out, ""), {})
-        run("hyprctl", "eval", mon_lua(out, d, se))
+    """desired: {output: {mode,pos,scale,transform,mirror,off}} -> apply ALL in one eval,
+    so Hyprland never sees a half-applied (overlapping) layout. Disabled/mirrored first,
+    then the real screens are placed, so positions resolve against final sizes."""
+    mons = monitors_all()
+    out_to_desc = {m["name"]: m["description"] for m in mons}
+    by_desc = {m["description"]: entry(st, m) for m in mons}
+    def key(item):
+        d = item[1]
+        return 0 if (d.get("off") or d.get("mirror")) else 1   # off/mirror first, placed screens last
+    calls = [mon_lua(out, d, by_desc.get(out_to_desc.get(out, ""), {}))
+             for out, d in sorted(desired.items(), key=key)]
+    if calls:
+        run("hyprctl", "eval", "\n".join(calls))
 
 
 def restore_live(st):
