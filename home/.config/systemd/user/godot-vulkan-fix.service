@@ -1,0 +1,6 @@
+[Unit]
+Description=Make Windows Godot games in Steam start on Vulkan (override.cfg)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.config/hypr/scripts/godot-vulkan-fix.py

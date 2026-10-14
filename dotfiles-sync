@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Copy the tracked config/scripts/apps into this repo, then commit and push.
+# Usage: dotfiles-sync "short message describing what changed"
+set -uo pipefail
+REPO="$(cd "$(dirname "$0")" && pwd)"
+MSG="${1:-update dotfiles}"
+cd "$REPO" || exit 1
+
+# --- Hyprland (config + scripts), excluding backups ---
+rsync -a --delete --exclude='*.bak*' --exclude='Crash Reports/' "$HOME/.config/hypr/" "home/.config/hypr/"
+# --- Noctalia shell config + its saved settings ---
+rsync -a --delete "$HOME/.config/noctalia/" "home/.config/noctalia/" 2>/dev/null
+cp -a "$HOME/.local/state/noctalia/settings.toml" "home/.local/state/noctalia/" 2>/dev/null
+
+# --- custom systemd user units ---
+for u in screentime-archive.service screentime-archive.timer \
+         godot-vulkan-fix.service godot-vulkan-fix.timer godot-vulkan-fix.path; do
+    [ -f "$HOME/.config/systemd/user/$u" ] && cp -a "$HOME/.config/systemd/user/$u" "home/.config/systemd/user/"
+done
+
+# --- custom app launchers ---
+for d in screen-settings keyboard-shortcuts screen-time network-settings file-sharing-toggle; do
+    [ -f "$HOME/.local/share/applications/$d.desktop" ] && \
+        cp -a "$HOME/.local/share/applications/$d.desktop" "home/.local/share/applications/"
+done
+
+# --- package lists (so a reinstall can put every app back) ---
+pacman -Qqen > packages-native.txt
+pacman -Qqem > packages-aur.txt
+
+git add -A
+if git diff --cached --quiet; then
+    echo "Nothing changed."
+    exit 0
+fi
+git commit -m "$MSG" || exit 1
+if git push 2>/dev/null; then
+    echo "Pushed: $MSG"
+else
+    echo "Committed locally, but push failed. Run 'gh auth login' once, then: cd ~/dotfiles && git push"
+fi

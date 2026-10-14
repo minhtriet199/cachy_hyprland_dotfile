@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=File Sharing (toggle)
+Comment=Open LAN file-sharing ports in the firewall for 15 minutes, then auto-close
+Exec=/home/gamer/.config/hypr/scripts/share-firewall.sh
+Icon=network-transmit-receive
+Terminal=false
+Categories=Network;System;
+Keywords=share;file;firewall;localsend;kdeconnect;lan;transfer;

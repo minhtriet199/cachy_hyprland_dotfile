@@ -1,0 +1,3 @@
+postman-bin
+rider
+visual-studio-code-bin

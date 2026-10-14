@@ -1,0 +1,21 @@
+#!/bin/sh
+# SSH server on/off, with its firewall opening. Called by Network Settings via a narrow
+# NOPASSWD sudoers rule. "on" does NOT persist across reboot (safer on shared Wi-Fi) —
+# flip it on again when you need it. Takes exactly: on | off
+case "$1" in
+    on)
+        systemctl start sshd || exit 1
+        if systemctl is-active --quiet firewalld; then
+            firewall-cmd --add-service=ssh >/dev/null 2>&1
+            firewall-cmd --permanent --add-service=ssh >/dev/null 2>&1
+        fi
+        ;;
+    off)
+        systemctl stop sshd
+        if systemctl is-active --quiet firewalld; then
+            firewall-cmd --remove-service=ssh >/dev/null 2>&1
+            firewall-cmd --permanent --remove-service=ssh >/dev/null 2>&1
+        fi
+        ;;
+    *) echo "usage: ssh-toggle on|off" >&2; exit 2 ;;
+esac

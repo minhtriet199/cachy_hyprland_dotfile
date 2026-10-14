@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard Shortcuts
+Comment=View, add and change Hyprland keybinds
+Exec=python3 /home/gamer/.config/hypr/scripts/keybinds.py
+Icon=preferences-desktop-keyboard-shortcuts
+Terminal=false
+Categories=Settings;
+Keywords=keybind;shortcut;hotkey;hyprland;bind;keyboard;
+StartupWMClass=dev.gamer.KeyboardShortcuts

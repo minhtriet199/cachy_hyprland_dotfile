@@ -1,0 +1,10 @@
+[Unit]
+Description=Re-check Steam games for Godot when the library changes
+
+[Path]
+# appmanifests change when an install/update finishes; common/ gets new game folders
+PathChanged=%h/.local/share/Steam/steamapps
+PathChanged=%h/.local/share/Steam/steamapps/common
+
+[Install]
+WantedBy=default.target

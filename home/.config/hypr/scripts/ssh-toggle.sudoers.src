@@ -1,0 +1,1 @@
+gamer ALL=(root) NOPASSWD: /usr/local/bin/ssh-toggle on, /usr/local/bin/ssh-toggle off

@@ -1,0 +1,9 @@
+[Unit]
+Description=Re-check Steam games for Godot at login and every 30 minutes (backup for the path watch)
+
+[Timer]
+OnStartupSec=1min
+OnUnitActiveSec=30min
+
+[Install]
+WantedBy=timers.target

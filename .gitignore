@@ -1,0 +1,6 @@
+*.bak
+*.bak*
+Crash Reports/
+*.log
+__pycache__/
+*.pyc

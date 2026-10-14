@@ -1,0 +1,6 @@
+[Unit]
+Description=Copy Noctalia screen time into a 31-day archive
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.config/hypr/scripts/screentime.py archive

@@ -1,0 +1,677 @@
+[
+ {
+  "keys": "SUPER + Escape",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle session",
+  "category": "Windows",
+  "desc": "Power menu",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Q",
+  "action": "exec",
+  "arg": "noctalia msg settings-toggle",
+  "category": "Windows",
+  "desc": "Noctalia settings",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + D",
+  "action": "exec",
+  "arg": "noctalia msg bar-toggle",
+  "category": "Windows",
+  "desc": "Show / hide top bar",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + W",
+  "action": "close",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Close window",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + A",
+  "action": "float",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Toggle floating",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + ALT + Space",
+  "action": "maximize",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Maximize window",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + F",
+  "action": "fullscreen",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Fullscreen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + J",
+  "action": "togglesplit",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Toggle split direction",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + E",
+  "action": "opaque",
+  "arg": "",
+  "category": "Windows",
+  "desc": "Toggle full opacity",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Left",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/smart-move.sh left",
+  "category": "Focus & move",
+  "desc": "Focus / move left (floating windows get tiled)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Right",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/smart-move.sh right",
+  "category": "Focus & move",
+  "desc": "Focus / move right (floating windows get tiled)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Up",
+  "action": "focus_dir",
+  "arg": "up",
+  "category": "Focus & move",
+  "desc": "Focus up",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Down",
+  "action": "focus_dir",
+  "arg": "down",
+  "category": "Focus & move",
+  "desc": "Focus down",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "ALT + Tab",
+  "action": "cycle",
+  "arg": "",
+  "category": "Focus & move",
+  "desc": "Next window",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Tab",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/ws-list.sh",
+  "category": "Focus & move",
+  "desc": "Workspace list",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "CONTROL + Tab",
+  "action": "focus_monitor",
+  "arg": "+1",
+  "category": "Focus & move",
+  "desc": "Jump to the other screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + Up",
+  "action": "move_dir",
+  "arg": "up",
+  "category": "Focus & move",
+  "desc": "Move window up",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + Right",
+  "action": "move_dir",
+  "arg": "right",
+  "category": "Focus & move",
+  "desc": "Move window right",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + Left",
+  "action": "move_dir",
+  "arg": "left",
+  "category": "Focus & move",
+  "desc": "Move window left",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + Down",
+  "action": "move_dir",
+  "arg": "down",
+  "category": "Focus & move",
+  "desc": "Move window down",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + mouse_up",
+  "action": "move_monitor",
+  "arg": "-1",
+  "category": "Focus & move",
+  "desc": "Move window to previous screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + mouse_down",
+  "action": "move_monitor",
+  "arg": "+1",
+  "category": "Focus & move",
+  "desc": "Move window to next screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER",
+  "action": "ws_digits",
+  "arg": "go",
+  "category": "Workspaces",
+  "desc": "Show workspace N on this screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT",
+  "action": "ws_digits",
+  "arg": "move",
+  "category": "Workspaces",
+  "desc": "Move window to workspace N (follow)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + ALT",
+  "action": "ws_digits",
+  "arg": "focus",
+  "category": "Workspaces",
+  "desc": "Go to workspace N (absolute)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + CONTROL",
+  "action": "ws_digits",
+  "arg": "move_to",
+  "category": "Workspaces",
+  "desc": "Move window to workspace N on this screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + ALT",
+  "action": "ws_digits",
+  "arg": "move_silent",
+  "category": "Workspaces",
+  "desc": "Move window to workspace N (stay)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + Right",
+  "action": "focus_ws",
+  "arg": "m+1",
+  "category": "Workspaces",
+  "desc": "Next workspace",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + Left",
+  "action": "focus_ws",
+  "arg": "m-1",
+  "category": "Workspaces",
+  "desc": "Previous workspace",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + Down",
+  "action": "focus_ws",
+  "arg": "emptym",
+  "category": "Workspaces",
+  "desc": "First empty workspace",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + SHIFT + Right",
+  "action": "move_ws",
+  "arg": "m+1",
+  "category": "Workspaces",
+  "desc": "Move window to next workspace",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + SHIFT + Left",
+  "action": "move_ws",
+  "arg": "m-1",
+  "category": "Workspaces",
+  "desc": "Move window to previous workspace",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + mouse_down",
+  "action": "focus_ws",
+  "arg": "m-1",
+  "category": "Workspaces",
+  "desc": "Previous workspace (scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + mouse_up",
+  "action": "focus_ws",
+  "arg": "m+1",
+  "category": "Workspaces",
+  "desc": "Next workspace (scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + mouse_up",
+  "action": "focus_ws",
+  "arg": "m-1",
+  "category": "Workspaces",
+  "desc": "Previous workspace (Ctrl+scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + mouse_down",
+  "action": "focus_ws",
+  "arg": "m+1",
+  "category": "Workspaces",
+  "desc": "Next workspace (Ctrl+scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + SHIFT + mouse_up",
+  "action": "move_ws",
+  "arg": "m-1",
+  "category": "Workspaces",
+  "desc": "Move window to previous workspace (scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + SHIFT + mouse_down",
+  "action": "move_ws",
+  "arg": "m+1",
+  "category": "Workspaces",
+  "desc": "Move window to next workspace (scroll)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Return",
+  "action": "app",
+  "arg": "kitty.desktop",
+  "category": "Apps",
+  "desc": "Terminal",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + T",
+  "action": "app",
+  "arg": "kitty.desktop",
+  "category": "Apps",
+  "desc": "Terminal",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "XF86Calculator",
+  "action": "app",
+  "arg": "org.gnome.Calculator.desktop",
+  "category": "Apps",
+  "desc": "Calculator",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "CONTROL + SHIFT + Escape",
+  "action": "exec",
+  "arg": "uwsm app -- kitty -e btop",
+  "category": "Apps",
+  "desc": "Task manager (btop)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Space",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle launcher",
+  "category": "Apps",
+  "desc": "App launcher",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + period",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle launcher /emo",
+  "category": "Apps",
+  "desc": "Emoji picker",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + ALT + C",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle session",
+  "category": "Apps",
+  "desc": "Power menu",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + K",
+  "action": "exec",
+  "arg": "python3 ~/.config/hypr/scripts/keybinds.py",
+  "category": "Apps",
+  "desc": "Keyboard Shortcuts (this app)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + C",
+  "action": "exec",
+  "arg": "noctalia msg media toggle",
+  "category": "Media & hardware",
+  "desc": "Play / pause",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioRaiseVolume",
+  "action": "exec",
+  "arg": "noctalia msg volume-up",
+  "category": "Media & hardware",
+  "desc": "Volume up",
+  "locked": true,
+  "repeating": true
+ },
+ {
+  "keys": "XF86AudioLowerVolume",
+  "action": "exec",
+  "arg": "noctalia msg volume-down",
+  "category": "Media & hardware",
+  "desc": "Volume down",
+  "locked": true,
+  "repeating": true
+ },
+ {
+  "keys": "XF86AudioMute",
+  "action": "exec",
+  "arg": "noctalia msg volume-mute",
+  "category": "Media & hardware",
+  "desc": "Mute",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioMicMute",
+  "action": "exec",
+  "arg": "noctalia msg mic-mute",
+  "category": "Media & hardware",
+  "desc": "Mic mute",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioPlay",
+  "action": "exec",
+  "arg": "noctalia msg media toggle",
+  "category": "Media & hardware",
+  "desc": "Play / pause",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioPause",
+  "action": "exec",
+  "arg": "noctalia msg media toggle",
+  "category": "Media & hardware",
+  "desc": "Play / pause",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioNext",
+  "action": "exec",
+  "arg": "noctalia msg media next",
+  "category": "Media & hardware",
+  "desc": "Next track",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86AudioPrev",
+  "action": "exec",
+  "arg": "noctalia msg media previous",
+  "category": "Media & hardware",
+  "desc": "Previous track",
+  "locked": true,
+  "repeating": false
+ },
+ {
+  "keys": "XF86Launch4",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/profile.sh",
+  "category": "Media & hardware",
+  "desc": "ASUS mode: Silent → Performance → Turbo",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + I",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/profile.sh",
+  "category": "Media & hardware",
+  "desc": "ASUS mode: Silent → Performance → Turbo",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + B",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle control-center bluetooth",
+  "category": "Media & hardware",
+  "desc": "Bluetooth",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + CONTROL + H",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/hdr.sh toggle",
+  "category": "Screen",
+  "desc": "HDR on / off (focused external screen)",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + ALT + Up",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/hdr.sh up",
+  "category": "Screen",
+  "desc": "External screen brighter",
+  "locked": false,
+  "repeating": true
+ },
+ {
+  "keys": "SUPER + ALT + Down",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/hdr.sh down",
+  "category": "Screen",
+  "desc": "External screen dimmer",
+  "locked": false,
+  "repeating": true
+ },
+ {
+  "keys": "XF86MonBrightnessUp",
+  "action": "exec",
+  "arg": "noctalia msg brightness-up",
+  "category": "Screen",
+  "desc": "Brightness up",
+  "locked": true,
+  "repeating": true
+ },
+ {
+  "keys": "XF86MonBrightnessDown",
+  "action": "exec",
+  "arg": "noctalia msg brightness-down",
+  "category": "Screen",
+  "desc": "Brightness down",
+  "locked": true,
+  "repeating": true
+ },
+ {
+  "keys": "SUPER + P",
+  "action": "exec",
+  "arg": "hyprpicker -a -n",
+  "category": "Utilities",
+  "desc": "Color picker",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "Print",
+  "action": "exec",
+  "arg": "noctalia msg screenshot-region",
+  "category": "Utilities",
+  "desc": "Screenshot region",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + S",
+  "action": "exec",
+  "arg": "~/.config/hypr/scripts/snip.sh",
+  "category": "Utilities",
+  "desc": "Snip to clipboard",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Print",
+  "action": "exec",
+  "arg": "noctalia msg screenshot-fullscreen",
+  "category": "Utilities",
+  "desc": "Screenshot full screen",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + W",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle wallpaper",
+  "category": "Utilities",
+  "desc": "Wallpaper picker",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + V",
+  "action": "exec",
+  "arg": "noctalia msg panel-toggle clipboard",
+  "category": "Utilities",
+  "desc": "Clipboard history",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + mouse:272",
+  "action": "drag",
+  "arg": "",
+  "category": "Mouse",
+  "desc": "Drag window",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + mouse:273",
+  "action": "resize",
+  "arg": "",
+  "category": "Mouse",
+  "desc": "Resize window",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + Minus",
+  "action": "zoom",
+  "arg": "out",
+  "category": "Mouse",
+  "desc": "Zoom out",
+  "locked": false,
+  "repeating": true
+ },
+ {
+  "keys": "SUPER + Plus",
+  "action": "zoom",
+  "arg": "in",
+  "category": "Mouse",
+  "desc": "Zoom in",
+  "locked": false,
+  "repeating": true
+ },
+ {
+  "keys": "SUPER + code:82",
+  "action": "zoom",
+  "arg": "out",
+  "category": "Mouse",
+  "desc": "Zoom out (keypad)",
+  "locked": false,
+  "repeating": true
+ },
+ {
+  "keys": "SUPER + code:86",
+  "action": "zoom",
+  "arg": "in",
+  "category": "Mouse",
+  "desc": "Zoom in (keypad)",
+  "locked": false,
+  "repeating": true
+ }
+]
