@@ -66,6 +66,7 @@ def save(st):
 def entry(st, m):
     d = st.setdefault(m["description"], {})
     d.setdefault("hdr", 0); d.setdefault("nits", 200); d.setdefault("ddc", 50)
+    d.setdefault("transform", 0); d.setdefault("mirror", ""); d.setdefault("off", 0)
     if d.get("out") != m["name"]:  # moved to another port: DDC bus must be re-detected
         d.pop("bus", None)
         d["out"] = m["name"]
@@ -76,6 +77,11 @@ def entry(st, m):
 
 def monitors():
     return json.loads(run("hyprctl", "monitors", "-j") or "[]")
+
+
+def monitors_all():
+    # includes disabled outputs, so a screen turned off via "only screen X" is still listed
+    return json.loads(run("hyprctl", "monitors", "all", "-j") or "[]")
 
 
 def find(out):
@@ -205,7 +211,9 @@ def info(st, m):
     return {"output": out, "key": m["description"], "name": f'{m["make"]} {m["model"]}'.strip(),
             "model": "Laptop screen" if internal else (m["model"] or out), "internal": internal,
             "x": m["x"], "y": m["y"], "width": m["width"], "height": m["height"],
-            "refresh": round(m["refreshRate"], 2), "scale": m["scale"], "transform": m["transform"],
+            "refresh": round(m["refreshRate"], 2), "scale": m["scale"],
+            "transform": int(d.get("transform", m["transform"]) or 0),
+            "mirror": d.get("mirror", ""), "off": bool(d.get("off", 0)) or bool(m.get("disabled")),
             "modes": modes(m), "native": edid_native(out), "hdr_supported": hdr_ok, "nits_max": top, "hdr": bool(d["hdr"]),
             "nits": d["nits"], "pct": pct, "ddc": ddc_ok, "focused": m["focused"]}
 
@@ -241,6 +249,29 @@ def set_hdr(st, m, mode):
 def fmt_hz(hz):
     hz = float(hz)
     return str(int(hz)) if hz == int(hz) else f"{hz:.2f}"
+
+
+def _phys(mon, e):
+    md = e.get("mode")
+    if md:
+        mt = re.match(r"(\d+)x(\d+)", md)
+        if mt:
+            return int(mt.group(1)), int(mt.group(2))
+    return mon.get("width") or 1920, mon.get("height") or 1080
+
+
+def _retile(st):
+    """Lay the enabled, non-mirrored screens out left-to-right with no overlap/gap."""
+    x = 0
+    for mon in sorted(monitors_all(), key=lambda mo: mo["x"]):
+        e = entry(st, mon)
+        if e.get("off") or e.get("mirror"):
+            continue
+        w, h = _phys(mon, e)
+        sc = float(e.get("scale") or mon.get("scale") or 1)
+        lw = h if int(e.get("transform", 0)) % 2 else w
+        e["pos"] = f"{x}x0"
+        x += round(lw / sc)
 
 
 def set_mode(st, m, mode, scale):
@@ -282,18 +313,48 @@ def main(argv):
     st = load()
     cmd, args = (argv[0] if argv else ""), argv[1:]
     if cmd == "list":
-        print(json.dumps([info(st, m) for m in sorted(monitors(), key=lambda m: (m["x"], m["y"]))]))
+        mons = sorted(monitors_all(), key=lambda m: (is_internal(m["name"]), m["x"], m["y"]))
+        print(json.dumps([info(st, m) for m in mons]))
         save(st)
-    elif cmd in ("set", "hdr", "mode") and len(args) >= 2:
-        m = find(args[0])
+    elif cmd in ("set", "hdr", "mode", "rotate", "pos") and len(args) >= 2:
+        m = next((x for x in monitors_all() if x["name"] == args[0]), None)
         if not m:
             sys.exit(f"no screen {args[0]}")
         if cmd == "set":
             set_pct(st, m, args[1])
         elif cmd == "hdr":
             set_hdr(st, m, args[1])
+        elif cmd == "rotate":
+            entry(st, m)["transform"] = (int(args[1]) // 90) % 4
+            _retile(st)
+            save(st); reload()
+        elif cmd == "pos":
+            entry(st, m)["pos"] = args[1]
+            save(st); reload()
         else:
             set_mode(st, m, args[1], args[2] if len(args) > 2 else m["scale"])
+    elif cmd == "layout" and len(args) >= 2:
+        for i in range(0, len(args) - 1, 2):
+            mon = next((x for x in monitors_all() if x["name"] == args[i]), None)
+            if mon:
+                entry(st, mon)["pos"] = args[i + 1]
+        save(st); reload()
+    elif cmd == "arrange" and args:
+        mode = args[0]
+        mons = sorted(monitors_all(), key=lambda mo: mo["x"])
+        if mode == "only" and len(args) > 1:
+            for mon in mons:
+                e = entry(st, mon); e["off"] = 0 if mon["name"] == args[1] else 1; e["mirror"] = ""
+        elif mode == "duplicate":
+            primary = mons[0]["name"]
+            for mon in mons:
+                e = entry(st, mon); e["off"] = 0
+                e["mirror"] = "" if mon["name"] == primary else primary
+        else:  # extend
+            for mon in mons:
+                e = entry(st, mon); e["off"] = 0; e["mirror"] = ""
+            _retile(st)
+        save(st); reload()
     elif cmd in ("up", "down", "toggle"):
         m = target(args)
         if not m:
@@ -317,6 +378,7 @@ def main(argv):
             notify(pct, f"{label} brightness", f"{pct}%")
     else:
         print("usage: screenctl.py list | set OUT PCT | hdr OUT on|off|toggle | mode OUT WxH@HZ SCALE"
+              " | rotate OUT 0|90|180|270 | pos OUT XxY | layout OUT XxY ... | arrange extend|duplicate|only OUT"
               " | up|down|toggle [OUT]", file=sys.stderr)
         sys.exit(1)
 
