@@ -78,6 +78,11 @@ def monitors():
     return json.loads(run("hyprctl", "monitors", "-j") or "[]")
 
 
+def monitors_all():
+    # includes disabled outputs, so a screen turned off ("Only screen X") is still listed
+    return json.loads(run("hyprctl", "monitors", "all", "-j") or "[]")
+
+
 def find(out):
     return next((m for m in monitors() if m["name"] == out), None)
 
@@ -185,6 +190,52 @@ def reload():
     run("hyprctl", "reload")
 
 
+# ---------- SAFE live apply (hyprctl eval; nothing saved to disk) ----------
+# Rotation / mirror / disable are applied LIVE only and are NEVER written to the state file,
+# so a crash can't persist a bad config and a reboot always returns to the known-good layout.
+
+def _lua_str(v):
+    return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def mon_lua(out, d, st_entry):
+    """Build an hl.monitor({...}) call for one output. d: mode,pos,scale,transform,mirror,off."""
+    if d.get("off"):
+        return 'hl.monitor({output=%s, disabled=true})' % _lua_str(out)
+    parts = ['output=%s' % _lua_str(out),
+             'mode=%s' % _lua_str(d.get("mode") or "preferred"),
+             'position=%s' % _lua_str(d.get("pos") or "auto"),
+             'scale=%s' % (d.get("scale") or "1")]
+    t = int(d.get("transform") or 0)
+    if t:
+        parts.append('transform=%d' % (t % 4))
+    if d.get("mirror"):
+        parts.append('mirror=%s' % _lua_str(d["mirror"]))
+    # keep HDR if this screen has it on (so rotating/arranging doesn't drop HDR)
+    if st_entry and st_entry.get("hdr") == 1:
+        parts += ['bitdepth=10', 'cm="hdr"', 'sdr_max_luminance=%d' % int(st_entry.get("nits") or 200)]
+    return 'hl.monitor({%s})' % ', '.join(parts)
+
+
+def apply_live(st, desired):
+    """desired: {output: {mode,pos,scale,transform,mirror,off}} -> apply each via hyprctl eval."""
+    by_desc = {m["description"]: entry(st, m) for m in monitors_all()}
+    out_to_desc = {m["name"]: m["description"] for m in monitors_all()}
+    for out, d in desired.items():
+        se = by_desc.get(out_to_desc.get(out, ""), {})
+        run("hyprctl", "eval", mon_lua(out, d, se))
+
+
+def restore_live(st):
+    """Revert live to the saved-good base: every screen on, no mirror, no rotation."""
+    desired = {}
+    for m in monitors_all():
+        e = entry(st, m)
+        desired[m["name"]] = {"mode": e.get("mode"), "pos": e.get("pos"),
+                              "scale": e.get("scale"), "transform": 0, "mirror": "", "off": 0}
+    apply_live(st, desired)
+
+
 # ---------- actions ----------
 
 def info(st, m):
@@ -207,7 +258,9 @@ def info(st, m):
             "x": m["x"], "y": m["y"], "width": m["width"], "height": m["height"],
             "refresh": round(m["refreshRate"], 2), "scale": m["scale"], "transform": m["transform"],
             "modes": modes(m), "native": edid_native(out), "hdr_supported": hdr_ok, "nits_max": top, "hdr": bool(d["hdr"]),
-            "nits": d["nits"], "pct": pct, "ddc": ddc_ok, "focused": m["focused"]}
+            "nits": d["nits"], "pct": pct, "ddc": ddc_ok, "focused": m["focused"],
+            "mirror": "" if m.get("mirrorOf", "none") in ("none", "", None) else m["mirrorOf"],
+            "off": bool(m.get("disabled"))}
 
 
 def set_pct(st, m, pct):
@@ -282,7 +335,8 @@ def main(argv):
     st = load()
     cmd, args = (argv[0] if argv else ""), argv[1:]
     if cmd == "list":
-        print(json.dumps([info(st, m) for m in sorted(monitors(), key=lambda m: (m["x"], m["y"]))]))
+        mons = sorted(monitors_all(), key=lambda m: (is_internal(m["name"]), m["x"], m["y"]))
+        print(json.dumps([info(st, m) for m in mons]))
         save(st)
     elif cmd in ("set", "hdr", "mode") and len(args) >= 2:
         m = find(args[0])
@@ -315,9 +369,13 @@ def main(argv):
         else:
             pct = set_pct(st, m, cur["pct"] + sign * DDC_STEP)
             notify(pct, f"{label} brightness", f"{pct}%")
+    elif cmd == "live":
+        apply_live(st, json.load(sys.stdin))      # live only, nothing saved
+    elif cmd == "restore":
+        restore_live(st)                          # revert live to the known-good base
     else:
         print("usage: screenctl.py list | set OUT PCT | hdr OUT on|off|toggle | mode OUT WxH@HZ SCALE"
-              " | up|down|toggle [OUT]", file=sys.stderr)
+              " | live (JSON on stdin) | restore | up|down|toggle [OUT]", file=sys.stderr)
         sys.exit(1)
 
 
