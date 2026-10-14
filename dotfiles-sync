@@ -34,8 +34,8 @@ if git diff --cached --quiet; then
     exit 0
 fi
 git commit -m "$MSG" || exit 1
-if git push 2>/dev/null; then
+if git push 2>/dev/null || git push -u origin HEAD 2>/dev/null; then
     echo "Pushed: $MSG"
 else
-    echo "Committed locally, but push failed. Run 'gh auth login' once, then: cd ~/dotfiles && git push"
+    echo "Committed locally, but push failed. Run 'gh auth login' once, then: cd ~/dotfiles && git push -u origin main"
 fi
