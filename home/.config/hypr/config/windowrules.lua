@@ -138,3 +138,6 @@ hl.window_rule({ match = { class = "^(dev\\.gamer\\.ScreenTime)$" }, float = tru
 
 -- Network Settings (scripts/netsettings.py)
 hl.window_rule({ match = { class = "^(dev\\.gamer\\.NetworkSettings)$" }, float = true, center = true, size = { 640, 820 }, opacity = "1.0 override" })
+
+-- Unified Settings app (scripts/settings.py)
+hl.window_rule({ match = { class = "^(dev\\.gamer\\.Settings)$" }, float = true, center = true, size = { 1020, 780 }, opacity = "1.0 override" })

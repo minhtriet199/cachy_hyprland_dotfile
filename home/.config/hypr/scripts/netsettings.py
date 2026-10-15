@@ -208,7 +208,7 @@ def scan(cidr):
 
 # ---------------- GUI ----------------
 
-def run_gui():
+def run_gui(embed_app=None):
     import gi
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
@@ -714,6 +714,11 @@ def run_gui():
                                                       Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
             Window(self).present()
 
+    if embed_app is not None:                 # embed this app's panel inside another window
+        prov = Gtk.CssProvider(); prov.load_from_string(CSS)
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        return Window(embed_app)
     Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.PREFER_DARK)
     App().run()
 
