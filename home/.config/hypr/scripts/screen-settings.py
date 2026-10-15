@@ -407,6 +407,8 @@ class Arrangement(Gtk.Box):
         self._bx, self._by = self._base(i)
 
     def _drag_move(self, i, ox, oy):
+        if abs(ox) < 12 and abs(oy) < 12:     # ignore tiny movement (it's a click)
+            return
         self.fixed.move(self.buttons[i], self._bx + ox, self._by + oy)
 
     def _logical(self, s):
@@ -414,6 +416,8 @@ class Arrangement(Gtk.Box):
         return (h, w) if s["transform"] % 2 else (w, h)
 
     def _drag_end(self, i, ox, oy):
+        if abs(ox) < 20 and abs(oy) < 20:    # a click, not a drag -> just select, don't move
+            self.fixed.move(self.buttons[i], self._bx, self._by); return
         if len(self._screens) != 2:          # snap back; multi-monitor drag not supported
             self.fixed.move(self.buttons[i], self._bx, self._by); return
         other = 1 - i
@@ -462,7 +466,7 @@ class Popup(Adw.ApplicationWindow):
             outer.append(self.arrangement)
             if len(self.screens) > 1:
                 self.mode_btns = {}
-                seg = Gtk.Box(halign=Gtk.Align.CENTER)
+                seg = Gtk.Box()
                 seg.add_css_class("linked")
                 def add_mode(key, label):
                     b = Gtk.ToggleButton(label=label, focus_on_click=False)
@@ -472,9 +476,13 @@ class Popup(Adw.ApplicationWindow):
                     seg.append(b); self.mode_btns[key] = b
                 add_mode(("extend",), "Extend")
                 add_mode(("duplicate",), "Duplicate")
-                for i, sc in enumerate(self.screens):
-                    add_mode(("only", sc["output"]), f"Only {i + 1}")
-                outer.append(seg)
+                self.apply_btn = Gtk.Button(label="Apply", sensitive=False, valign=Gtk.Align.CENTER)
+                self.apply_btn.add_css_class("suggested-action")
+                self.apply_btn.connect("clicked", lambda *_: self.do_apply())
+                mrow = Gtk.Box(spacing=10, halign=Gtk.Align.CENTER)
+                mrow.append(seg); mrow.append(self.apply_btn)
+                outer.append(mrow)
+                self.staged = None
                 self.sync_mode_buttons()
 
             # "keep these display settings?" bar
@@ -600,34 +608,53 @@ class Popup(Adw.ApplicationWindow):
         self.retile(d)
         self.apply_display(d)
 
-    def apply_arrange(self, mode, out=None):
+    def arrange_desired(self, mode):
         d = self.base_desired()
-        if mode == "extend":
+        if mode == "duplicate":
+            prim = min(self.screens, key=lambda s: s["x"])["output"]
+            for o in d:
+                d[o]["off"] = 0
+                d[o]["mirror"] = "" if o == prim else prim
+                if o != prim:
+                    d[o]["pos"] = d[prim]["pos"]
+        else:  # extend
             for o in d:
                 d[o]["off"] = 0; d[o]["mirror"] = ""
             self.retile(d)
-        elif mode == "duplicate":
-            prim = min(self.screens, key=lambda s: s["x"])["output"]
-            for o in d:
-                d[o]["off"] = 0; d[o]["mirror"] = "" if o == prim else prim
-        elif mode == "only":
-            for o in d:
-                d[o]["off"] = 0 if o == out else 1; d[o]["mirror"] = ""
-        self.apply_display(d)
+        return d
 
-    def apply_layout(self, positions):
+    def preview_layout(self, desired):
+        pv = []
+        for sc in self.screens:
+            dd = desired[sc["output"]]; s2 = dict(sc)
+            px, _, py = dd["pos"].partition("x")
+            s2["x"], s2["y"] = int(px or 0), int(py or 0)
+            s2["transform"] = int(dd["transform"]); s2["off"] = bool(dd["off"]); s2["mirror"] = dd["mirror"]
+            pv.append(s2)
+        self.arrangement.layout(pv)
+        self.arrangement.select(self.pages.index(self.stack.get_visible_child()))
+
+    def stage(self, desired):
+        self.staged = desired
+        self.preview_layout(desired)
+        self.apply_btn.set_sensitive(True)
+
+    def do_apply(self):
+        if getattr(self, "staged", None):
+            d, self.staged = self.staged, None
+            self.apply_btn.set_sensitive(False)
+            self.apply_display(d)
+
+    def on_move(self, positions):
         d = self.base_desired()
         for o, pos in positions.items():
             d[o]["pos"] = pos
-        self.apply_display(d)
-
-    def on_move(self, positions):
-        self.apply_layout(positions)
+        self.stage(d)
 
     def on_mode_btn(self, key):
         if getattr(self, "_sync_modes", False):
             return
-        self.apply_arrange(*key)
+        self.stage(self.arrange_desired(key[0]))
 
     def current_arrange(self):
         offs = [sc for sc in self.screens if sc["off"]]
@@ -699,6 +726,8 @@ class Popup(Adw.ApplicationWindow):
         self.arrangement.layout(self.screens)
         self.arrangement.select(self.pages.index(self.stack.get_visible_child()))
         self.sync_mode_buttons()
+        if hasattr(self, "apply_btn") and not getattr(self, "staged", None):
+            self.apply_btn.set_sensitive(False)
 
     # ----- window behaviour -----
     def hold_focus(self, secs):
