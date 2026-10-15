@@ -191,17 +191,13 @@ class ScreenPage(Gtk.Box):
         self.res_row = Adw.ComboRow(title="Display resolution")
         self.hz_row = Adw.ComboRow(title="Refresh rate")
         self.scale_row = Adw.ComboRow(title="Scale", subtitle="Size of text, apps and other items")
-        self.rot_row = Adw.ComboRow(title="Orientation", model=Gtk.StringList.new(
-            ["Landscape", "Portrait (90°)", "Landscape (flipped)", "Portrait (270°)"]))
-        self.rot_row.set_selected(s["transform"])
-        for r in (self.res_row, self.hz_row, self.scale_row, self.rot_row):
+        for r in (self.res_row, self.hz_row, self.scale_row):
             layout.add(r)
         self.append(layout)
         self.fill_modes(s["width"], s["height"], s["refresh"], s["scale"])
         self.res_row.connect("notify::selected", self.on_res)
         self.hz_row.connect("notify::selected", self.on_mode_change)
         self.scale_row.connect("notify::selected", self.on_mode_change)
-        self.rot_row.connect("notify::selected", self.on_rotate)
 
         self.show_value(s["pct"])
         self.scale.connect("value-changed", lambda w: self.set_value(int(w.get_value())))
@@ -330,16 +326,6 @@ class ScreenPage(Gtk.Box):
         self.fill_scales(w, h, sc)
         self.syncing = False
 
-    def on_rotate(self, *_):
-        if self.syncing:
-            return
-        self.win.apply_rotation(self, self.rot_row.get_selected())
-
-    def show_rotation(self, transform):
-        self.syncing = True
-        self.rot_row.set_selected(transform)
-        self.syncing = False
-
 
 class Arrangement(Gtk.Box):
     """Screens drawn to scale in their real layout, like Windows. Click one to select it."""
@@ -442,7 +428,6 @@ class Popup(Adw.ApplicationWindow):
         self.applier = Applier()
         self.was_active = False
         self.hold_until = time.monotonic() + 1  # ignore focus flicker on open
-        self.pending = None  # [page, old mode, seconds left, timer] while "keep changes?" is shown
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         outer.add_css_class("outer")
@@ -464,6 +449,12 @@ class Popup(Adw.ApplicationWindow):
         else:
             self.arrangement = Arrangement(self.screens, self.pick, self.on_move)
             outer.append(self.arrangement)
+            self.staged = None
+            self.sel = 0
+            self.rot_names = ["Landscape", "Portrait (90°)", "Landscape (flipped)", "Portrait (270°)"]
+
+            # top controls (left-aligned): [Extend|Duplicate] + Apply, then Orientation of the selected screen
+            top = Gtk.Box(spacing=10, halign=Gtk.Align.START)
             if len(self.screens) > 1:
                 self.mode_btns = {}
                 seg = Gtk.Box()
@@ -476,33 +467,21 @@ class Popup(Adw.ApplicationWindow):
                     seg.append(b); self.mode_btns[key] = b
                 add_mode(("extend",), "Extend")
                 add_mode(("duplicate",), "Duplicate")
-                self.apply_btn = Gtk.Button(label="Apply", sensitive=False, valign=Gtk.Align.CENTER)
-                self.apply_btn.add_css_class("suggested-action")
-                self.apply_btn.connect("clicked", lambda *_: self.do_apply())
-                mrow = Gtk.Box(spacing=10, halign=Gtk.Align.CENTER)
-                mrow.append(seg); mrow.append(self.apply_btn)
-                outer.append(mrow)
-                self.staged = None
-                self.sync_mode_buttons()
+                top.append(seg)
+            self.apply_btn = Gtk.Button(label="Apply", sensitive=False, valign=Gtk.Align.CENTER)
+            self.apply_btn.add_css_class("suggested-action")
+            self.apply_btn.connect("clicked", lambda *_: self.do_apply())
+            top.append(self.apply_btn)
+            outer.append(top)
 
-            # "keep these display settings?" bar
-            self.keep_label = Gtk.Label(xalign=0)
-            self.keep_label.add_css_class("sub")
-            keep_title = Gtk.Label(label="Keep these display settings?", xalign=0)
-            keep_title.add_css_class("keep-title")
-            texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True)
-            texts.append(keep_title); texts.append(self.keep_label)
-            revert = Gtk.Button(label="Revert", valign=Gtk.Align.CENTER)
-            keep = Gtk.Button(label="Keep changes", valign=Gtk.Align.CENTER)
-            keep.add_css_class("suggested-action")
-            revert.connect("clicked", lambda *_: self.revert_mode())
-            keep.connect("clicked", lambda *_: self.keep_mode())
-            bar = Gtk.Box(spacing=8)
-            bar.add_css_class("keep-bar")
-            bar.append(texts); bar.append(revert); bar.append(keep)
-            self.keep_revealer = Gtk.Revealer(child=bar, reveal_child=False,
-                                              transition_type=Gtk.RevealerTransitionType.SLIDE_DOWN)
-            outer.append(self.keep_revealer)
+            rrow = Gtk.Box(spacing=10, halign=Gtk.Align.START)
+            rrow.append(Gtk.Label(label="Orientation"))
+            self.rot_drop = Gtk.DropDown.new_from_strings(self.rot_names)
+            self.rot_drop.connect("notify::selected", self.on_rotate_top)
+            rrow.append(self.rot_drop)
+            outer.append(rrow)
+            if len(self.screens) > 1:
+                self.sync_mode_buttons()
 
             self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE,
                                    transition_duration=150, vhomogeneous=False, interpolate_size=True)
@@ -521,18 +500,17 @@ class Popup(Adw.ApplicationWindow):
         self.connect("close-request", self.on_close)
 
     def pick(self, i):
+        self.sel = i
         self.arrangement.select(i)
         self.stack.set_visible_child(self.pages[i])
+        if hasattr(self, "rot_drop"):
+            self._sync_rot = True
+            self.rot_drop.set_selected(self.screens[i]["transform"])
+            self._sync_rot = False
 
-    # ----- changes with a 15-second keep-or-revert, like Windows -----
-    def begin_change(self, key, revert_fn):
-        if self.pending:
-            if self.pending[3] == key:        # same control still pending: keep its first revert
-                self.hold_focus(REVERT_SECS + 5)
-                return
-            self.keep_mode()                  # a different change was pending: treat it as kept
-        self.pending = [revert_fn, REVERT_SECS, 0, key]
-        self.hold_focus(REVERT_SECS + 5)
+    # ----- staged display changes; Apply runs them live (session-only, reboot = normal) -----
+    def hold_focus(self, secs):
+        self.hold_until = max(self.hold_until, time.monotonic() + secs)
 
     def send(self, key, args, then=None, lock=None):
         if lock:
@@ -547,14 +525,26 @@ class Popup(Adw.ApplicationWindow):
         self.applier.request(key, args, done)
 
     def apply_mode(self, page, w, h, hz, sc):
-        s0 = page.s
-        old = (s0["width"], s0["height"], s0["refresh"], s0["scale"])
-        self.begin_change(("mode", page.out), lambda: (page.show_mode(*old),
-            self.send(("mode", page.out), ("mode", page.out, f"{old[0]}x{old[1]}@{old[2]}", old[3]))))
-        self.send(("mode", page.out), ("mode", page.out, f"{w}x{h}@{hz}", sc),
-                  then=self.start_countdown, lock=page)
+        self.hold_focus(5)
+        self.send(("mode", page.out), ("mode", page.out, f"{w}x{h}@{hz}", sc), lock=page)
 
-    # ---- display changes (rotation, mirror/only, drag): LIVE only, session-only ----
+    def live(self, desired, then=None):
+        def done(_out):
+            self.relayout()
+            if then:
+                then()
+            return False
+        self.applier.request("display", ("live", json.dumps(desired)), done)
+
+    def apply_display(self, desired):
+        self.hold_focus(6)
+        self.live(desired)
+
+    def current_desired(self):
+        if getattr(self, "staged", None):
+            return {o: dict(v) for o, v in self.staged.items()}
+        return self.base_desired()
+
     def base_desired(self):
         d = {}
         for sc in self.screens:
@@ -578,38 +568,8 @@ class Popup(Adw.ApplicationWindow):
             d[o]["pos"] = f"{int(round(x))}x0"
             x += round(lw)
 
-    def live(self, desired, then=None):
-        def done(_out):
-            self.relayout()
-            if then:
-                then()
-            return False
-        self.applier.request("display", ("live", json.dumps(desired)), done)
-
-    def do_restore(self, then=None):
-        def done(_out):
-            self.relayout()
-            if then:
-                then()
-            return False
-        self.applier.request("restore", ("restore",), done)
-
-    def apply_display(self, desired):
-        # one path for rotation / arrange / drag: apply live, revert = restore good base
-        self.begin_change("display", lambda: self.do_restore(then=self.start_countdown_off))
-        self.live(desired, then=self.start_countdown)
-
-    def start_countdown_off(self):
-        self.keep_revealer.set_reveal_child(False)
-
-    def apply_rotation(self, page, transform):
-        d = self.base_desired()
-        d[page.out]["transform"] = transform
-        self.retile(d)
-        self.apply_display(d)
-
     def arrange_desired(self, mode):
-        d = self.base_desired()
+        d = self.current_desired()
         if mode == "duplicate":
             prim = min(self.screens, key=lambda s: s["x"])["output"]
             for o in d:
@@ -632,7 +592,7 @@ class Popup(Adw.ApplicationWindow):
             s2["transform"] = int(dd["transform"]); s2["off"] = bool(dd["off"]); s2["mirror"] = dd["mirror"]
             pv.append(s2)
         self.arrangement.layout(pv)
-        self.arrangement.select(self.pages.index(self.stack.get_visible_child()))
+        self.arrangement.select(self.sel)
 
     def stage(self, desired):
         self.staged = desired
@@ -645,8 +605,17 @@ class Popup(Adw.ApplicationWindow):
             self.apply_btn.set_sensitive(False)
             self.apply_display(d)
 
+    def on_rotate_top(self, *_):
+        if getattr(self, "_sync_rot", False):
+            return
+        out = self.screens[self.sel]["output"]
+        d = self.current_desired()
+        d[out]["transform"] = self.rot_drop.get_selected()
+        self.retile(d)
+        self.stage(d)
+
     def on_move(self, positions):
-        d = self.base_desired()
+        d = self.current_desired()
         for o, pos in positions.items():
             d[o]["pos"] = pos
         self.stage(d)
@@ -657,10 +626,6 @@ class Popup(Adw.ApplicationWindow):
         self.stage(self.arrange_desired(key[0]))
 
     def current_arrange(self):
-        offs = [sc for sc in self.screens if sc["off"]]
-        if offs and len(self.screens) - len(offs) >= 1 and len(offs) == len(self.screens) - 1:
-            on = next(sc for sc in self.screens if not sc["off"])
-            return ("only", on["output"])
         if any(sc["mirror"] for sc in self.screens):
             return ("duplicate",)
         return ("extend",)
@@ -674,45 +639,6 @@ class Popup(Adw.ApplicationWindow):
             b.set_active(key == cur)
         self._sync_modes = False
 
-    def start_countdown(self):
-        if not self.pending:
-            return
-        if self.pending[2]:
-            GLib.source_remove(self.pending[2])
-        self.pending[1] = REVERT_SECS
-        self.keep_revealer.set_reveal_child(True)
-        self.tick()
-        self.pending[2] = GLib.timeout_add_seconds(1, self.tick)
-
-    def tick(self):
-        if not self.pending:
-            return False
-        if self.pending[1] <= 0:
-            self.pending[2] = 0
-            self.revert_mode()
-            return False
-        self.keep_label.set_label(f"Reverting to the previous settings in {self.pending[1]} s")
-        self.pending[1] -= 1
-        return True
-
-    def keep_mode(self):
-        if self.pending and self.pending[2]:
-            GLib.source_remove(self.pending[2])
-        self.pending = None
-        self.keep_revealer.set_reveal_child(False)
-        self.hold_focus(1)
-
-    def revert_mode(self):
-        if not self.pending:
-            return
-        revert_fn, _, timer, _ = self.pending
-        if timer:
-            GLib.source_remove(timer)
-        self.pending = None
-        self.keep_revealer.set_reveal_child(False)
-        self.hold_focus(5)
-        revert_fn()
-
     def relayout(self):
         # sizes/positions changed: redraw the arrangement and refresh each page's info
         fresh = {s["output"]: s for s in list_screens()}
@@ -720,12 +646,13 @@ class Popup(Adw.ApplicationWindow):
             if p.out in fresh:
                 p.s = fresh[p.out]
         self.screens = [p.s for p in self.pages]
-        for p in self.pages:
-            if hasattr(p, "show_rotation"):
-                p.show_rotation(p.s["transform"])
         self.arrangement.layout(self.screens)
-        self.arrangement.select(self.pages.index(self.stack.get_visible_child()))
+        self.arrangement.select(self.sel)
         self.sync_mode_buttons()
+        if hasattr(self, "rot_drop"):
+            self._sync_rot = True
+            self.rot_drop.set_selected(self.screens[self.sel]["transform"])
+            self._sync_rot = False
         if hasattr(self, "apply_btn") and not getattr(self, "staged", None):
             self.apply_btn.set_sensitive(False)
 
@@ -734,8 +661,6 @@ class Popup(Adw.ApplicationWindow):
         self.hold_until = max(self.hold_until, time.monotonic() + secs)
 
     def on_close(self, *_):
-        if self.pending:  # closed without confirming: go back, like Windows
-            self.revert_mode()
         for p in self.pages:
             p.commit()
         self.set_visible(False)
@@ -744,10 +669,7 @@ class Popup(Adw.ApplicationWindow):
 
     def on_key(self, _c, keyval, _code, _state):
         if keyval == Gdk.KEY_Escape:
-            if self.pending:
-                self.revert_mode()
-            else:
-                self.close()
+            self.close()
             return True
         return False
 
@@ -755,9 +677,9 @@ class Popup(Adw.ApplicationWindow):
         # click away closes, like a popup (not while a change is waiting for "keep")
         if self.is_active():
             self.was_active = True
-        elif self.was_active and time.monotonic() > self.hold_until and not self.pending:
+        elif self.was_active and time.monotonic() > self.hold_until:
             # focus can flicker while the window maps; only close if it stays away
-            GLib.timeout_add(200, lambda: (self.is_active() or self.pending or self.close(), False)[1])
+            GLib.timeout_add(200, lambda: (self.is_active() or self.close(), False)[1])
 
 
 class App(Adw.Application):
