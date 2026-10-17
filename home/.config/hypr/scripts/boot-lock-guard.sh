@@ -1,0 +1,7 @@
+#!/bin/sh
+# Auto-login safety: Isla should lock the screen right after login. If Isla isn't running a few seconds
+# after Hyprland starts (crash, broken config…), lock with hyprlock instead so the session is never left open.
+sleep 10
+if ! pgrep -x qs >/dev/null && ! pgrep -x quickshell >/dev/null; then
+    pidof hyprlock >/dev/null || hyprlock
+fi
