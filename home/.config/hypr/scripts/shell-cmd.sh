@@ -4,6 +4,12 @@
 # Noctalia running -> passes the exact same command to "noctalia msg" (old behaviour).
 # Isla (Quickshell) running instead -> does the same job through Isla or plain tools.
 
+# Super+Tab: Isla's Islands screen, or the old fuzzel workspace list under Noctalia
+if [ "$1" = islands ]; then
+    pgrep -x noctalia >/dev/null && exec "$HOME/.config/hypr/scripts/ws-list.sh"
+    exec qs -c isla ipc call isla phone islands
+fi
+
 if pgrep -x noctalia >/dev/null; then
     exec noctalia msg "$@"
 fi

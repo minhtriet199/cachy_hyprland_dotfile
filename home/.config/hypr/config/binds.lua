@@ -35,7 +35,7 @@ hl.bind("SUPER + Right", hl.dsp.exec_cmd("~/.config/hypr/scripts/smart-move.sh r
 hl.bind("SUPER + Up", hl.dsp.focus({ direction = "up" }), { description = "Focus up" })
 hl.bind("SUPER + Down", hl.dsp.focus({ direction = "down" }), { description = "Focus down" })
 hl.bind("ALT + Tab", hl.dsp.window.cycle_next(), { description = "Next window" })
-hl.bind("SUPER + Tab", hl.dsp.exec_cmd("~/.config/hypr/scripts/ws-list.sh"), { description = "Workspace list" })
+hl.bind("SUPER + Tab", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh islands"), { description = "Islands (workspaces)" })
 hl.bind("CONTROL + Tab", hl.dsp.focus({ monitor = "+1" }), { description = "Jump to the other screen" })
 hl.bind("SUPER + SHIFT + Up", hl.dsp.window.move({ direction = "u" }), { description = "Move window up" })
 hl.bind("SUPER + SHIFT + Right", hl.dsp.window.move({ direction = "r" }), { description = "Move window right" })

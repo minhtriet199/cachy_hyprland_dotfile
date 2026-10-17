@@ -128,9 +128,9 @@
  {
   "keys": "SUPER + Tab",
   "action": "exec",
-  "arg": "~/.config/hypr/scripts/ws-list.sh",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh islands",
   "category": "Focus & move",
-  "desc": "Workspace list",
+  "desc": "Islands (workspaces)",
   "locked": false,
   "repeating": false
  },
