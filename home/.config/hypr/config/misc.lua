@@ -15,6 +15,7 @@ hl.config({
         focus_on_activate = true, -- let apps focus their window (e.g. when you click their notification)
         swallow_regex = "(kitty|ghostty|[Kk]onsole|Alacritty|gnome-terminal|xfce[0-9]?-terminal)",
         vrr = 3,
+        allow_session_lock_restore = true, -- if the lock screen (Isla) crashes, a new one can take over instead of a stuck red screen
     },
     render = {
         direct_scanout = 2,
