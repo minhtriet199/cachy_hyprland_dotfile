@@ -407,9 +407,9 @@
  {
   "keys": "SUPER + K",
   "action": "exec",
-  "arg": "python3 ~/.config/hypr/scripts/keybinds.py",
+  "arg": "qs -c isla ipc call isla phone settingsKeys",
   "category": "Apps",
-  "desc": "Keyboard Shortcuts (this app)",
+  "desc": "Keyboard shortcuts (Isla phone)",
   "locked": false,
   "repeating": false
  },

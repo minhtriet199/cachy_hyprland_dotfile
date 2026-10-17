@@ -19,7 +19,7 @@ for u in screentime-archive.service screentime-archive.timer \
 done
 
 # --- custom app launchers ---
-for d in screen-settings keyboard-shortcuts screen-time network-settings file-sharing-toggle; do
+for d in file-sharing-toggle; do
     [ -f "$HOME/.local/share/applications/$d.desktop" ] && \
         cp -a "$HOME/.local/share/applications/$d.desktop" "home/.local/share/applications/"
 done

@@ -127,17 +127,7 @@ hl.layer_rule({
   blur_popups = true,
 })
 
--- Screen Settings window (scripts/screen-settings.py)
-hl.window_rule({ match = { class = "^(dev\\.gamer\\.ScreenSettings)$" }, float = true, center = true, pin = true, opacity = "1.0 override" })
 
--- Keyboard Shortcuts editor (scripts/keybinds.py)
-hl.window_rule({ match = { class = "^(dev\\.gamer\\.KeyboardShortcuts)$" }, float = true, center = true, size = { 760, 760 }, opacity = "1.0 override" })
 
--- Screen Time month view (scripts/screentime.py)
-hl.window_rule({ match = { class = "^(dev\\.gamer\\.ScreenTime)$" }, float = true, center = true, size = { 720, 780 }, opacity = "1.0 override" })
 
--- Network Settings (scripts/netsettings.py)
-hl.window_rule({ match = { class = "^(dev\\.gamer\\.NetworkSettings)$" }, float = true, center = true, size = { 640, 820 }, opacity = "1.0 override" })
 
--- Unified Settings app (scripts/settings.py)
-hl.window_rule({ match = { class = "^(dev\\.gamer\\.Settings)$" }, float = true, center = true, size = { 1020, 780 }, opacity = "1.0 override" })

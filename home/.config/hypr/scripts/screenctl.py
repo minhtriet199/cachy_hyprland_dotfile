@@ -12,6 +12,7 @@
 #   screenctl.py set OUT PCT               brightness 0-100
 #   screenctl.py hdr OUT on|off|toggle
 #   screenctl.py mode OUT WxH@HZ SCALE     resolution / refresh / scale, re-lays out screens left to right
+#   screenctl.py pos OUT XxY [OUT XxY ...]   set screen positions (logical px, saved, reload)
 #   screenctl.py order OUT OUT ...         place screens left to right in this order (saved, reload)
 #   screenctl.py up|down|toggle [OUT]      for keybinds (default: focused external screen), notifies
 import glob, json, os, re, subprocess, sys
@@ -343,6 +344,19 @@ def set_order(st, names):
     save(st); reload()
 
 
+def set_pos(st, pairs):
+    """pairs = [OUT, XxY, OUT, XxY, ...] in logical px. Keeps modes. Saved + reload."""
+    mons = {mo["name"]: mo for mo in monitors()}
+    for name, pos in zip(pairs[::2], pairs[1::2]):
+        if name not in mons or not re.fullmatch(r"-?\d+x-?\d+", pos):
+            continue
+        mon, e = mons[name], entry(st, mons[name])
+        e.setdefault("mode", f'{mon["width"]}x{mon["height"]}@{fmt_hz(round(mon["refreshRate"], 2))}')
+        e.setdefault("scale", f'{mon["scale"]:g}')
+        e["pos"] = pos
+    save(st); reload()
+
+
 def notify(value, title, body):
     run("notify-send", "-a", "Monitor", "-h", "string:x-canonical-private-synchronous:screenctl",
         "-h", f"int:value:{value}", title, body)
@@ -373,6 +387,8 @@ def main(argv):
             set_hdr(st, m, args[1])
         else:
             set_mode(st, m, args[1], args[2] if len(args) > 2 else m["scale"])
+    elif cmd == "pos" and len(args) >= 2:
+        set_pos(st, args)                         # e.g. pos HDMI-A-1 0x0 eDP-1 2560x0
     elif cmd == "order" and args:
         set_order(st, args)                       # e.g. order eDP-1 HDMI-A-1  (left → right)
     elif cmd in ("up", "down", "toggle"):

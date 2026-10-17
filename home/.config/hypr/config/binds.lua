@@ -80,7 +80,7 @@ hl.bind("CONTROL + SHIFT + Escape", hl.dsp.exec_cmd("uwsm app -- kitty -e btop")
 hl.bind("SUPER + Space", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher"), { description = "App launcher" })
 hl.bind("SUPER + period", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher /emo"), { description = "Emoji picker" })
 hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle session"), { description = "Power menu" })
-hl.bind("SUPER + K", hl.dsp.exec_cmd("python3 ~/.config/hypr/scripts/keybinds.py"), { description = "Keyboard Shortcuts (this app)" })
+hl.bind("SUPER + K", hl.dsp.exec_cmd("qs -c isla ipc call isla phone settingsKeys"), { description = "Keyboard shortcuts (Isla phone)" })
 
 -- Media & hardware
 hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh media toggle"), { locked = true, description = "Play / pause" })
