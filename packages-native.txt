@@ -101,6 +101,7 @@ hwdetect
 hwinfo
 hyphen-en
 hyprland
+hyprlock
 hyprsunset
 inetutils
 iwd
