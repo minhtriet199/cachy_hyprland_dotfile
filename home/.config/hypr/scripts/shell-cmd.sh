@@ -19,7 +19,7 @@ case "$*" in
     "bar-toggle")                           isla bar ;;
     "panel-toggle control-center bluetooth") isla phone quick ;;
     "panel-toggle wallpaper")               isla phone wallpapers ;;
-    "panel-toggle clipboard")               cliphist list | fuzzel --dmenu --prompt 'Clipboard: ' | cliphist decode | wl-copy ;;
+    "panel-toggle clipboard")               isla phone clipboard ;;
     "volume-up")                            wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
     "volume-down")                          wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
     "volume-mute")                          wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
