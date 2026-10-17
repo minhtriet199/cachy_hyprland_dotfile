@@ -2,7 +2,7 @@
  {
   "keys": "SUPER + Escape",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle session",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle session",
   "category": "Windows",
   "desc": "Power menu",
   "locked": false,
@@ -11,7 +11,7 @@
  {
   "keys": "SUPER + Q",
   "action": "exec",
-  "arg": "noctalia msg settings-toggle",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh settings-toggle",
   "category": "Windows",
   "desc": "Noctalia settings",
   "locked": false,
@@ -20,7 +20,7 @@
  {
   "keys": "SUPER + D",
   "action": "exec",
-  "arg": "noctalia msg bar-toggle",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh bar-toggle",
   "category": "Windows",
   "desc": "Show / hide top bar",
   "locked": false,
@@ -380,7 +380,7 @@
  {
   "keys": "SUPER + Space",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle launcher",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher",
   "category": "Apps",
   "desc": "App launcher",
   "locked": false,
@@ -389,7 +389,7 @@
  {
   "keys": "SUPER + period",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle launcher /emo",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher /emo",
   "category": "Apps",
   "desc": "Emoji picker",
   "locked": false,
@@ -398,7 +398,7 @@
  {
   "keys": "SUPER + ALT + C",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle session",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle session",
   "category": "Apps",
   "desc": "Power menu",
   "locked": false,
@@ -416,7 +416,7 @@
  {
   "keys": "SUPER + C",
   "action": "exec",
-  "arg": "noctalia msg media toggle",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh media toggle",
   "category": "Media & hardware",
   "desc": "Play / pause",
   "locked": true,
@@ -425,7 +425,7 @@
  {
   "keys": "XF86AudioRaiseVolume",
   "action": "exec",
-  "arg": "noctalia msg volume-up",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh volume-up",
   "category": "Media & hardware",
   "desc": "Volume up",
   "locked": true,
@@ -434,7 +434,7 @@
  {
   "keys": "XF86AudioLowerVolume",
   "action": "exec",
-  "arg": "noctalia msg volume-down",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh volume-down",
   "category": "Media & hardware",
   "desc": "Volume down",
   "locked": true,
@@ -443,7 +443,7 @@
  {
   "keys": "XF86AudioMute",
   "action": "exec",
-  "arg": "noctalia msg volume-mute",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh volume-mute",
   "category": "Media & hardware",
   "desc": "Mute",
   "locked": true,
@@ -452,7 +452,7 @@
  {
   "keys": "XF86AudioMicMute",
   "action": "exec",
-  "arg": "noctalia msg mic-mute",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh mic-mute",
   "category": "Media & hardware",
   "desc": "Mic mute",
   "locked": true,
@@ -461,7 +461,7 @@
  {
   "keys": "XF86AudioPlay",
   "action": "exec",
-  "arg": "noctalia msg media toggle",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh media toggle",
   "category": "Media & hardware",
   "desc": "Play / pause",
   "locked": true,
@@ -470,7 +470,7 @@
  {
   "keys": "XF86AudioPause",
   "action": "exec",
-  "arg": "noctalia msg media toggle",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh media toggle",
   "category": "Media & hardware",
   "desc": "Play / pause",
   "locked": true,
@@ -479,7 +479,7 @@
  {
   "keys": "XF86AudioNext",
   "action": "exec",
-  "arg": "noctalia msg media next",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh media next",
   "category": "Media & hardware",
   "desc": "Next track",
   "locked": true,
@@ -488,7 +488,7 @@
  {
   "keys": "XF86AudioPrev",
   "action": "exec",
-  "arg": "noctalia msg media previous",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh media previous",
   "category": "Media & hardware",
   "desc": "Previous track",
   "locked": true,
@@ -515,7 +515,7 @@
  {
   "keys": "SUPER + B",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle control-center bluetooth",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle control-center bluetooth",
   "category": "Media & hardware",
   "desc": "Bluetooth",
   "locked": false,
@@ -542,7 +542,7 @@
  {
   "keys": "XF86MonBrightnessUp",
   "action": "exec",
-  "arg": "noctalia msg brightness-up",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh brightness-up",
   "category": "Screen",
   "desc": "Brightness up",
   "locked": true,
@@ -551,7 +551,7 @@
  {
   "keys": "XF86MonBrightnessDown",
   "action": "exec",
-  "arg": "noctalia msg brightness-down",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh brightness-down",
   "category": "Screen",
   "desc": "Brightness down",
   "locked": true,
@@ -569,7 +569,7 @@
  {
   "keys": "Print",
   "action": "exec",
-  "arg": "noctalia msg screenshot-region",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh screenshot-region",
   "category": "Utilities",
   "desc": "Screenshot region",
   "locked": false,
@@ -587,7 +587,7 @@
  {
   "keys": "SUPER + Print",
   "action": "exec",
-  "arg": "noctalia msg screenshot-fullscreen",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh screenshot-fullscreen",
   "category": "Utilities",
   "desc": "Screenshot full screen",
   "locked": false,
@@ -596,7 +596,7 @@
  {
   "keys": "SUPER + SHIFT + W",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle wallpaper",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle wallpaper",
   "category": "Utilities",
   "desc": "Wallpaper picker",
   "locked": false,
@@ -605,7 +605,7 @@
  {
   "keys": "SUPER + V",
   "action": "exec",
-  "arg": "noctalia msg panel-toggle clipboard",
+  "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard",
   "category": "Utilities",
   "desc": "Clipboard history",
   "locked": false,
