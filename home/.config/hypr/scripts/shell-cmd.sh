@@ -11,20 +11,10 @@ fi
 isla() { qs -c isla ipc call isla "$@"; }
 notify() { notify-send -a "Shortcuts" "$1" "$2"; }
 
-power_menu() {
-    choice=$(printf 'Log out\nSuspend\nReboot\nShut down\n' | fuzzel --dmenu --prompt 'Power: ' --lines 4) || exit 0
-    case "$choice" in
-        "Log out")   uwsm stop ;;
-        "Suspend")   systemctl suspend ;;
-        "Reboot")    systemctl reboot ;;
-        "Shut down") systemctl poweroff ;;
-    esac
-}
-
 case "$*" in
     "panel-toggle launcher")                isla phone search ;;
     "panel-toggle launcher /emo")           notify "Emoji picker" "Only in Noctalia for now" ;;
-    "panel-toggle session")                 power_menu ;;
+    "panel-toggle session")                 isla power ;;
     "settings-toggle")                      isla phone settings ;;
     "bar-toggle")                           isla bar ;;
     "panel-toggle control-center bluetooth") isla phone quick ;;
