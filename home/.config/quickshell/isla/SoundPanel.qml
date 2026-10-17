@@ -1,0 +1,64 @@
+import QtQuick
+import Quickshell
+import Quickshell.Services.Pipewire
+import Quickshell.Widgets
+
+// Sound: output device + volume, input device + volume, and a mixer with one slider per app playing sound.
+// mode: "all" · "out" (output + apps) · "in" (input only)
+Item {
+    id: snd
+    property var svc
+    property string mode: "all"
+    property bool wide: false                 // phone landscape: two columns
+    readonly property var nodes: Pipewire.nodes.values.filter(n => n.audio && n.ready !== false)
+    readonly property var outs: nodes.filter(n => !n.isStream && n.isSink)
+    readonly property var ins: nodes.filter(n => !n.isStream && !n.isSink && (n.properties["media.class"] || "").startsWith("Audio/Source"))
+    readonly property var apps: nodes.filter(n => n.isStream && (n.properties["media.class"] || "") === "Stream/Output/Audio")
+    implicitHeight: wide ? Math.max(left.implicitHeight, right.implicitHeight) : left.implicitHeight + (right.visible ? right.implicitHeight + 14 : 0)
+
+    // volumes/mutes of nodes are only live while tracked
+    PwObjectTracker { objects: Pipewire.nodes.values }
+
+    function nameOf(n) {
+        const id = n.name || "";
+        if (id.startsWith("alsa_output") && id.includes("hdmi")) return "Monitor speakers (HDMI)";
+        if (id.startsWith("alsa_output") && id.includes("analog")) return "Laptop speakers";
+        if (id.startsWith("alsa_input") && id.includes("analog")) return "Laptop microphone";
+        return n.description || n.nickname || id || "Device";
+    }
+    function appName(n) { return n.properties["application.name"] || n.properties["media.name"] || nameOf(n) }
+
+    Column {
+        id: left
+        width: snd.wide ? (snd.width - 20) / 2 : snd.width; spacing: 14
+        SndDevices { panel: snd; visible: snd.mode !== "in"; width: parent.width; label: "OUTPUT"; list: snd.outs; current: Pipewire.defaultAudioSink; isOut: true }
+        SndDevices { panel: snd; visible: snd.mode !== "out" && !snd.wide; width: parent.width; label: "INPUT"; list: snd.ins; current: Pipewire.defaultAudioSource; isOut: false }
+    }
+    Column {
+        id: right
+        x: snd.wide ? left.width + 20 : 0; y: snd.wide ? 0 : left.implicitHeight + 14
+        width: snd.wide ? (snd.width - 20) / 2 : snd.width; spacing: 14
+        visible: snd.mode !== "in"
+        SndDevices { panel: snd; visible: snd.wide; width: parent.width; label: "INPUT"; list: snd.ins; current: Pipewire.defaultAudioSource; isOut: false }
+        Column {
+            width: parent.width; spacing: 8
+            UiText { text: "APPS"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 20 }
+            UiText { visible: snd.apps.length === 0; text: "No app is playing sound"; fam: "n"; px: 12; w: 800; color: Theme.textSoft; height: 22 }
+            Repeater {
+                model: snd.apps
+                delegate: Item {
+                    id: ap
+                    required property var modelData
+                    width: parent.width; height: 42
+                    IconImage { x: 0; y: 2; implicitSize: 22; asynchronous: true
+                        source: Quickshell.iconPath(ap.modelData.properties["application.icon-name"] || (ap.modelData.properties["application.process.binary"] || "").toLowerCase(), "audio-x-generic") }
+                    UiText { x: 30; y: 0; width: parent.width - 30 - 34; height: 20; text: snd.appName(ap.modelData); px: 13; w: 700 }
+                    UiText { anchors.right: parent.right; y: 0; height: 20; text: Math.round((ap.modelData.audio.volume || 0) * 100) + "%"; fam: "n"; px: 11; w: 900; color: Theme.textSoft }
+                    UiSlider { x: 30; y: 24; width: parent.width - 30; height: 12; max: 1.0; color: Theme.sea
+                        value: ap.modelData.audio.volume || 0
+                        onPicked: v => { ap.modelData.audio.muted = false; ap.modelData.audio.volume = v } }
+                }
+            }
+        }
+    }
+}

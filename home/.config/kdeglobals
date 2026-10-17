@@ -1,0 +1,169 @@
+[ColorEffects:Disabled]
+Color=25,25,25
+ColorAmount=0
+ColorEffect=0
+ContrastAmount=0.65
+ContrastEffect=1
+IntensityAmount=0.1
+IntensityEffect=2
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=38,38,38
+ColorAmount=0.025
+ColorEffect=2
+ContrastAmount=0.1
+ContrastEffect=2
+Enable=false
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundNormal=255,240,212
+BackgroundAlternate=255,249,236
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Complementary]
+BackgroundNormal=61,90,102
+BackgroundAlternate=44,74,84
+ForegroundNormal=255,249,236
+ForegroundInactive=191,215,221
+ForegroundActive=169,221,228
+ForegroundLink=169,221,228
+ForegroundVisited=217,206,250
+ForegroundNegative=246,191,208
+ForegroundNeutral=255,212,92
+ForegroundPositive=191,230,194
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Header]
+BackgroundNormal=255,240,212
+BackgroundAlternate=255,244,224
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Header][Inactive]
+BackgroundNormal=255,244,224
+BackgroundAlternate=255,244,224
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Selection]
+BackgroundNormal=169,221,228
+BackgroundAlternate=201,232,236
+ForegroundNormal=33,63,72
+ForegroundInactive=61,90,102
+ForegroundActive=33,63,72
+ForegroundLink=33,63,72
+ForegroundVisited=33,63,72
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Tooltip]
+BackgroundNormal=255,249,236
+BackgroundAlternate=255,244,224
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:View]
+BackgroundNormal=255,253,246
+BackgroundAlternate=255,246,230
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[Colors:Window]
+BackgroundNormal=255,244,224
+BackgroundAlternate=255,246,230
+ForegroundNormal=51,80,91
+ForegroundInactive=94,122,132
+ForegroundActive=47,158,171
+ForegroundLink=47,158,171
+ForegroundVisited=142,123,230
+ForegroundNegative=238,125,156
+ForegroundNeutral=247,160,75
+ForegroundPositive=62,154,93
+DecorationFocus=85,191,198
+DecorationHover=169,221,228
+
+[General]
+ColorScheme=Isla
+Name=Isla
+TerminalApplication=kitty
+font=Nunito,10,-1,5,700,0,0,0,0,0,0,0,0,0,0,1
+fixed=monospace,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+
+[KDE]
+contrast=4
+
+[KFileDialog Settings]
+Allow Expansion=false
+Automatically select filename extension=true
+Breadcrumb Navigation=true
+Decoration position=2
+Show Full Path=false
+Show Inline Previews=true
+Show Preview=false
+Show Speedbar=true
+Show hidden files=false
+Sort by=Name
+Sort directories first=true
+Sort hidden files last=false
+Sort reversed=false
+Speedbar Width=187
+View Style=DetailTree
+
+[WM]
+activeBackground=0,79,128
+activeBlend=204,235,255
+activeForeground=204,235,255
+inactiveBackground=22,22,22
+inactiveBlend=221,225,230
+inactiveForeground=221,225,230
+
+[Icons]
+Theme=Isla

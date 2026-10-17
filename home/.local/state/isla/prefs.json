@@ -1,0 +1,14 @@
+{
+  "notifications": true,
+  "dock": true,
+  "bar": true,
+  "size": 0.75,
+  "barStyle": "Transparent",
+  "barPos": "Top",
+  "wallpaper": "/home/gamer/Pictures/Wallpapers/isla-default.png",
+  "wallDir": "/home/gamer/Pictures/Wallpapers",
+  "displayName": "",
+  "avatar": "pulse",
+  "phoneBg": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
+  "lockWallpaper": ""
+}
