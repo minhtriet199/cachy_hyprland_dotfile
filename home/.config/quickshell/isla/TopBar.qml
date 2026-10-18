@@ -188,6 +188,16 @@ Item {
                     }
                 }
             }
+            // network: download / upload speed (Services measures it with the status check, no extra polling)
+            Row {
+                spacing: 5
+                Glyph { anchors.verticalCenter: parent.verticalCenter; name: "updown"; size: 18; stroke: 2.2 }
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter; width: 62; spacing: 0
+                    UiText { width: parent.width; text: "↓ " + bar.svc.netDown.replace("/s", ""); px: 11.5; w: 700; height: 13; color: Theme.seaDeep }
+                    UiText { width: parent.width; text: "↑ " + bar.svc.netUp.replace("/s", ""); fam: "n"; px: 10.5; w: 900; height: 12; color: Theme.textSoft }
+                }
+            }
         }
         // apps running in the background (system tray: Steam, Discord, WARP…)
         // fcitx5 is left out: the EN/VI button already shows it

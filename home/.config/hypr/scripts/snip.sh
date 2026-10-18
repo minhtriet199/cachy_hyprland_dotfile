@@ -6,6 +6,10 @@
 # captured even if a game/video keeps moving. The snip is cut from that first grab: grabbing the frozen
 # frame instead converts the colours twice on an HDR screen and the snip looks burnt (too much contrast).
 tmp=$(mktemp -d); trap 'kill $freeze 2>/dev/null; rm -rf "$tmp"' EXIT
+# remember the pointer: if it gets thrown to the top-left corner (focus jumping between screens), put it back
+pos=$(hyprctl cursorpos)
+unjump() { case "$(hyprctl cursorpos)" in "0, 0"|"0, "[0-9]|"0, "[0-9][0-9]|[0-9]", 0"|[0-9][0-9]", 0")
+    hyprctl dispatch "hl.dsp.cursor.move({ x = ${pos%%,*}, y = ${pos##* } })" >/dev/null;; esac; }
 mons=$(hyprctl -j monitors | python3 -c 'import json,sys
 for m in json.load(sys.stdin):
     w, h = (m["height"], m["width"]) if m["transform"] % 2 else (m["width"], m["height"])
@@ -16,9 +20,10 @@ echo "$mons" | { while read -r name _; do grim -t ppm -o "$name" "$tmp/$name.ppm
 hyprpicker -r -z -d -q &
 freeze=$!
 sleep 0.15                         # let the frozen frame appear
+unjump
 
 # Dark dim outside the selection, selection itself stays clear, white border
-region=$(slurp -b "#00000080" -s "#00000000" -c "#ffffffcc" -w 2) || exit 0   # Esc cancels
+region=$(slurp -b "#00000080" -s "#00000000" -c "#ffffffcc" -w 2) || { unjump; exit 0; }   # Esc cancels
 
 dir="$HOME/Pictures/screenshot"
 mkdir -p "$dir"
@@ -32,6 +37,7 @@ for line in sys.stdin:
     if mx <= x and my <= y and x + w <= mx + mw and y + h <= my + mh:
         print(n, "%dx%d+%d+%d" % (round(w * s), round(h * s), round((x - mx) * s), round((y - my) * s))); break' "$region")
 kill $freeze 2>/dev/null           # unfreeze right away
+unjump
 if [ -n "$crop" ] && [ -f "$tmp/${crop%% *}.ppm" ]; then
     magick "$tmp/${crop%% *}.ppm" -crop "${crop#* }" +repage "$file" || exit 1
 else
