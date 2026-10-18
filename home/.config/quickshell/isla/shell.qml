@@ -129,6 +129,7 @@ ShellRoot {
         target: "isla"
         function phone(screen: string): void { shell.phone(screen) }
         function close(): void { shell.phoneClose() }
+        function lid(state: string): void { Services.lid(state === "closed") }
         function wallpaper(path: string): void { Prefs.set("wallpaper", path) }
         function bar(): void { Prefs.flip("bar") }
         function drop(which: string): void { shell.dropRequest(shell.focusedName(), which) }

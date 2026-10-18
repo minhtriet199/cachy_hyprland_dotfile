@@ -375,6 +375,20 @@ Singleton {
     IdleMonitor { id: idleSleepM; enabled: s._mins(Prefs.idleSleep) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleSleep)) * 60; respectInhibitors: true
         onIsIdleChanged: if (isIdle) { s.lockRequested(); s.run(["sh", "-c", "sleep 2; systemctl suspend"]) } }   // lock first, then sleep
 
+    // ── lid (Settings → Power): Isla tells logind it handles the lid (inhibitor lives only while Isla runs),
+    //    Hyprland's lid switch binds (hypr/config/lid.lua) call lid() through IPC ──
+    Process { running: true; command: ["sh", "-c", "exec systemd-inhibit --what=handle-lid-switch --who=Isla --why='Isla handles the lid' --mode=block tail --pid=$PPID -f /dev/null"] }
+    readonly property string _laptopScreen: { const m = Hyprland.monitors.values.find(m => m.name.startsWith("eDP")); return m ? m.name : "eDP-1" }
+    function _laptopDpms(on) { run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + (on ? "on" : "off") + "\", monitor = \"" + _laptopScreen + "\" })"]) }
+    function lid(closed) {
+        if (!closed) { _laptopDpms(true); return }
+        let a = (Prefs.lidClose || [])[_ix] || "sleep";
+        if (a === "sleep" && Hyprland.monitors.values.length > 1) a = "screen";   // docked: keep working on the other screen
+        if (a === "sleep") { lockRequested(); run(["sh", "-c", "sleep 2; systemctl suspend"]) }
+        else if (a === "lock") { lockRequested(); _laptopDpms(false) }
+        else if (a === "screen") _laptopDpms(false);
+    }
+
     // ── screen time recorder (Noctalia did this; only runs while Noctalia is off) ──
     property var _stPending: ({})
     IdleMonitor { id: idle; timeout: 300; respectInhibitors: true }

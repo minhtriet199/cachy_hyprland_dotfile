@@ -2,16 +2,19 @@ import QtQuick
 
 // One Windows-style timer row: "Turn off my screen after" — Plugged in [10 min ▾]  On battery [3 min ▾].
 // Clicking a value opens the choices underneath (Never, 1 min … 5 h, Custom…). key = Prefs property (idleLock / idleScreen / idleSleep).
+// choices = [[value, label], …] makes it a plain pick list instead of minutes (lid: Sleep / Screen off / …).
 Column {
     id: ic
     property string title: ""
     property string glyph: "power"
     property string key: "idleScreen"
+    property var choices: null
     property int open: -1                       // which column's choices are showing (0 plugged in, 1 battery)
     readonly property var vals: Prefs[key] || [0, 0]
-    readonly property var options: [0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 120, 180, 300]
-    function label(m) { return m <= 0 ? "Never" : m < 60 ? m + " min" : (m % 60 ? (m / 60).toFixed(1) : m / 60) + " h" }
-    function setVal(col, m) { const v = vals.slice(); v[col] = Math.max(0, Math.round(m)); Prefs.set(key, v); open = -1 }
+    readonly property var options: choices ? choices.map(c => c[0]) : [0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 120, 180, 300]
+    function label(m) { if (choices) { const c = choices.find(c => c[0] === m); return c ? c[1] : String(m) }
+        return m <= 0 ? "Never" : m < 60 ? m + " min" : (m % 60 ? (m / 60).toFixed(1) : m / 60) + " h" }
+    function setVal(col, m) { const v = vals.slice(); v[col] = choices ? m : Math.max(0, Math.round(m)); Prefs.set(key, v); open = -1 }
     spacing: 6
     Item {
         width: ic.width; height: 40
@@ -45,7 +48,7 @@ Column {
             Repeater {
                 model: ic.options
                 delegate: UiCandy {
-                    required property int modelData
+                    required property var modelData
                     readonly property bool picked: ic.open >= 0 && ic.vals[ic.open] === modelData
                     width: cl.implicitWidth + 18; height: 28; radius: 9; bw: 2; drop: picked ? 2 : 0; hi: 0
                     fill: picked ? Theme.gGo : Theme.cream; pressable: true
@@ -55,6 +58,7 @@ Column {
             }
             // custom minutes
             UiCandy {
+                visible: !ic.choices
                 width: 128; height: 28; radius: 9; bw: 2; drop: 0; hi: 0; fill: Theme.cream
                 TextInput {
                     id: custom; x: 8; width: parent.width - 16; anchors.verticalCenter: parent.verticalCenter; clip: true

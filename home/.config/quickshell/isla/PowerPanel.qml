@@ -1,12 +1,12 @@
 import QtQuick
 
-// Power page: battery card on the left; brightness, keep awake and the power menu on the right.
+// Power page: battery card on the left; brightness, timers, lid, keep awake and the power menu on the right.
 Item {
     id: pp
     property var svc
     readonly property bool narrow: width < 560
     implicitHeight: narrow ? bat.height + 16 + right.implicitHeight : Math.max(bat.height + 6, right.implicitHeight)
-    DropBattery { id: bat; svc: pp.svc; width: pp.narrow ? pp.width : Math.min(360, (pp.width - 20) / 2) }
+    DropBattery { id: bat; svc: pp.svc; showBrightness: false; width: pp.narrow ? pp.width : Math.min(360, (pp.width - 20) / 2) }
     Column {
         id: right
         x: pp.narrow ? 0 : bat.width + 20; y: pp.narrow ? bat.height + 16 : 0; width: pp.narrow ? pp.width : pp.width - bat.width - 20; spacing: 12
@@ -15,11 +15,17 @@ Item {
         Item { width: 1; height: 4 }
         // Windows-style timers
         UiText { text: "SCREEN & SLEEP"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
-        PowerTimer { width: parent.width; key: "idleLock"; glyph: "lock"; title: "Lock the screen after" }
-        PowerTimer { width: parent.width; key: "idleScreen"; glyph: "monitor"; title: "Turn off my screen after" }
-        PowerTimer { width: parent.width; key: "idleSleep"; glyph: "moon"; title: "Put the laptop to sleep after" }
+        PowerTimer { width: parent.width; key: "idleLock"; glyph: "lock"; title: "Lock after" }
+        PowerTimer { width: parent.width; key: "idleScreen"; glyph: "monitor"; title: "Screen off after" }
+        PowerTimer { width: parent.width; key: "idleSleep"; glyph: "moon"; title: "Sleep after" }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
             text: "Counts from your last mouse or key press. Videos and games that keep the screen awake pause it, and so does Keep awake." }
+        Item { width: 1; height: 4 }
+        UiText { text: "WHEN I CLOSE THE LID"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
+        PowerTimer { width: parent.width; key: "lidClose"; glyph: "desktop"; title: "Close the lid"
+            choices: [["sleep", "Sleep"], ["screen", "Screen off"], ["lock", "Lock"], ["nothing", "Nothing"]] }
+        UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+            text: "With a second screen plugged in, Sleep only turns off the laptop screen, so you can keep working. Opening the lid turns it back on." }
         Item { width: 1; height: 2 }
         UiRow {
             width: parent.width; glyph: "moon"; title: "Keep awake"; sub: pp.svc.keepAwake ? "Screen will not sleep" : "Normal sleep"
