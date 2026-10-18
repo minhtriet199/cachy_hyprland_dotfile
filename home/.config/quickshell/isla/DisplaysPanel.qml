@@ -97,17 +97,18 @@ Item {
         // move the picked screen
         Row {
             visible: !!dp.scr && dp.svc.screens.length > 1 && dp.keepLeft === 0
-            anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
+            anchors.horizontalCenter: parent.horizontalCenter; spacing: dp.width < 460 ? 6 : 10
             Repeater {
-                // [side, label, arrow]
+                // [side, label, arrow] — buttons shrink so all four fit the narrow phone
                 model: [["left", "Left", "←"], ["above", "Top", "↑"], ["below", "Bottom", "↓"], ["right", "Right", "→"]]
                 delegate: UiCandy {
                     required property var modelData
                     readonly property bool here: !!dp.scr && dp.sideOf(dp.scr) === modelData[0]
-                    width: 104; height: 32; radius: 11; bw: 2.5; drop: here ? 0 : 3; hi: 0
+                    width: Math.min(104, (dp.width - 3 * parent.spacing) / 4); height: 32; radius: 11; bw: 2.5; drop: here ? 0 : 3; hi: 0
                     fill: here ? Theme.gOn : Theme.paper; pressable: !here
                     onClicked: dp.place(modelData[0])
-                    UiText { anchors.centerIn: parent; text: modelData[2] + "  " + modelData[1]; px: 13; w: 700 }
+                    UiText { anchors.centerIn: parent; width: parent.width - 8; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                        text: modelData[2] + (parent.width < 90 ? " " : "  ") + modelData[1]; px: parent.width < 90 ? 12 : 13; w: 700 }
                 }
             }
         }

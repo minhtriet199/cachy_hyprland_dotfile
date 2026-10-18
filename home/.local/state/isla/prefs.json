@@ -25,5 +25,9 @@
     0,
     15
   ],
-  "phoneLite": false
+  "phoneLite": false,
+  "lidClose": [
+    "sleep",
+    "sleep"
+  ]
 }
