@@ -28,6 +28,7 @@ Item {
     Process { id: setP }
     function hex(c) { return String(c).slice(1, 7) }
 
+    component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
     // [name, top colour, bottom colour] for the focused border (two-tone, like the stickers)
     readonly property var activeSets: [
         ["Cachy", "#82DCCC", "#007D6F"], ["Sea", Theme.sea, Theme.seaDeep], ["Lilac", Theme.lilac, Theme.purple],
@@ -36,7 +37,6 @@ Item {
     readonly property var inactiveSets: [["Grey", "#798BB2"], ["Ink", Theme.ink], ["Soft", Theme.textSoft], ["Sand", Theme.sand],
         ["Sea", Theme.seaSoft], ["Lilac", Theme.lilacSoft], ["Cream", Theme.cream]]
 
-    component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
     component Slide: Column {
         id: sl
         property string key
@@ -45,10 +45,14 @@ Item {
         property real hi: 10
         property bool pct: false
         property color tint: Theme.sea
-        width: parent.width; spacing: 6
-        Label { text: sl.title + " · " + (sl.pct ? Math.round(wp.num(sl.key) * 100) + "%" : Math.round(wp.num(sl.key)) + " px") }
-        UiSlider { width: parent.width; max: sl.hi; step: sl.pct ? 0.05 : 1; color: sl.tint; value: wp.num(sl.key)
-            onPicked: x => wp.put(sl.key, sl.pct ? Math.max(sl.lo, Math.round(x * 100) / 100) : Math.max(sl.lo, Math.round(x))) }
+        width: parent.width; spacing: 4
+        Label { text: sl.title }
+        Item {
+            width: parent.width; height: 30
+            UiSlider { width: parent.width - nb.width - 12; anchors.verticalCenter: parent.verticalCenter; max: sl.hi; step: sl.pct ? 0.05 : 1; color: sl.tint; value: wp.num(sl.key)
+                onPicked: x => wp.put(sl.key, sl.pct ? Math.max(sl.lo, Math.round(x * 100) / 100) : Math.max(sl.lo, Math.round(x))) }
+            WinNumBox { id: nb; page: wp; anchors.right: parent.right; key: sl.key; pct: sl.pct; vmin: sl.lo; vmax: sl.hi }
+        }
     }
 
     Column {
@@ -108,8 +112,8 @@ Item {
                     readonly property bool on: wp.v.active1.toLowerCase() === wp.hex(modelData[1]).toLowerCase() && wp.v.active2.toLowerCase() === wp.hex(modelData[2]).toLowerCase()
                     width: 72; height: 34; radius: 12; bw: on ? 3 : 2; drop: on ? 0 : 2; hi: 2; ink: Theme.inkPhone
                     fill: [modelData[1], modelData[2]]; pressable: true
-                    onClicked: { wp.put("active1", wp.hex(modelData[1])); wp.put("active2", wp.hex(modelData[2])) }
-                    UiText { anchors.centerIn: parent; text: (parent.on ? "✓ " : "") + modelData[0]; px: 12; w: 700; color: "#FFFFFF" }
+                    onClicked: { wp.put("active1", wp.hex(modelData[1])); wp.put("active2", wp.hex(modelData[2])); wheel.load() }
+                    UiText { anchors.centerIn: parent; text: (on ? "✓ " : "") + modelData[0]; px: 12; w: 700; color: "#FFFFFF" }
                 }
             }
         }
@@ -123,18 +127,40 @@ Item {
                     readonly property bool on: wp.v.inactive.toLowerCase() === wp.hex(modelData[1]).toLowerCase()
                     width: 72; height: 34; radius: 12; bw: on ? 3 : 2; drop: on ? 0 : 2; hi: 0; ink: Theme.inkPhone
                     fill: modelData[1]; pressable: true
-                    onClicked: wp.put("inactive", wp.hex(modelData[1]))
-                    UiText { anchors.centerIn: parent; text: (parent.on ? "✓ " : "") + modelData[0]; px: 12; w: 700
+                    onClicked: { wp.put("inactive", wp.hex(modelData[1])); wheel.load() }
+                    UiText { anchors.centerIn: parent; text: (on ? "✓ " : "") + modelData[0]; px: 12; w: 700
                         color: Qt.colorEqual(modelData[1], Theme.ink) || Qt.colorEqual(modelData[1], Theme.textSoft) || modelData[0] === "Grey" ? "#FFFFFF" : Theme.text }
                 }
             }
         }
 
         Item { width: 1; height: 2 }
+        Label { text: "PICK ANY COLOUR" }
+        // which colour the wheel changes: focused border (top / bottom of its two-tone) or other windows
+        Flow {
+            width: parent.width; spacing: 8
+            Repeater {
+                model: [["active1", "Focused · 1"], ["active2", "Focused · 2"], ["inactive", "Other windows"]]
+                delegate: UiCandy {
+                    id: chip
+                    required property var modelData
+                    readonly property bool on: wheel.target === modelData[0]
+                    width: chipT.implicitWidth + 44; height: 32; radius: 12; bw: on ? 2.5 : 2; drop: on ? 0 : 2; hi: 0; ink: Theme.inkPhone
+                    fill: on ? Theme.gActive : Theme.paper; pressable: true
+                    onClicked: wheel.target = modelData[0]
+                    Rectangle { x: 9; anchors.verticalCenter: parent.verticalCenter; width: 16; height: 16; radius: 8
+                        color: "#" + wp.v[chip.modelData[0]]; border.width: 2; border.color: Theme.inkPhone }
+                    UiText { id: chipT; x: 31; anchors.verticalCenter: parent.verticalCenter; text: chip.modelData[1]; px: 12; w: 700 }
+                }
+            }
+        }
+        WinColorWheel { id: wheel; page: wp; width: parent.width }
+
+        Item { width: 1; height: 2 }
         UiRow {
             width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "95% / 90%, 2 px border, 10 px corners, gaps 3 / 8"
             onClicked: { wp.put("active_opacity", 0.95); wp.put("inactive_opacity", 0.9); wp.put("border_size", 2); wp.put("rounding", 10)
-                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2") }
+                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2"); wheel.load() }
         }
     }
 }
