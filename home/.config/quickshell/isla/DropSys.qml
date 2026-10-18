@@ -19,8 +19,8 @@ DropCard {
         Repeater {
             model: [
                 ["CPU", d.m.cpu + "%", d.m.cpuTemp + "°C · 16 threads", d.svc.cpuHist, Theme.sea],
-                ["RAM", d.m.ram + "%", d.m.ramUsed.toFixed(1) + " / " + d.m.ramTotal.toFixed(1) + " GB", d.svc.ramHist, Theme.purple],
-                ["GPU", d.m.gpu + "%", d.m.gpuTemp + "°C · VRAM " + d.m.vramUsed.toFixed(1) + " / " + d.m.vramTotal.toFixed(0) + " GB", d.svc.gpuHist, Theme.berry]
+                ["RAM", d.m.ramUsed.toFixed(1) + " GB", d.m.ram + "% of " + d.m.ramTotal.toFixed(1) + " GB", d.svc.ramHist, Theme.purple],
+                ["GPU · " + d.svc.gpuName, d.m.gpu + "%", d.m.gpuTemp + "°C · VRAM " + d.m.vramUsed.toFixed(1) + " / " + d.m.vramTotal.toFixed(0) + " GB", d.svc.gpuHist, Theme.berry]
             ]
             delegate: Column {
                 id: sec

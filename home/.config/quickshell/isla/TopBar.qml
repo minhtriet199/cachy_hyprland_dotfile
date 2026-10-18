@@ -165,10 +165,10 @@ Item {
             fill: Theme.gChip; gap: 12; padL: 12; padR: 12; pressable: true
             onClicked: bar.drop("sys", sysPill)
             Repeater {
-                // [icon, %, colour, temperature (°C, 0 = none)]
-                model: [["cpu", bar.svc.sysmon.cpu, Theme.seaDeep, bar.svc.sysmon.cpuTemp],
-                        ["ram", bar.svc.sysmon.ram, Theme.purple, 0],
-                        ["gpu", bar.svc.sysmon.gpu, Theme.berry, bar.svc.sysmon.gpuTemp]]
+                // [icon, % (bar fill), colour, temperature (°C, 0 = none), text]
+                model: [["cpu", bar.svc.sysmon.cpu, Theme.seaDeep, bar.svc.sysmon.cpuTemp, bar.svc.sysmon.cpu + "%"],
+                        ["ram", bar.svc.sysmon.ram, Theme.purple, 0, bar.svc.sysmon.ramUsed.toFixed(1) + " GB"],
+                        ["gpu", bar.svc.sysmon.gpu, Theme.berry, bar.svc.sysmon.gpuTemp, bar.svc.sysmon.gpu + "%"]]
                 delegate: Row {
                     required property var modelData
                     spacing: 5
@@ -177,7 +177,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter; spacing: 2
                         Row {
                             spacing: 4
-                            UiText { text: modelData[1] + "%"; px: 13; w: 700; height: 14 }
+                            UiText { text: modelData[4]; px: 13; w: 700; height: 14 }
                             UiText { visible: modelData[3] > 0; text: modelData[3] + "°"; fam: "n"; px: 10.5; w: 900; height: 14
                                 color: modelData[3] >= 85 ? Theme.berry : modelData[3] >= 75 ? Theme.orange : Theme.textSoft }
                         }

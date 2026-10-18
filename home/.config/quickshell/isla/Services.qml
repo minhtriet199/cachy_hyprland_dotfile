@@ -469,6 +469,10 @@ Singleton {
             s.cpuHist = s._push(s.cpuHist, cpu); s.ramHist = s._push(s.ramHist, ram); s.gpuHist = s._push(s.gpuHist, Math.round(v.gpu || 0));
         } } }
     Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!sysmonP.running) sysmonP.running = true }
+    // the gaming GPU's real name (e.g. "RX 6700S"), read once from Vulkan
+    property string gpuName: "GPU"
+    Process { running: true; command: ["sh", "-c", "vulkaninfo --summary 2>/dev/null | grep -A1 DISCRETE_GPU | sed -n 's/.*deviceName *= *//p' | head -1"]
+        stdout: StdioCollector { onStreamFinished: { const n = this.text.trim().replace(/\s*\(.*\)$/, "").replace(/^(AMD|NVIDIA)\s+(Radeon\s+|GeForce\s+)?/, ""); if (n) s.gpuName = n } } }
 
     // ── live status for the bar icons (no waiting for the 4 s poll) ──
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }
