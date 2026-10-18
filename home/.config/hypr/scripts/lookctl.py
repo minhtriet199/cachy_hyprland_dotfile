@@ -52,7 +52,8 @@ def main():
             continue
         if k in CHECK:
             lo, hi = CHECK[k]
-            val = str(round(max(lo, min(hi, float(val))), 2))
+            val = max(lo, min(hi, float(val)))
+            val = str(round(val, 2)) if "opacity" in k else str(int(round(val)))
         elif not re.fullmatch(r"[0-9a-fA-F]{6}", val):
             continue
         v[k] = val
