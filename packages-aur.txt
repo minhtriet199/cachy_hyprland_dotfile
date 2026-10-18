@@ -1,3 +1,4 @@
+mactahoe-icon-theme-git
 postman-bin
 rider
 samrewritten
