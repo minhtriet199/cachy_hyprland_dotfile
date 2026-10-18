@@ -22,7 +22,7 @@ Item {
     readonly property color fillBottom: fillIsList ? fill[fill.length - 1] : fill
     readonly property real ir: Math.max(0, Math.min(radius, Math.min(width, height) / 2) - bw)
     // "ring" box style (Theme.ring): a light gap between the outline and the fill, soft tinted shadow
-    readonly property real gap: Theme.ring && !dashed ? (Math.min(width, height) < 34 ? 1.5 : 3) : 0
+    readonly property real gap: Theme.ring && !dashed ? (Math.min(width, height) < 30 ? 2 : Math.min(width, height) < 44 ? 3.5 : 5) : 0
     default property alias content: holder.data
     signal clicked()
     signal rightClicked()

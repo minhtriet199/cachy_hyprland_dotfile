@@ -61,6 +61,9 @@ Item {
         onTriggered: { const v = frameTime > 0 ? (wp.view - wp._last) / frameTime : 0; wp._last = wp.view
             wp.vel = wp.vel * 0.6 + v * 0.4; wp.swing = Math.max(-16, Math.min(16, -wp.vel * 7)) } }
     function apply() { if (cur) prefs.set(targetKey, cur.path) }
+    function applyTo(key) { if (cur) prefs.set(key, cur.path) }
+    // washi tape colours for the strips that hold each photo
+    readonly property var tapes: [Theme.pinkSoft, Theme.seaSoft, Theme.sun, Theme.lilacSoft, Theme.peach]
 
     // header
     Flow {
@@ -144,9 +147,26 @@ Item {
         scale: Math.min(1, wp.cw / 800); transformOrigin: Item.TopLeft
         x: wp.cx; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: wp.cw / scale; height: (wp.height - y - 14 - 87 - 4) / scale
         Canvas {
-            x: 10; y: 4; width: 780; height: 80
-            onPaint: { const g = getContext("2d"); g.reset(); g.strokeStyle = wp.ink; g.lineWidth = 4; g.lineCap = "round"
-                g.beginPath(); g.moveTo(10, 70); g.quadraticCurveTo(390, -30, 770, 70); g.stroke() }
+            id: rope
+            x: 10; y: 4; width: 780; height: 100
+            property color inkC: wp.ink
+            property color dotC: Theme.paper
+            onInkCChanged: requestPaint()
+            onPaint: {
+                const g = getContext("2d"); g.reset(); g.strokeStyle = inkC; g.lineCap = "round"
+                const at = (t, a, b, c) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c
+                g.lineWidth = 4; g.beginPath(); g.moveTo(10, 70); g.quadraticCurveTo(390, -30, 770, 70); g.stroke()       // main rope
+                g.lineWidth = 2.5; g.beginPath(); g.moveTo(34, 84); g.quadraticCurveTo(390, -10, 746, 84); g.stroke()     // thin rope under it
+                for (const t of [0.1, 0.27, 0.5, 0.73, 0.9]) {
+                    const x = at(t, 10, 390, 770), y = at(t, 70, -30, 70), y2 = at((x - 34) / 712, 84, -10, 84)
+                    g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y2); g.stroke()                       // little strut
+                    g.fillStyle = dotC; g.beginPath()
+                    if (t === 0.5) { g.moveTo(x, y - 7); g.lineTo(x + 7, y); g.lineTo(x, y + 7); g.lineTo(x - 7, y); g.closePath() }
+                    else g.arc(x, y, 6, 0, 2 * Math.PI)
+                    g.fill(); g.lineWidth = 2.5; g.stroke()
+                    if (t !== 0.5) { g.fillStyle = inkC; g.beginPath(); g.arc(x, y, 2, 0, 2 * Math.PI); g.fill() }
+                }
+            }
         }
         // drag the string left/right: the photos follow your hand, then spring onto the nearest one.
         // A short click picks the photo under the pointer (middle one = set it).
@@ -177,7 +197,7 @@ Item {
         SequentialAnimation on sway { running: wp.visible; loops: Animation.Infinite
             NumberAnimation { from: -1; to: 1; duration: 2200; easing.type: Easing.InOutSine } NumberAnimation { from: 1; to: -1; duration: 2200; easing.type: Easing.InOutSine } }
         // spots along the string by distance from the middle: [x, width, photo height, opacity]; in-between = blended
-        readonly property var slots: [[-110, 100, 72, 0], [18, 120, 86, 1], [136, 150, 106, 1], [302, 190, 132, 1], [512, 150, 106, 1], [650, 120, 86, 1], [800, 100, 72, 0]]
+        readonly property var slots: [[-320, 140, 92, 0], [-140, 150, 98, 1], [32, 200, 130, 1], [257, 286, 186, 1], [568, 200, 130, 1], [790, 150, 98, 1], [960, 140, 92, 0]]
         function slot(o) {
             const c = Math.max(-3, Math.min(3, o)), a = Math.min(2, Math.floor(c)), f = c - a
             const A = slots[a + 3], B = slots[a + 4]
@@ -197,29 +217,40 @@ Item {
                 readonly property var pic: wp.n ? wp.list[((a % wp.n) + wp.n) % wp.n] : null
                 readonly property real pinX: sl[0] + sl[1] / 2
                 // clip sits on the string; the photo hangs below it, tilted with the string, swaying and swinging
-                x: sl[0]; y: stage.stringY(pinX) - 9
-                width: sl[1]; height: 16 + sl[2]
+                x: sl[0]; y: stage.stringY(pinX) + 4
+                width: sl[1]; height: 22 + sl[2]
                 rotation: stage.stringAngle(pinX) * 0.8 + stage.sway * (1.6 - Math.abs(o) * 0.3) * (((a % 2) + 2) % 2 ? -1 : 1)
                           + wp.swing * (1 - Math.min(3, Math.abs(o)) * 0.15)
                 transformOrigin: Item.Top
                 z: 10 - Math.abs(o)
                 opacity: sl[3]
                 visible: wp.n > 0 && opacity > 0.01 && Math.abs(o) <= wp.n / 2
+                // two strings from the rope down to the photo's top corners
+                Repeater { model: [0.18, 0.82]
+                    delegate: Rectangle { required property real modelData; x: card.width * modelData - 1; y: 0; width: 2; height: 24; color: wp.ink } }
                 UiCandy {
                     id: photo
-                    y: 16; width: card.width; height: card.sl[2]
-                    radius: 12; ink: wp.ink; bw: card.mid ? 4 : 3; drop: card.mid ? 7 : 4; hi: 0
-                    fill: "#DDF4FA"
+                    y: 22; width: card.width; height: card.sl[2]
+                    radius: 14; ink: wp.ink; bw: card.mid ? 4 : 3; drop: card.mid ? 7 : 4; hi: 0
+                    fill: Theme.paper
+                    // the picture sits on a white mat inside the frame
+                    readonly property real mat: photo.bw + (card.mid ? 7 : 5)
                     Image {
-                        x: photo.bw; y: photo.bw; width: photo.width - 2 * photo.bw; height: photo.height - 2 * photo.bw
+                        x: photo.mat; y: photo.mat; width: photo.width - 2 * photo.mat; height: photo.height - 2 * photo.mat
                         source: card.pic ? "file://" + card.pic.path : ""
                         sourceSize: Qt.size(380, 264); fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
                     }
-                    Rectangle { x: photo.bw; y: photo.bw; width: photo.width - 2 * photo.bw; height: photo.height - 2 * photo.bw
-                        opacity: Math.max(0, 1 - Math.abs(card.o) * 2)
-                        radius: 8; color: "transparent"; border.width: 6; border.color: Theme.paper }
                 }
-                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: 14; height: 22; radius: 4; color: card.mid ? Theme.sun : Theme.paper; border.width: 2; border.color: wp.ink }
+                // washi tape strips over the top corners
+                Repeater { model: [0, 1]
+                    delegate: Rectangle {
+                        required property int modelData
+                        width: card.width * 0.2; height: 13; radius: 2
+                        x: modelData ? card.width * 0.82 - width / 2 : card.width * 0.18 - width / 2; y: 22 - 6
+                        rotation: modelData ? 7 : -6
+                        color: wp.tapes[(((card.a * 2 + modelData) % wp.tapes.length) + wp.tapes.length) % wp.tapes.length]; opacity: 0.85
+                    }
+                }
             }
         }
         UiText { visible: wp.n === 0; anchors.centerIn: parent; horizontalAlignment: Text.AlignHCenter; fam: "n"; w: 800; px: 13; color: Theme.textSoft
@@ -235,15 +266,24 @@ Item {
             UiText { id: il; anchors.centerIn: parent; text: (wp.n ? wp.i + 1 : 0) + " / " + wp.n; px: 11; w: 700 } }
         Row {
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 10; height: 40
-            WpButton { text: "‹ Previous"; h: 30; onClicked: wp.step(-1) }
-            WpButton { text: wp.applied ? "✓ Applied" : "Set as " + wp.target; h: 36; bold: true; drop: 3; fill: wp.applied ? wp.accent : Theme.paper; onClicked: wp.apply() }
-            WpButton { text: "Next ›"; h: 30; onClicked: wp.step(1) }
-            WpButton { text: "🗑"; h: 30; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
-            WpButton { visible: !wp.narrow; text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
+            WpButton { text: wp.narrow ? "‹" : "‹ Previous"; h: 30; onClicked: wp.step(-1) }
+            Repeater {
+                model: [["wallpaper", "🖥", "Desktop"], ["lockWallpaper", "🔒", "Lockscreen"]]
+                delegate: WpButton {
+                    required property var modelData
+                    readonly property bool done: !!wp.cur && wp.prefs[modelData[0]] === wp.cur.path
+                    text: (done ? "✓ " : modelData[1] + "  ") + (wp.narrow ? modelData[2] : "Set as " + modelData[2])
+                    h: 36; bold: true; drop: 3; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo(modelData[0])
+                }
+            }
+            WpButton { text: wp.narrow ? "›" : "Next ›"; h: 30; onClicked: wp.step(1) }
         }
-        Row {   // upright phone: paste goes on its own line
-            visible: wp.narrow; anchors.horizontalCenter: parent.horizontalCenter; height: 34
-            WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
+        Row {   // the rest: phone screen, delete, paste
+            anchors.horizontalCenter: parent.horizontalCenter; spacing: 8; height: 34
+            WpButton { readonly property bool done: !!wp.cur && wp.prefs.phoneBg === wp.cur.path
+                text: (done ? "✓ " : "📱 ") + "Phone"; h: 28; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo("phoneBg") }
+            WpButton { text: "🗑"; h: 28; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
+            WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 28; onClicked: wp.svc.pasteWallpaper() }
         }
     }
     // delete confirmation (moves the picture to the Trash, so it can be restored)
