@@ -3,7 +3,8 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 
 // Bluetooth: on/off, scan, devices (connected first, then paired, then new ones found by scanning).
-// Click = connect / disconnect, new device = pair + connect, shield = trust (auto-reconnect), trash = forget.
+// Click = connect / disconnect, new device = pair + connect, shield = trust (auto-reconnect),
+// unplug = disconnect, trash = remove completely (pairing, trust, saved info).
 Item {
     id: b
     property var svc
@@ -21,6 +22,8 @@ Item {
         pairP.command = ["sh", "-c", "a=$1; timeout 30 bluetoothctl --agent NoInputNoOutput pair $a; timeout 20 bluetoothctl connect $a | grep -q 'Connection successful'", "sh", d.address]
         pairP.running = true
     }
+    function removeDev(d) { rmP.command = ["sh", "-c", "bluetoothctl disconnect $1 >/dev/null; bluetoothctl remove $1", "sh", d.address]; rmP.running = true }
+    Process { id: rmP }
     Process { id: pairP; onExited: code => { if (code !== 0) b.failAddr = b.pairAddr; b.pairAddr = "" } }
     onVisibleChanged: if (!visible && ad && ad.discovering) ad.discovering = false
 
@@ -87,12 +90,15 @@ Item {
                     else if (modelData.paired && modelData.bonded) modelData.connect();
                     else b.pairNew(modelData)
                 }
+                UiCandy { visible: modelData.connected; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: modelData.disconnect()
+                    Glyph { anchors.centerIn: parent; name: "btOff"; size: 13; stroke: 2.4 } }
                 UiCandy { visible: modelData.paired; width: 26; height: 26; bw: 2; drop: 0; hi: 0
                     fill: modelData.trusted ? Theme.gSea : Theme.paper; pressable: true
                     onClicked: modelData.trusted = !modelData.trusted
                     Glyph { anchors.centerIn: parent; name: modelData.trusted ? "shieldCheck" : "shield"; size: 13; stroke: 2.4 } }
-                UiCandy { visible: modelData.paired; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
-                    onClicked: modelData.forget()
+                UiCandy { visible: modelData.paired || modelData.trusted || modelData.connected; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: b.removeDev(modelData)
                     Glyph { anchors.centerIn: parent; name: "trash"; size: 12; stroke: 2.6 } }
             }
         }
