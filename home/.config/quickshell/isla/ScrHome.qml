@@ -17,6 +17,8 @@ Item {
     property int sel: 0
     focus: true
     function focusField() { field.forceActiveFocus() }
+    // Tab anywhere on Home (also from an app tile): next search type, cursor back in the search box
+    function tabKey(fwd) { mode = (mode + (fwd ? 1 : modes.length - 1)) % modes.length; focusField() }
     onVisibleChanged: if (!visible) { query = ""; field.text = ""; mode = 0 } else Qt.callLater(focusField)
     onQueryChanged: { sel = 0; refreshFiles() }
     onModeChanged: { sel = 0; refreshFiles(); focusField() }
@@ -75,8 +77,8 @@ Item {
                 Keys.onReturnPressed: e => home.activate(home.selRow, e.modifiers & Qt.ShiftModifier)
                 Keys.onEnterPressed: home.activate(home.selRow, false)
                 Keys.onEscapePressed: e => { if (text) text = ""; else e.accepted = false }
-                Keys.onTabPressed: home.mode = (home.mode + 1) % home.modes.length
-                Keys.onBacktabPressed: home.mode = (home.mode + home.modes.length - 1) % home.modes.length
+                Keys.onTabPressed: home.tabKey(true)
+                Keys.onBacktabPressed: home.tabKey(false)
                 UiText { visible: !field.text; anchors.verticalCenter: parent.verticalCenter; fam: "n"; w: 800; px: 14; color: Theme.textSoft
                     text: ["Search apps, settings and files…", "Search apps…", "Search file and folder names…", "Search text inside your files…"][home.mode] }
             }

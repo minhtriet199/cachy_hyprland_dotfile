@@ -39,8 +39,10 @@ Item {
             if (zoneOf(n) === z) { n.forceActiveFocus(fwd ? Qt.TabFocusReason : Qt.BacktabFocusReason); return }
         }
     }
-    Keys.onTabPressed: moveFocus(true)
-    Keys.onBacktabPressed: moveFocus(false)
+    // a screen can take over Tab (e.g. Home: Tab = next search type) by defining tabKey(forward)
+    function tabOwner() { let p = r.parent; while (p) { if (typeof p.tabKey === "function") return p; p = p.parent } return null }
+    Keys.onTabPressed: { const o = tabOwner(); if (o) o.tabKey(true); else moveFocus(true) }
+    Keys.onBacktabPressed: { const o = tabOwner(); if (o) o.tabKey(false); else moveFocus(false) }
     // plain arrows move the ring; with Ctrl / Alt they pass up to the phone (Ctrl+←/→ switch area, Alt+← back)
     function arrow(e, fwd) { if (e.modifiers & (Qt.ControlModifier | Qt.AltModifier)) { e.accepted = false; return } moveFocus(fwd) }
     Keys.onDownPressed: e => arrow(e, true)
