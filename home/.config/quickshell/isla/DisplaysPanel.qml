@@ -29,32 +29,108 @@ Item {
     }
     function revert() {
         keepTimer.stop(); keepLeft = 0;
-        if (undo && undo.pos) svc.screenCmd(["pos"].concat(undo.pos));
+        if (undo && undo.live) svc.screenCmd(["poslive"].concat(undo.live));
+        else if (undo && undo.pos) svc.screenCmd(["pos"].concat(undo.pos));
         else if (undo && undo.order) svc.screenCmd(["order"].concat(undo.order));
         else if (undo) svc.screenCmd(["mode", undo.out, undo.mode, String(undo.scale)]);
         undo = null;
     }
-    // where the picked screen is now, compared with the other one
-    function sideOf(m) {
-        const o = svc.screens.find(x => x.output !== m.output); if (!o) return "";
-        if (m.y + 1 < o.y && m.x < o.x + o.width / o.scale && o.x < m.x + m.width / m.scale) return "above";
-        if (o.y + 1 < m.y && m.x < o.x + o.width / o.scale && o.x < m.x + m.width / m.scale) return "below";
-        return m.x < o.x ? "left" : "right";
+    // ── layout, any number of screens: drag a screen in the map, or use the side buttons. A moved screen snaps
+    //    against another (any side, lined up start / middle / end), never overlaps, and loose screens slide back
+    //    so there are no gaps. Tried LIVE (screenctl poslive, nothing saved) → Keep saves it, Go back / 15 s undoes. ──
+    function lw(m) { return Math.round((m.transform % 2 ? m.height : m.width) / m.scale) }
+    function lh(m) { return Math.round((m.transform % 2 ? m.width : m.height) / m.scale) }
+    function rects() { return svc.screens.map(m => ({ out: m.output, x: m.x, y: m.y, w: lw(m), h: lh(m) })) }
+    function hits(a, b) { return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h }
+    function touching(a, b) {
+        const v = a.y < b.y + b.h && b.y < a.y + a.h, h = a.x < b.x + b.w && b.x < a.x + a.w;
+        return (v && (a.x + a.w === b.x || b.x + b.w === a.x)) || (h && (a.y + a.h === b.y || b.y + b.h === a.y));
     }
-    // left → right order of the screens, move the picked one by one place
-    readonly property var order: svc.screens.slice().sort((a, b) => a.x - b.x).map(m => m.output)
-    function place(side) {
-        const other = svc.screens.find(m => m.output !== scr.output); if (!other) return;
-        const lw = m => Math.round((m.transform % 2 ? m.height : m.width) / m.scale), lh = m => Math.round((m.transform % 2 ? m.width : m.height) / m.scale);
-        let ax = 0, ay = 0, bx = 0, by = 0;                 // a = picked, b = other
-        if (side === "left")  { ax = 0; bx = lw(scr) }
-        if (side === "right") { bx = 0; ax = lw(other) }
-        if (side === "above") { ay = 0; by = lh(scr); ax = Math.max(0, Math.round((lw(other) - lw(scr)) / 2)); bx = Math.max(0, Math.round((lw(scr) - lw(other)) / 2)) }
-        if (side === "below") { by = 0; ay = lh(other); ax = Math.max(0, Math.round((lw(other) - lw(scr)) / 2)); bx = Math.max(0, Math.round((lw(scr) - lw(other)) / 2)) }
-        undo = { pos: [scr.output, scr.x + "x" + scr.y, other.output, other.x + "x" + other.y] };
-        svc.screenCmd(["pos", scr.output, ax + "x" + ay, other.output, bx + "x" + by]);
+    // which side of all the other screens the picked one is on ("" = in between)
+    function sideOf(m) {
+        const rs = rects(), me = rs.find(r => r.out === m.output), o = rs.filter(r => r.out !== m.output);
+        if (!me || !o.length) return "";
+        if (me.y + me.h <= Math.min(...o.map(r => r.y))) return "above";
+        if (me.y >= Math.max(...o.map(r => r.y + r.h))) return "below";
+        if (me.x + me.w <= Math.min(...o.map(r => r.x))) return "left";
+        if (me.x >= Math.max(...o.map(r => r.x + r.w))) return "right";
+        return "";
+    }
+    // nearest free spot touching another screen, close to (px, py)
+    function snap(out, px, py) {
+        const rs = rects(), me = rs.find(r => r.out === out), others = rs.filter(r => r.out !== out);
+        let best = null, bd = 1e18;
+        for (const o of others) {
+            const c = [];
+            for (const y of [o.y, o.y + (o.h - me.h) / 2, o.y + o.h - me.h]) { c.push([o.x - me.w, y]); c.push([o.x + o.w, y]) }
+            for (const x of [o.x, o.x + (o.w - me.w) / 2, o.x + o.w - me.w]) { c.push([x, o.y - me.h]); c.push([x, o.y + o.h]) }
+            for (const p of c) {
+                const r = { out: out, x: Math.round(p[0]), y: Math.round(p[1]), w: me.w, h: me.h };
+                if (others.some(q => hits(r, q))) continue;
+                const d = (r.x - px) ** 2 + (r.y - py) ** 2;
+                if (d < bd) { bd = d; best = r }
+            }
+        }
+        return best;
+    }
+    // screens no longer touching the moved one's group slide toward it until they touch (no gaps)
+    function compact(rs, out) {
+        for (let pass = 0; pass < rs.length; pass++) {
+            const main = [rs.find(r => r.out === out)], rest = rs.filter(r => r.out !== out);
+            for (let grew = true; grew;) { grew = false
+                for (let i = rest.length - 1; i >= 0; i--) if (main.some(m => touching(m, rest[i]))) { main.push(rest.splice(i, 1)[0]); grew = true } }
+            if (!rest.length) break;
+            const grp = [rest.shift()];
+            for (let grew = true; grew;) { grew = false
+                for (let i = rest.length - 1; i >= 0; i--) if (grp.some(g => touching(g, rest[i]))) { grp.push(rest.splice(i, 1)[0]); grew = true } }
+            const cand = [];
+            for (const c of grp) for (const m of main) {
+                if (c.y < m.y + m.h && m.y < c.y + c.h) cand.push([c.x >= m.x + m.w ? m.x + m.w - c.x : c.x + c.w <= m.x ? m.x - c.x - c.w : NaN, 0]);
+                if (c.x < m.x + m.w && m.x < c.x + c.w) cand.push([0, c.y >= m.y + m.h ? m.y + m.h - c.y : c.y + c.h <= m.y ? m.y - c.y - c.h : NaN]);
+            }
+            // only touching at a corner (no straight slide): line it up against the nearest screen instead
+            const cand2 = [];
+            for (const g of grp) for (const m of main) {
+                for (const y of [m.y, m.y + m.h - g.h]) { cand2.push([m.x - g.w - g.x, y - g.y]); cand2.push([m.x + m.w - g.x, y - g.y]) }
+                for (const x of [m.x, m.x + m.w - g.w]) { cand2.push([x - g.x, m.y - g.h - g.y]); cand2.push([x - g.x, m.y + m.h - g.y]) }
+            }
+            const free = d => !grp.some(g => rs.some(q => !grp.includes(q) && hits({ x: g.x + d[0], y: g.y + d[1], w: g.w, h: g.h }, q)));
+            const near = (a, b) => Math.abs(a[0]) + Math.abs(a[1]) - Math.abs(b[0]) - Math.abs(b[1]);
+            const ok = cand.filter(d => !isNaN(d[0]) && !isNaN(d[1])).sort(near).find(free) || cand2.sort(near).find(free);
+            if (!ok) break;                                            // can't line up: leave it where it is
+            for (const g of grp) { g.x += ok[0]; g.y += ok[1] }
+        }
+        const x0 = Math.min(...rs.map(r => r.x)), y0 = Math.min(...rs.map(r => r.y));
+        for (const r of rs) { r.x -= x0; r.y -= y0 }
+        return rs;
+    }
+    function pairs(rs) { const o = []; for (const r of rs) o.push(r.out, r.x + "x" + r.y); return o }
+    function tryLayout(rs) {
+        const now = pairs(rects()), next = pairs(rs);
+        if (now.join() === next.join()) return;
+        undo = { live: now, next: next };
+        svc.screenCmd(["poslive"].concat(next));
         keepLeft = 15; keepTimer.restart();
     }
+    function dropAt(out, px, py) {
+        const r = snap(out, px, py); if (!r) return;
+        tryLayout(compact(rects().map(q => q.out === out ? r : q), out));
+    }
+    // side buttons: put the picked screen on that side of ALL the others
+    function place(side) {
+        if (!scr) return;
+        const rs = rects(), me = rs.find(r => r.out === scr.output), o = rs.filter(r => r.out !== scr.output);
+        if (!o.length) return;
+        const pick = (f, cmp) => o.reduce((a, b) => cmp(f(b), f(a)) ? b : a);
+        if (side === "left")  { const t = pick(r => r.x, (p, q) => p < q); me.x = t.x - me.w; me.y = t.y }
+        if (side === "right") { const t = pick(r => r.x + r.w, (p, q) => p > q); me.x = t.x + t.w; me.y = t.y }
+        if (side === "above") { const t = pick(r => r.y, (p, q) => p < q); me.y = t.y - me.h; me.x = Math.round(t.x + (t.w - me.w) / 2) }
+        if (side === "below") { const t = pick(r => r.y + r.h, (p, q) => p > q); me.y = t.y + t.h; me.x = Math.round(t.x + (t.w - me.w) / 2) }
+        tryLayout(compact(rs, scr.output));
+    }
+    function keep() { keepTimer.stop(); keepLeft = 0; if (undo && undo.next) svc.screenCmd(["pos"].concat(undo.next)); undo = null }
+    // left → right order of the screens
+    readonly property var order: svc.screens.slice().sort((a, b) => a.x - b.x).map(m => m.output)
     function move(d) {
         const o = order.slice(), i = o.indexOf(scr.output), j = i + d;
         if (i < 0 || j < 0 || j >= o.length) return;
@@ -71,29 +147,56 @@ Item {
         // layout picker
         Item {
             id: lay
-            width: parent.width; height: 96
+            width: parent.width; height: dp.svc.screens.length > 2 ? 140 : 96
             readonly property var bounds: {
                 let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-                for (const m of dp.svc.screens) { const w = m.width / m.scale, h = m.height / m.scale; x0 = Math.min(x0, m.x); y0 = Math.min(y0, m.y); x1 = Math.max(x1, m.x + w); y1 = Math.max(y1, m.y + h) }
+                for (const m of dp.svc.screens) { const w = dp.lw(m), h = dp.lh(m); x0 = Math.min(x0, m.x); y0 = Math.min(y0, m.y); x1 = Math.max(x1, m.x + w); y1 = Math.max(y1, m.y + h) }
                 return { x0: x0, y0: y0, w: x1 - x0, h: y1 - y0 };
             }
             readonly property real k: bounds.w > 0 ? Math.min((width - 20) / bounds.w, (height - 8) / bounds.h) : 0
             Repeater {
                 model: dp.svc.screens
                 delegate: UiCandy {
+                    id: box
                     required property var modelData
                     readonly property bool cur: dp.scr && modelData.output === dp.scr.output
-                    x: (lay.width - lay.bounds.w * lay.k) / 2 + (modelData.x - lay.bounds.x0) * lay.k + 3
-                    y: (modelData.y - lay.bounds.y0) * lay.k + 2
-                    width: modelData.width / modelData.scale * lay.k - 6; height: modelData.height / modelData.scale * lay.k - 6
-                    radius: 10; bw: cur ? 3 : 2.5; drop: cur ? 3 : 0; hi: 0; fill: cur ? Theme.gOn : Theme.paper; pressable: true
-                    onClicked: { dp.sel = modelData.output; dp.reset() }
+                    property real dx: 0
+                    property real dy: 0
+                    x: (lay.width - lay.bounds.w * lay.k) / 2 + (modelData.x - lay.bounds.x0) * lay.k + 3 + dx
+                    y: (lay.height - lay.bounds.h * lay.k) / 2 + (modelData.y - lay.bounds.y0) * lay.k + 2 + dy
+                    z: dragMa.moved ? 5 : 0; opacity: dragMa.moved ? 0.85 : 1
+                    width: dp.lw(modelData) * lay.k - 6; height: dp.lh(modelData) * lay.k - 6
+                    radius: 10; bw: cur ? 3 : 2.5; drop: cur ? 3 : 0; hi: 0; fill: cur ? Theme.gOn : Theme.paper; pressable: false
+                    // tap = pick this screen, drag = move it (snaps when let go)
+                    MouseArea {
+                        id: dragMa
+                        anchors.fill: parent
+                        property point p0
+                        property bool moved: false
+                        readonly property bool canDrag: dp.svc.screens.length > 1 && dp.keepLeft === 0
+                        cursorShape: canDrag ? (moved ? Qt.ClosedHandCursor : Qt.OpenHandCursor) : Qt.PointingHandCursor
+                        onPressed: e => { p0 = mapToItem(lay, e.x, e.y); moved = false }
+                        onPositionChanged: e => {
+                            if (!canDrag) return;
+                            const p = mapToItem(lay, e.x, e.y);
+                            if (!moved && Math.hypot(p.x - p0.x, p.y - p0.y) < 6) return;
+                            moved = true; box.dx = p.x - p0.x; box.dy = p.y - p0.y;
+                        }
+                        onReleased: {
+                            dp.sel = box.modelData.output; dp.reset();
+                            if (moved) dp.dropAt(box.modelData.output, box.modelData.x + box.dx / lay.k, box.modelData.y + box.dy / lay.k);
+                            box.dx = 0; box.dy = 0; moved = false;
+                        }
+                        onCanceled: { box.dx = 0; box.dy = 0; moved = false }
+                    }
                     Column { anchors.centerIn: parent
                         UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.internal ? "Laptop" : modelData.model; px: 13; w: 700 }
                         UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.output + (modelData.focused ? " · here" : ""); fam: "n"; px: 9.5; w: 800; color: Theme.textSoft } }
                 }
             }
         }
+        UiText { visible: dp.svc.screens.length > 1 && dp.keepLeft === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter
+            text: "Drag a screen to move it · or put the picked one on a side:"; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft }
         // move the picked screen
         Row {
             visible: !!dp.scr && dp.svc.screens.length > 1 && dp.keepLeft === 0
@@ -116,7 +219,7 @@ Item {
             visible: dp.keepLeft > 0 && !!dp.undo && (!!dp.undo.order || !!dp.undo.pos)
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
             UiCandy { width: 150; height: 32; radius: 11; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
-                onClicked: { keepTimer.stop(); dp.keepLeft = 0; dp.undo = null }
+                onClicked: dp.keep()
                 UiText { anchors.centerIn: parent; text: "Keep (" + dp.keepLeft + ")"; px: 13; w: 700; color: "#FFFFFF" } }
             UiCandy { width: 110; height: 32; radius: 11; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; pressable: true
                 onClicked: dp.revert()
@@ -181,7 +284,7 @@ Item {
             UiCandy {
                 visible: dp.keepLeft > 0
                 width: 150; height: 36; radius: 12; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
-                onClicked: { keepTimer.stop(); dp.keepLeft = 0; dp.undo = null }
+                onClicked: dp.keep()
                 UiText { anchors.centerIn: parent; text: "Keep (" + dp.keepLeft + ")"; px: 14; w: 700; color: "#FFFFFF" }
             }
             UiCandy {

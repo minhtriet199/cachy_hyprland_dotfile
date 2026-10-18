@@ -13,6 +13,7 @@
 #   screenctl.py hdr OUT on|off|toggle
 #   screenctl.py mode OUT WxH@HZ SCALE     resolution / refresh / scale, re-lays out screens left to right
 #   screenctl.py pos OUT XxY [OUT XxY ...]   set screen positions (logical px, saved, reload)
+#   screenctl.py poslive OUT XxY [...]       same, but LIVE only (nothing saved) — try first, save with pos on Keep
 #   screenctl.py order OUT OUT ...         place screens left to right in this order (saved, reload)
 #   screenctl.py up|down|toggle [OUT]      for keybinds (default: focused external screen), notifies
 import glob, json, os, re, subprocess, sys
@@ -357,6 +358,18 @@ def set_pos(st, pairs):
     save(st); reload()
 
 
+def set_pos_live(st, pairs):
+    """Like set_pos, but applied live in one eval and NOT saved: the layout is tried first and only
+    saved (with pos) once it's confirmed. Screens not named keep their current spot."""
+    want = {n: p for n, p in zip(pairs[::2], pairs[1::2]) if re.fullmatch(r"-?\d+x-?\d+", p)}
+    desired = {}
+    for mon in monitors():
+        desired[mon["name"]] = {"mode": f'{mon["width"]}x{mon["height"]}@{fmt_hz(round(mon["refreshRate"], 2))}',
+                                "pos": want.get(mon["name"], f'{mon["x"]}x{mon["y"]}'),
+                                "scale": f'{mon["scale"]:g}', "transform": mon.get("transform", 0)}
+    apply_live(st, desired)
+
+
 def notify(value, title, body):
     run("notify-send", "-a", "Monitor", "-h", "string:x-canonical-private-synchronous:screenctl",
         "-h", f"int:value:{value}", title, body)
@@ -389,6 +402,8 @@ def main(argv):
             set_mode(st, m, args[1], args[2] if len(args) > 2 else m["scale"])
     elif cmd == "pos" and len(args) >= 2:
         set_pos(st, args)                         # e.g. pos HDMI-A-1 0x0 eDP-1 2560x0
+    elif cmd == "poslive" and len(args) >= 2:
+        set_pos_live(st, args)                    # live only: Keep → pos (saved), Go back → poslive old
     elif cmd == "order" and args:
         set_order(st, args)                       # e.g. order eDP-1 HDMI-A-1  (left → right)
     elif cmd in ("up", "down", "toggle"):
