@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Bluetooth
+import Quickshell.Io
 
 // Bluetooth: on/off, scan, devices (connected first, then paired, then new ones found by scanning).
 // Click = connect / disconnect, new device = pair + connect, trash = forget.
@@ -10,6 +11,17 @@ Item {
     readonly property var ad: Bluetooth.defaultAdapter
     readonly property var devs: ad ? ad.devices.values.slice().sort((x, y) => (y.connected - x.connected) || (y.paired - x.paired) || (x.name || "").localeCompare(y.name || "")) : []
     implicitHeight: col.implicitHeight
+    // Quickshell has no pairing agent, so pair() alone waits forever. bluetoothctl brings its own
+    // (no PIN prompt), then trusts + connects. Fails → the row says so.
+    property string pairAddr: ""
+    property string failAddr: ""
+    function pairNew(d) {
+        if (pairP.running) return
+        failAddr = ""; pairAddr = d.address
+        pairP.command = ["sh", "-c", "a=$1; timeout 30 bluetoothctl --agent NoInputNoOutput pair $a; bluetoothctl trust $a >/dev/null; timeout 20 bluetoothctl connect $a | grep -q 'Connection successful'", "sh", d.address]
+        pairP.running = true
+    }
+    Process { id: pairP; onExited: code => { if (code !== 0) b.failAddr = b.pairAddr; b.pairAddr = "" } }
     onVisibleChanged: if (!visible && ad && ad.discovering) ad.discovering = false
 
     function iconFor(d) {
@@ -50,13 +62,16 @@ Item {
                 glyph: b.iconFor(modelData)
                 title: modelData.name || modelData.address
                 active: modelData.connected
-                busy: modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
-                sub: (modelData.connected ? "Connected" : modelData.paired ? "Paired" : "New device")
+                busy: b.pairAddr === modelData.address || modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
+                busyText: b.pairAddr === modelData.address ? "Pairing…" : "Working…"
+                subColor: b.failAddr === modelData.address ? Theme.berry : Theme.textSoft
+                sub: b.failAddr === modelData.address && !modelData.connected ? "Couldn't connect · hold its pairing button, then tap again"
+                     : (modelData.connected ? "Connected" : modelData.paired ? "Paired" : "New device")
                      + (modelData.batteryAvailable ? " · 🔋 " + Math.round(modelData.battery * 100) + "%" : "")
                 onClicked: {
                     if (modelData.connected) modelData.disconnect();
-                    else if (modelData.paired) modelData.connect();
-                    else { modelData.trusted = true; modelData.pair() }
+                    else if (modelData.paired && modelData.bonded) modelData.connect();
+                    else b.pairNew(modelData)
                 }
                 UiCandy { visible: modelData.paired; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: modelData.forget()
