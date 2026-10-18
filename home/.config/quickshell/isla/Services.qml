@@ -774,7 +774,7 @@ Singleton {
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
         ["System", "settingsSystem", "gear", "#5E7A84", "system about charge limit firewall ssh"],
         ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps"],
-        ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition"],
+        ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition theme colour color look box style ring pop glass sakura mint airplane do not disturb"],
         ["Wallpapers", "wallpapers", "wallpaper", "#A08AEA", "wallpaper background picture lockscreen phone"],
         ["Clipboard", "clipboard", "clipboard", "#FFC23C", "clipboard copy paste history"],
         ["Islands", "islands", "map", "#F7A982", "islands workspaces windows"],
