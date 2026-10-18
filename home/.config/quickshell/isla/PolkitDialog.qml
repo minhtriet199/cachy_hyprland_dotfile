@@ -25,8 +25,9 @@ Item {
                 fill: d.flow && d.flow.supplementaryIsError ? Theme.pinkSoft : Theme.paper
                 Glyph { x: 11; anchors.verticalCenter: parent.verticalCenter; name: "lock"; size: 15; stroke: 2.6 }
                 TextInput {
-                    id: pw; x: 34; width: parent.width - 46; anchors.verticalCenter: parent.verticalCenter; clip: true
-                    echoMode: d.flow && d.flow.responseVisible ? TextInput.Normal : TextInput.Password
+                    id: pw; x: 34; width: parent.width - 46 - 30; anchors.verticalCenter: parent.verticalCenter; clip: true
+                    property bool reveal: false
+                    echoMode: reveal || (d.flow && d.flow.responseVisible) ? TextInput.Normal : TextInput.Password
                     font.family: Theme.body; font.weight: 800; font.pixelSize: 14; color: Theme.text
                     focus: true
                     Component.onCompleted: forceActiveFocus()
@@ -35,6 +36,11 @@ Item {
                     UiText { visible: !pw.text; text: d.flow && d.flow.inputPrompt ? d.flow.inputPrompt.replace(/:\s*$/, "") : "Password"
                         fam: "n"; px: 13; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
                 }
+                // eye: show / hide what you typed
+                UiCandy { anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
+                    width: 26; height: 26; bw: 0; drop: 0; hi: 0; fill: "transparent"; pressable: true
+                    onClicked: pw.reveal = !pw.reveal
+                    Glyph { anchors.centerIn: parent; name: pw.reveal ? "eyeOff" : "eye"; size: 16; stroke: 2.4 } }
             }
             UiText { visible: text !== ""; width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 11; w: 800
                 color: d.flow && d.flow.supplementaryIsError ? Theme.berry : Theme.textSoft

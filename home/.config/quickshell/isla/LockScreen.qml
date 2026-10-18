@@ -9,6 +9,8 @@ Item {
     property var svc
     property var lock                       // shell's lock controller: password, busy, failed, lockedAt, tryUnlock()
     property bool main: true                // password box only on the main screen
+    property bool reveal: false             // eye button: show the password as text instead of dots
+    Connections { target: ls.lock; function onPasswordChanged() { if (ls.lock.password === "") ls.reveal = false } }
     readonly property real sc: height / 1080
     focus: true
     Component.onCompleted: svc.loadProfile()
@@ -100,7 +102,18 @@ Item {
                     px: 24; w: 700; color: ls.lock.failed ? Theme.berry : Theme.textDeep }
                 Rectangle {
                     x: 24; y: 58; width: parent.width - 48; height: 40; radius: 20; color: "#2C4A54"
+                    UiText { visible: ls.reveal && ls.lock.password.length > 0; anchors.centerIn: parent; width: parent.width - 80; horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideLeft; text: ls.lock.password; px: 18; w: 700; color: "#FFF3C4" }
+                    // eye: show / hide the password
+                    Rectangle {
+                        visible: ls.lock.password.length > 0
+                        anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
+                        width: 30; height: 30; radius: 15; color: eyeMa.containsMouse ? "#3D5F6A" : "transparent"
+                        Glyph { anchors.centerIn: parent; name: ls.reveal ? "eyeOff" : "eye"; size: 18; stroke: 2.4; color: "#FFF3C4" }
+                        MouseArea { id: eyeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ls.reveal = !ls.reveal }
+                    }
                     Row {
+                        visible: !ls.reveal
                         anchors.centerIn: parent; spacing: 10
                         Repeater {
                             model: Math.min(ls.lock.password.length, 18)

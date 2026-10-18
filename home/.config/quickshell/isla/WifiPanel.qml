@@ -45,11 +45,17 @@ Item {
                 x: 10; y: 34; width: parent.width - 20 - 82; height: 38; radius: 11; bw: 2; drop: 0; hi: 0; fill: Theme.paper
                 TextInput {
                     id: pw
-                    x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter
-                    echoMode: TextInput.Password; font.family: Theme.body; font.pixelSize: 14; font.weight: 800; color: Theme.text; clip: true
+                    x: 10; width: parent.width - 20 - 28; anchors.verticalCenter: parent.verticalCenter
+                    property bool reveal: false
+                    echoMode: reveal ? TextInput.Normal : TextInput.Password; font.family: Theme.body; font.pixelSize: 14; font.weight: 800; color: Theme.text; clip: true
                     onAccepted: go.clicked()
                     Keys.onEscapePressed: { w.askFor = ""; text = "" }
                 }
+                // eye: show / hide the password
+                UiCandy { anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
+                    width: 26; height: 26; bw: 0; drop: 0; hi: 0; fill: "transparent"; pressable: true
+                    onClicked: pw.reveal = !pw.reveal
+                    Glyph { anchors.centerIn: parent; name: pw.reveal ? "eyeOff" : "eye"; size: 16; stroke: 2.4 } }
             }
             UiCandy {
                 id: go
