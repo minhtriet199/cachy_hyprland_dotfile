@@ -45,7 +45,7 @@ Item {
     // cards (5 × 2)
     Flickable {
         id: cardsFl
-        x: st.cx; y: 20 + st.topPad + 46 + 14; width: st.cw; height: st.height - y - 14
+        x: st.cx; y: 20 + st.topPad + 46 + 14; width: st.cw; height: st.height - y - 14 - (st.svc && st.svc.phoneBig && st.narrow ? 52 : 0)
         contentHeight: cardsGrid.height; clip: true; boundsBehavior: Flickable.StopAtBounds
     Grid {
         id: cardsGrid
