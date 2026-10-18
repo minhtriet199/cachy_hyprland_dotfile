@@ -16,7 +16,7 @@ UiCandy {
             delegate: Item {
                 required property int index
                 required property string modelData
-                width: (tabs.width - 15 - 12) / 3; height: 34
+                width: (tabs.width - 15 - 6 * (tabs.labels.length - 1)) / tabs.labels.length; height: 34
                 y: 2.5
                 UiCandy {
                     anchors.fill: parent; visible: index === tabs.current

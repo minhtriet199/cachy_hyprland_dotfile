@@ -35,6 +35,7 @@ Item {
     readonly property real visibleAmount: Math.max(Math.min(1, rise), hand, slideIn)
 
     function open(scr) {
+        if (scr === "search") scr = "home";           // search lives on the home screen now
         const land = landScreens.indexOf(scr) >= 0;
         if (land) {
             if (rise > 0.5 && !wantLand && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }

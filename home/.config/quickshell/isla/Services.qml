@@ -631,16 +631,67 @@ Singleton {
         try { const v = Function("return (" + q.replace(/[x×]/g, "*").replace(/÷/g, "/").replace(/\^/g, "**").replace(/,/g, ".") + ")")();
               return Number.isFinite(v) ? "= " + String(+v.toFixed(8)) : "" } catch (e) { return "" }
     }
+    // Isla's own screens, so typing "wifi" or "setting" offers the page (title, screen, glyph, tint, keywords)
+    readonly property var phonePages: [
+        ["Settings", "settings", "gear", "#5E7A84", "setting preferences options"],
+        ["Wi-Fi", "settingsWifi", "wifi", "#55BFC6", "wifi wireless network internet dns"],
+        ["Bluetooth", "settingsBt", "bluetooth", "#7C83F0", "bluetooth earbuds headphones controller pair"],
+        ["Sound", "settingsSound", "volume", "#7CC47F", "sound audio volume speaker mic microphone output input mixer"],
+        ["Power & battery", "settingsPower", "battery", "#FFC23C", "power battery brightness sleep turbo silent mode"],
+        ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale"],
+        ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
+        ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
+        ["System", "settingsSystem", "gear", "#5E7A84", "system about charge limit firewall ssh"],
+        ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition"],
+        ["Wallpapers", "wallpapers", "wallpaper", "#A08AEA", "wallpaper background picture lockscreen phone"],
+        ["Clipboard", "clipboard", "clipboard", "#FFC23C", "clipboard copy paste history"],
+        ["Islands", "islands", "map", "#F7A982", "islands workspaces windows"],
+        ["Quick panel", "quick", "sliders", "#55BFC6", "quick panel toggles notifications"],
+        ["Profile", "profile", "smile", "#FFD45C", "profile name password avatar user account"]
+    ]
+    // files by name (fd) / text inside files (ripgrep, personal folders only) — debounced, newest query wins
+    property var fileHits: []
+    property bool fileBusy: false
+    property string _fq: ""
+    property string _fmode: ""
+    Timer { id: fileDebounce; interval: 260; onTriggered: {
+        fileP.running = false;
+        const home = Quickshell.env("HOME");
+        fileP.command = s._fmode === "content"
+            ? ["sh", "-c", "cd \"$HOME\" && timeout 4 rg -i -n -m1 --no-heading --max-filesize 2M --max-columns 200 --max-columns-preview -- \"$0\" Documents Desktop Projects Downloads dotfiles 2>/dev/null | head -n 40", s._fq]
+            : ["sh", "-c", "cd \"$HOME\" && timeout 4 fd -i --max-results 40 -E .cache -E .local -E node_modules -- \"$0\" . 2>/dev/null", s._fq];
+        s.fileBusy = true; fileP.running = true;
+    } }
+    Process { id: fileP
+        stdout: StdioCollector { onStreamFinished: {
+            const home = Quickshell.env("HOME"), out = [];
+            for (const l of this.text.split("\n")) {
+                if (!l) continue;
+                if (s._fmode === "content") {
+                    const m = /^(.*?):(\d+):(.*)$/.exec(l); if (!m) continue;
+                    out.push({ path: home + "/" + m[1], name: m[1].split("/").pop(), dir: m[1].split("/").slice(0, -1).join("/"), line: m[3].trim().slice(0, 140), lineNo: m[2], isDir: false });
+                } else {
+                    const rel = l.replace(/^\.\//, "").replace(/\/$/, ""), isDir = l.endsWith("/");
+                    out.push({ path: home + "/" + rel, name: rel.split("/").pop(), dir: rel.split("/").slice(0, -1).join("/"), line: "", isDir: isDir });
+                }
+            }
+            s.fileHits = out; s.fileBusy = false;
+        } } }
+    function searchFiles(q, mode) { _fq = q; _fmode = mode; fileHits = []; if (!q || q.length < 2) { fileBusy = false; fileP.running = false; return } fileDebounce.restart() }
+    function openPath(p, reveal) { openApp(reveal ? ["dolphin", "--select", p] : ["xdg-open", p]) }
+
     function search(query) {
         const q = (query || "").trim().toLowerCase();
-        if (!q) return { apps: [], actions: actions.slice(0, 4).map(a => Object.assign({ kind: "action" }, a)), math: "" };
+        if (!q) return { apps: [], actions: actions.slice(0, 4).map(a => Object.assign({ kind: "action" }, a)), math: "", pages: [] };
+        const pages = phonePages.map(p => ({ p: p, sc: Math.max(score(p[0], q) * 2, score(p[4], q)) })).filter(x => x.sc > 0)
+            .sort((a, b) => b.sc - a.sc).slice(0, 3).map(x => ({ kind: "page", title: x.p[0], screen: x.p[1], glyph: x.p[2], tint: x.p[3] }));
         const apps = entries.map(e => ({ e: e, sc: Math.max(score(e.name, q) * 2, score(e.genericName, q), score((e.keywords || []).join(" "), q)) }))
-            .filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc || a.e.name.localeCompare(b.e.name)).slice(0, 4)
+            .filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc || a.e.name.localeCompare(b.e.name)).slice(0, 8)
             .map(x => { const l = lookFor(x.e.startupClass || x.e.id); return { kind: "app", name: x.e.name, generic: x.e.genericName || x.e.comment || "",
                 glyph: l[0] !== "grid" ? l[0] : "", tint: l[1], icon: Quickshell.iconPath(x.e.icon, true), entry: x.e } });
         const acts = actions.map(a => ({ a: a, sc: Math.max(score(a.title, q) * 2, score(a.keywords, q)) })).filter(x => x.sc > 0)
             .sort((a, b) => b.sc - a.sc).slice(0, 3).map(x => Object.assign({ kind: "action" }, x.a));
-        return { apps: apps, actions: acts, math: math(q) };
+        return { apps: apps, actions: acts, math: math(q), pages: pages };
     }
 
     // ── notifications ──
