@@ -60,6 +60,7 @@ Item {
             id: lv
             width: parent.width; height: 6 * 46 - 7
             clip: true; spacing: 7; boundsBehavior: Flickable.StopAtBounds
+            topMargin: 4; bottomMargin: 4; leftMargin: 4        // room for the keyboard focus ring
             model: c.list
             currentIndex: c.sel
             highlightFollowsCurrentItem: false
@@ -69,7 +70,7 @@ Item {
                 required property var modelData
                 required property int index
                 readonly property bool picked: index === c.sel
-                width: lv.width; height: 39; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: picked ? 3 : 0; hi: 0
+                width: lv.width - 8; height: 39; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: picked ? 3 : 0; hi: 0
                 fill: picked ? Theme.gLilac : Theme.paper; pressable: true
                 onClicked: { if (c.sel === index) c.copy(); else c.sel = index }
                 onRightClicked: c.svc.clipDelete(modelData)

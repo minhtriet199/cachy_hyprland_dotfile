@@ -18,12 +18,16 @@ Item {
         stdout: StdioCollector { onStreamFinished: { try { mp.v = JSON.parse(this.text) } catch (e) {} } } }
     // sliders send many values while dragging: keep the newest and apply ~8 times a second
     property var pending: ({})
-    function put(k, val) { const n = Object.assign({}, v); n[k] = String(val); v = n; const p = pending; p[k] = val; pending = p; if (!sendT.running) sendT.start() }
+    function put(k, val) { if (k === "cursor_size") cursorDirty = true; const n = Object.assign({}, v); n[k] = String(val); v = n; const p = pending; p[k] = val; pending = p; if (!sendT.running) sendT.start() }
     Timer { id: sendT; interval: 120; onTriggered: {
         if (setP.running) { restart(); return }
         const args = Object.keys(mp.pending).map(k => k + "=" + mp.pending[k]); mp.pending = ({})
         setP.command = ["python3", mp.tool, "set"].concat(args); setP.running = true } }
-    Process { id: setP }
+    Process { id: setP; onExited: if (mp.cursorDirty) { mp.cursorDirty = false; reshape.enabled = true; reshapeT.restart() } }
+    // Hyprland only redraws the cursor at the new size when the window asks for a shape again, so briefly ask
+    // for another shape and then the normal one (else the old size stays until the pointer leaves the phone)
+    property bool cursorDirty: false
+    Timer { id: reshapeT; interval: 60; onTriggered: reshape.enabled = false }
 
     component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
     // slider with a label + value on the right; lo/hi are the real values, the slider runs 0…1
@@ -53,6 +57,8 @@ Item {
         onClicked: mp.put(key, mp.on(key) ? 0 : 1)
         UiSwitch { on: mp.on(tg.key); onToggled: mp.put(tg.key, mp.on(tg.key) ? 0 : 1) }
     }
+
+    MouseArea { id: reshape; anchors.fill: parent; z: 100; enabled: false; hoverEnabled: true; acceptedButtons: Qt.NoButton; cursorShape: Qt.CrossCursor }
 
     Column {
         id: col

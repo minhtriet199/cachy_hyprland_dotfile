@@ -29,5 +29,11 @@
   "lidClose": [
     "sleep",
     "sleep"
-  ]
+  ],
+  "h24": true,
+  "location": false,
+  "weatherAuto": true,
+  "city": "Ho Chi Minh City",
+  "autoTz": false,
+  "dndGaming": true
 }

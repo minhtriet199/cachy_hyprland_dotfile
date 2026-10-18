@@ -31,11 +31,15 @@ Item {
     Keys.onEnterPressed: clicked()
     Keys.onSpacePressed: clicked()
     function zoneOf(it) { let p = it ? it.parent : null; while (p) { if (p.isNavZone === true) return p; p = p.parent } return null }
-    function moveFocus(fwd) {
+    // a small button inside another button (the ✕ on a list row): ↑/↓ skip it, Tab and →/← reach it
+    function nestedIn(it) { let p = it ? it.parent : null; while (p) { if (p.activeFocusOnTab === true && typeof p.moveFocus === "function") return p; p = p.parent } return null }
+    function moveFocus(fwd, rowsOnly) {
         const z = zoneOf(r); let n = r;
         for (let k = 0; k < 400; k++) {
             n = n.nextItemInFocusChain(fwd);
             if (!n || n === r) return;
+            if (rowsOnly && nestedIn(n)) continue;
+            if (rowsOnly && !fwd && nestedIn(r) === n) continue;       // from a row's ✕, ↑ goes to the row above, not its own row
             if (zoneOf(n) === z) { n.forceActiveFocus(fwd ? Qt.TabFocusReason : Qt.BacktabFocusReason); return }
         }
     }
@@ -44,11 +48,11 @@ Item {
     Keys.onTabPressed: { const o = tabOwner(); if (o) o.tabKey(true); else moveFocus(true) }
     Keys.onBacktabPressed: { const o = tabOwner(); if (o) o.tabKey(false); else moveFocus(false) }
     // plain arrows move the ring; with Ctrl / Alt they pass up to the phone (Ctrl+←/→ switch area, Alt+← back)
-    function arrow(e, fwd) { if (e.modifiers & (Qt.ControlModifier | Qt.AltModifier)) { e.accepted = false; return } moveFocus(fwd) }
-    Keys.onDownPressed: e => arrow(e, true)
-    Keys.onRightPressed: e => arrow(e, true)
-    Keys.onUpPressed: e => arrow(e, false)
-    Keys.onLeftPressed: e => arrow(e, false)
+    function arrow(e, fwd, rows) { if (e.modifiers & (Qt.ControlModifier | Qt.AltModifier)) { e.accepted = false; return } moveFocus(fwd, rows) }
+    Keys.onDownPressed: e => arrow(e, true, true)
+    Keys.onRightPressed: e => arrow(e, true, false)
+    Keys.onUpPressed: e => arrow(e, false, true)
+    Keys.onLeftPressed: e => arrow(e, false, false)
 
     Item {
         id: body
@@ -71,7 +75,7 @@ Item {
             Behavior on opacity { NumberAnimation { duration: 120 } } }
         Item { id: holder; anchors.fill: parent }
         // keyboard focus ring
-        Rectangle { visible: r.activeFocus; anchors.fill: parent; anchors.margins: -5; radius: r.radius + 5; color: "transparent"; border.width: 3; border.color: Theme.sunDeep }
+        Rectangle { visible: r.activeFocus; anchors.fill: parent; anchors.margins: -4; radius: r.radius + 5; color: "transparent"; border.width: 3; border.color: Theme.sunDeep }
     }
     MouseArea {
         id: ma
