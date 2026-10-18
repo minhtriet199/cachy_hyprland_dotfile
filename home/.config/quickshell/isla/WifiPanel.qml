@@ -92,9 +92,6 @@ Item {
                     if (modelData.secure && !modelData.known) { w.askFor = modelData.ssid; pw.forceActiveFocus() }
                     else w.svc.wifiConnect(modelData, "");
                 }
-                // spinner while this one is connecting
-                Glyph { id: rs; visible: net.busy; name: "reload"; size: 15; stroke: 2.6; color: Theme.seaDeep
-                    RotationAnimation on rotation { running: rs.visible; loops: Animation.Infinite; from: 0; to: 360; duration: 900 } }
                 // settings page for saved networks
                 UiCandy { visible: modelData.active || modelData.known; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: w.detail = modelData.ssid
