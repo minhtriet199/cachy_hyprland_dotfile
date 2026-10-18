@@ -1,6 +1,6 @@
 import QtQuick
 
-// System page (phone): charge limit, firewall, SSH, file sharing on the left; About on the right.
+// System page (phone): charge limit, firewall, SSH, file sharing on the left; About, storage and updates on the right.
 Item {
     id: sp
     property var svc
@@ -79,5 +79,7 @@ Item {
                 Glyph { name: "reload"; size: 14; stroke: 2.6; anchors.verticalCenter: parent.verticalCenter }
                 UiText { text: "Reload Isla"; px: 13; w: 700; anchors.verticalCenter: parent.verticalCenter } }
         }
+        Item { width: 1; height: 8 }
+        SysStorage { width: parent.width; svc: sp.svc }
     }
 }

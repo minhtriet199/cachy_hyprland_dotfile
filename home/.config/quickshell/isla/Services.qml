@@ -183,6 +183,7 @@ Singleton {
     property var warp: ({ connected: false })
     property bool imeVi: false
     property bool dnd: false
+    property bool airplane: false                  // every radio (Wi-Fi + Bluetooth) blocked (rfkill)
     // Do not disturb: by hand, for a while (dndFor), or by itself while a game is focused (Prefs.dndGaming)
     readonly property bool dndOn: dnd || (Prefs.dndGaming && gaming)
     property real dndUntil: 0
@@ -221,6 +222,7 @@ Singleton {
             "echo ac=$(cat /sys/class/power_supply/A*/online 2>/dev/null | head -1)",
             "echo energy=$(cat /sys/class/power_supply/BAT*/energy_now /sys/class/power_supply/BAT*/energy_full /sys/class/power_supply/BAT*/energy_full_design /sys/class/power_supply/BAT*/power_now 2>/dev/null | tr '\\n' ' ')",
             "echo prof=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)",
+            "echo rf=$(cat /sys/class/rfkill/rfkill*/soft 2>/dev/null | sort -u | tr -d '\\n')",
             // one ps instead of three pgreps
             "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects rec:wf-recorder; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
             "echo net=$(awk 'NR>2 && $1 !~ /lo:/ {r+=$2; t+=$10} END {print r\" \"t}' /proc/net/dev)"
@@ -229,6 +231,7 @@ Singleton {
             const v = {}; for (const l of this.text.split("\n")) { const i = l.indexOf("="); if (i > 0) v[l.slice(0, i)] = l.slice(i + 1).trim() }
             s.wifi = { on: v.wifi === "enabled", ssid: v.ssid || "" };
             s.wifiSignal = parseInt(v.sig) || 0;
+            s.airplane = v.rf === "1";
             s.nmState = v.nm || ""; s.nmConn = v.conn || "";
             s.warp = { connected: v.warp === "on" };
             let m = /([\d.]+)/.exec(v.vol || ""); if (m) s.volume = parseFloat(m[1]); s.muted = (v.vol || "").includes("MUTED");
@@ -631,6 +634,7 @@ Singleton {
         else if (what === "warp") run(["warp-cli", "--accept-tos", warp.connected ? "disconnect" : "connect"]);
         else if (what === "ime") { imeVi = !imeVi; run(["fcitx5-remote", "-t"]) }
         else if (what === "dnd") dnd = !dnd;
+        else if (what === "airplane") { airplane = !airplane; run(["rfkill", airplane ? "block" : "unblock", "all"]) }
         else if (what === "night") { nightLight = !nightLight; run(nightLight ? ["sh", "-c", "pgrep -x hyprsunset || hyprsunset -t " + nightTemp + " >/dev/null 2>&1 &"] : ["pkill", "-x", "hyprsunset"]) }
         else if (what === "awake") keepAwake = !keepAwake;
         else if (what === "game") gameMode = !gameMode;

@@ -57,6 +57,12 @@ Item {
                 columns: sq.narrow ? 1 : 3; rowSpacing: 10; columnSpacing: 12
                 readonly property real tw: sq.narrow ? sq.cw - 33 : (sq.cw - 33 - 24) / 3
                 SetToggle { width: parent.tw; glyph: "bell"; title: "Notifications"; on: sq.prefs.notifications; onClicked: sq.prefs.flip("notifications") }
+                SetToggle { width: parent.tw; glyph: sq.svc.dnd ? "bellOff" : "bell"; title: "Do not disturb"; on: sq.svc.dnd
+                    sub: sq.svc.dnd && sq.svc.dndUntil ? "Until " + Qt.formatTime(new Date(sq.svc.dndUntil), sq.svc.h24 ? "HH:mm" : "h:mm AP") : (sq.svc.dnd ? "ON" : "OFF")
+                    onClicked: sq.svc.toggle("dnd") }
+                SetToggle { width: parent.tw; glyph: "moon"; title: "Quiet for 1 hour"; sub: "Then pop-ups come back"; link: true; onClicked: sq.svc.dndFor(60) }
+                SetToggle { width: parent.tw; glyph: "gamepad"; title: "Quiet while gaming"; on: sq.prefs.dndGaming; onClicked: sq.prefs.flip("dndGaming") }
+                SetToggle { width: parent.tw; glyph: "wifiOff"; title: "Airplane mode"; sub: sq.svc.airplane ? "Wi-Fi + Bluetooth off" : "OFF"; on: sq.svc.airplane; onClicked: sq.svc.toggle("airplane") }
                 SetToggle { width: parent.tw; glyph: "moon"; title: "Night light"; on: sq.svc.nightLight; onClicked: sq.svc.toggle("night") }
                 SetToggle { width: parent.tw; glyph: "bolt"; title: "Keep awake"; on: sq.svc.keepAwake; onClicked: sq.svc.toggle("awake") }
                 SetToggle { width: parent.tw; glyph: "gamepad2"; title: "Game mode"; on: sq.svc.gameMode; onClicked: sq.svc.toggle("game") }
