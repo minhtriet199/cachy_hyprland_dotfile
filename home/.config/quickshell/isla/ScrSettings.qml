@@ -11,7 +11,7 @@ Item {
     readonly property bool narrow: width < 600                     // shown on the upright phone
     readonly property real cx: narrow ? 18 : 56
     readonly property real cw: width - cx - (narrow ? 18 : 26)
-    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
+    readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     // [number, title, line, colour, glyph, phone screen or "app:<name>" for the user's own settings apps]
     readonly property var cats: [
         ["01", "Wi-Fi", "Networks and passwords", "#55BFC6", "wifi", "settingsWifi"],
@@ -40,7 +40,7 @@ Item {
                 UiText { text: "Settings"; px: 18; w: 700; color: Theme.textDeep; height: 19 }
                 UiText { text: "Pick what you want to change"; fam: "n"; w: 800; px: 10.5; color: "#3F5F69" } }
         }
-        SetHeaderBtn { anchors.right: parent.right; y: st.narrow ? -50 : (parent.height - height) / 2; svc: st.svc; onClose: st.close() }
+        SetHeaderBtn { anchors.right: parent.right; y: (parent.height - height) / 2; clockOnly: st.narrow; svc: st.svc; onClose: st.close() }
     }
     // cards (5 × 2)
     Flickable {

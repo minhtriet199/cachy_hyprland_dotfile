@@ -21,7 +21,7 @@ Item {
     readonly property bool narrow: width < 600                     // shown on the upright phone
     readonly property real cx: narrow ? 18 : 54
     readonly property real cw: width - cx - (narrow ? 18 : 24)
-    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
+    readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     FolderListModel {
         id: files
         folder: "file://" + wp.prefs.wallDir

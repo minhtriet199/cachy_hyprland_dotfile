@@ -13,7 +13,7 @@ Item {
     readonly property bool narrow: width < 600                     // shown on the upright phone
     readonly property real cx: narrow ? 18 : 56
     readonly property real cw: width - cx - (narrow ? 18 : 26)
-    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
+    readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     readonly property var info: ({
         wifi:  ["Wi-Fi", "Networks and passwords", "wifi", Theme.gOn],
         bt:    ["Bluetooth", "Earbuds, pads, devices", "bluetooth", Theme.gLilac],
@@ -39,7 +39,7 @@ Item {
                 UiText { text: pg.info[0]; px: 18; w: 700; color: Theme.textDeep; height: 19 }
                 UiText { text: pg.info[1]; fam: "n"; w: 800; px: 10.5; color: Theme.textMuted } }
         }
-        SetHeaderBtn { anchors.right: parent.right; y: pg.narrow ? -50 : (parent.height - height) / 2; svc: pg.svc; onClose: pg.close() }
+        SetHeaderBtn { anchors.right: parent.right; y: (parent.height - height) / 2; clockOnly: pg.narrow; svc: pg.svc; onClose: pg.close() }
     }
 
     // body (scrolls if it is taller than the screen)

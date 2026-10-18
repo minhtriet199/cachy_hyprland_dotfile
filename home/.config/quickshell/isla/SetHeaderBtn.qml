@@ -7,12 +7,13 @@ Row {
     property real clockH: 42
     property real timePx: 15
     property real closeSize: 40
-    property bool showClose: false     // every landscape screen has a Back button now; Esc / click outside still close
+    property bool showClose: false
+    property bool clockOnly: false      // upright phone: ↻ and ⛶ already live in the side buttons / bottom bar     // every landscape screen has a Back button now; Esc / click outside still close
     signal close()
     spacing: 10
     // ↻ turn the phone upright (every screen works both ways)
     UiCandy {
-        visible: !!h.svc
+        visible: !!h.svc && !h.clockOnly
         anchors.verticalCenter: parent.verticalCenter
         width: h.closeSize; height: h.closeSize; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper; pressable: true
         onClicked: h.svc.rotatePhone()
@@ -20,7 +21,7 @@ Row {
     }
     // big mode: phone grows to ~3/4 of the screen and lies flat
     UiCandy {
-        visible: !!h.svc && h.svc.phoneBig !== undefined
+        visible: !!h.svc && h.svc.phoneBig !== undefined && !h.clockOnly
         anchors.verticalCenter: parent.verticalCenter
         width: h.closeSize; height: h.closeSize; ink: Theme.inkPhone; drop: 3; hi: 0
         fill: h.svc && h.svc.phoneBig ? Theme.gOn : Theme.paper; pressable: true

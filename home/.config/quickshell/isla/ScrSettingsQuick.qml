@@ -12,7 +12,7 @@ Item {
     readonly property bool narrow: width < 600                     // shown on the upright phone
     readonly property real cx: narrow ? 18 : 56
     readonly property real cw: width - cx - (narrow ? 18 : 26)
-    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
+    readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     Flickable {
         id: page
         anchors.fill: parent; contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
@@ -36,7 +36,7 @@ Item {
                     UiText { text: "Bar, dock and notifications"; fam: "n"; w: 800; px: 10.5; color: "#4A3F78" } }
             }
             Row {
-                anchors.right: parent.right; y: sq.narrow ? -50 : (parent.height - height) / 2
+                anchors.right: parent.right; y: (parent.height - height) / 2
                 spacing: 10
                 UiCandy {
                     anchors.verticalCenter: parent.verticalCenter
@@ -46,7 +46,7 @@ Item {
                     Glyph { x: 12 + 2.5; anchors.verticalCenter: parent.verticalCenter; name: "menu9"; size: 14 }
                     UiText { id: ml; x: 12 + 2.5 + 14 + 7; anchors.verticalCenter: parent.verticalCenter; text: "Menu"; px: 13; w: 600 }
                 }
-                SetHeaderBtn { anchors.verticalCenter: parent.verticalCenter; svc: sq.svc; clockH: 40; timePx: 14; closeSize: 38; onClose: sq.close() }
+                SetHeaderBtn { anchors.verticalCenter: parent.verticalCenter; clockOnly: sq.narrow; svc: sq.svc; clockH: 40; timePx: 14; closeSize: 38; onClose: sq.close() }
             }
         }
         // Shell
