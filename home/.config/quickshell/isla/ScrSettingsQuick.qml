@@ -90,6 +90,33 @@ Item {
                 }
             }
         }
+        // Look: colour theme + box style (Theme.palettes / Theme.ring)
+        SetSection {
+            title: "Look"; tagColor: Theme.gSettings[1]; padTop: 20
+            Column {
+                spacing: 10
+                Flow {
+                    width: sq.cw - 40; spacing: 10
+                    Repeater {
+                        model: Object.keys(Theme.palettes)
+                        delegate: UiCandy {
+                            required property string modelData
+                            readonly property var p: Theme.palettes[modelData]
+                            readonly property bool on: (sq.prefs.theme || "isla") === modelData
+                            width: 104; height: 58; radius: 16; bw: on ? 3 : 2.5; drop: on ? 0 : 3; hi: 0
+                            ink: p.ink || "#3D5A66"; fill: p.gOn || ["#D8F1F4", "#A9DDE4"]; pressable: true
+                            onClicked: sq.prefs.set("theme", modelData)
+                            Row { x: 10; y: 9; spacing: 4
+                                Repeater { model: [parent.parent.p.ink || "#3D5A66", parent.parent.p.sea || "#55BFC6", (parent.parent.p.gActive || ["#C9B9F7", "#9C86E6"])[1], parent.parent.p.cream || "#FFF9EC"]
+                                    delegate: Rectangle { required property color modelData; width: 14; height: 14; radius: 7; color: modelData; border.width: 1.5; border.color: Qt.rgba(0, 0, 0, 0.25) } } }
+                            UiText { x: 10; y: 30; text: (parent.on ? "✓ " : "") + parent.p.name; px: 13; w: 700; color: parent.p.textDeep || "#213F48" }
+                        }
+                    }
+                }
+                SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring"]; current: sq.prefs.boxStyle === "ring" ? "Ring" : "Candy"
+                    onPicked: v => sq.prefs.set("boxStyle", v === "Ring" ? "ring" : "candy") }
+            }
+        }
         // Bar
         SetSection {
             title: "Bar"; tagColor: "#FFE39A"; padTop: 20

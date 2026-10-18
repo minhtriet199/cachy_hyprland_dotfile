@@ -21,6 +21,8 @@ Item {
     readonly property color fillTop: fillIsList ? fill[0] : fill
     readonly property color fillBottom: fillIsList ? fill[fill.length - 1] : fill
     readonly property real ir: Math.max(0, Math.min(radius, Math.min(width, height) / 2) - bw)
+    // "ring" box style (Theme.ring): a light gap between the outline and the fill, soft tinted shadow
+    readonly property real gap: Theme.ring && !dashed ? (Math.min(width, height) < 34 ? 1.5 : 3) : 0
     default property alias content: holder.data
     signal clicked()
     signal rightClicked()
@@ -60,12 +62,16 @@ Item {
         y: r.down ? Math.min(2, r.drop) : 0
         Behavior on y { NumberAnimation { duration: 70 } }
 
-        Rectangle { visible: r.drop > 0 && !r.dashed; y: r.drop - body.y; width: parent.width; height: parent.height; radius: r.radius; color: r.dropColor }
-        Rectangle { visible: !r.dashed && r.hi > 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.fillTop }
-        Rectangle { visible: !r.dashed && r.hi > 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.hiColor }
+        Rectangle { visible: r.drop > 0 && !r.dashed; y: r.drop - body.y; width: parent.width; height: parent.height; radius: r.radius
+            color: Theme.ring ? Qt.rgba(r.fillBottom.r, r.fillBottom.g, r.fillBottom.b, 0.85) : r.dropColor }
+        Rectangle { visible: r.gap > 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: Theme.paper }
+        Rectangle { visible: !r.dashed && r.hi > 0 && r.gap === 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.fillTop }
+        Rectangle { visible: !r.dashed && r.hi > 0 && r.gap === 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.hiColor }
         Rectangle {
             visible: !r.dashed
-            x: r.bw; y: r.bw + r.hi; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw - r.hi; radius: r.ir
+            readonly property real inset: r.bw + r.gap
+            readonly property real hiRoom: r.gap > 0 ? 0 : r.hi
+            x: inset; y: inset + hiRoom; width: parent.width - 2 * inset; height: parent.height - 2 * inset - hiRoom; radius: Math.max(0, r.ir - r.gap)
             gradient: Gradient { GradientStop { position: 0; color: r.fillTop } GradientStop { position: 1; color: r.fillBottom } }
         }
         // outline ring on top (so see-through fills stay clean)

@@ -35,5 +35,7 @@
   "weatherAuto": true,
   "city": "Ho Chi Minh City",
   "autoTz": false,
-  "dndGaming": true
+  "dndGaming": false,
+  "theme": "isla",
+  "boxStyle": "candy"
 }

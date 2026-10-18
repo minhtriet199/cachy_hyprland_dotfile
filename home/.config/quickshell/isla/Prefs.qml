@@ -27,7 +27,9 @@ Singleton {
     property bool weatherAuto: true             // weather for where you are (needs location) instead of the city below
     property string city: "Ho Chi Minh City"    // weather city when not automatic
     property bool autoTz: false                 // set the time zone from your location when the network changes
-    property bool dndGaming: true               // no pop-ups while a game is focused     // plugged in, on battery: sleep / screen / lock / nothing
+    property bool dndGaming: true               // no pop-ups while a game is focused
+    property string theme: "isla"               // colour theme (Theme.palettes)
+    property string boxStyle: "candy"           // "candy" or "ring"     // plugged in, on battery: sleep / screen / lock / nothing
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
@@ -38,7 +40,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }
