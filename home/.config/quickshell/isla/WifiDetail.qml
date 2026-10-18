@@ -23,8 +23,21 @@ Item {
         if (!p[1]) svc.wifiModify(i, ["ipv4.dns", "", "ipv4.ignore-auto-dns", "no", "ipv6.dns", "", "ipv6.ignore-auto-dns", "no"]);
         else svc.wifiModify(i, ["ipv4.dns", p[1], "ipv4.ignore-auto-dns", "yes", "ipv6.dns", p[2], "ipv6.ignore-auto-dns", "yes"]);
     }
-    property bool manual: i ? i["ipv4.method"] === "manual" : false
-    onIChanged: if (i) { manual = i["ipv4.method"] === "manual"; if (!ipIn.activeFocus) ipIn.text = (i["ipv4.addresses"] || (i.ip || "")).split(",")[0]; if (!gwIn.activeFocus) gwIn.text = i["ipv4.gateway"] || i.gw || "" }
+    // Manual / Custom are choices you're still editing: only re-read them from the system when another network opens or after Save
+    property bool manual: false
+    property bool customDns: false
+    property string syncedFor: ""
+    function syncFromSystem() {
+        if (!i) return;
+        manual = i["ipv4.method"] === "manual";
+        customDns = presetNow === "Custom";
+        ipIn.text = (i["ipv4.addresses"] || (i.ip || "")).split(",")[0];
+        gwIn.text = i["ipv4.gateway"] || i.gw || "";
+        dns4In.text = (i["ipv4.dns"] || "").split(",").join(", ");
+        syncedFor = ssid;
+    }
+    onIChanged: if (i && syncedFor !== ssid) syncFromSystem()
+    Connections { target: wd.svc; function onWifiSaveMsgChanged() { if (wd.svc.wifiSaveMsg === "Saved ✓") wd.syncedFor = "" } }
 
     Column {
         id: col
@@ -69,16 +82,43 @@ Item {
                     model: wd.presets
                     delegate: UiCandy {
                         required property var modelData
-                        readonly property bool picked: wd.presetNow === modelData[0]
+                        readonly property bool picked: !wd.customDns && wd.presetNow === modelData[0]
                         width: dl.implicitWidth + 22; height: 30; radius: 10; bw: 2; drop: picked ? 2 : 0; hi: 0
                         fill: picked ? Theme.gOn : Theme.cream; pressable: true
-                        onClicked: wd.setDns(modelData)
+                        onClicked: { wd.customDns = false; wd.setDns(modelData) }
                         UiText { id: dl; anchors.centerIn: parent; text: modelData[0]; px: 12; w: 700 }
                     }
                 }
+                UiCandy {
+                    width: cl.implicitWidth + 22; height: 30; radius: 10; bw: 2; drop: wd.customDns ? 2 : 0; hi: 0
+                    fill: wd.customDns ? Theme.gOn : Theme.cream; pressable: true
+                    onClicked: { wd.customDns = true; dns4In.forceActiveFocus() }
+                    UiText { id: cl; anchors.centerIn: parent; text: "Custom…"; px: 12; w: 700 }
+                }
+            }
+            // your own DNS servers (IPv4; IPv6 optional)
+            Row {
+                visible: wd.customDns
+                spacing: 6
+                UiCandy {
+                    width: Math.min(300, wd.width - 90); height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                    TextInput { id: dns4In; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
+                        font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
+                        onAccepted: dnsSave.clicked()
+                        UiText { visible: !dns4In.text; text: "DNS servers, e.g. 1.1.1.1, 8.8.8.8"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
+                }
+                UiCandy { id: dnsSave; width: 70; height: 32; radius: 10; bw: 2.5; drop: 2; hi: 3; fill: Theme.gGo; pressable: true
+                    onClicked: {
+                        const v4 = dns4In.text.split(/[\s,;]+/).filter(x => /^\d{1,3}(\.\d{1,3}){3}$/.test(x));
+                        const v6 = dns4In.text.split(/[\s,;]+/).filter(x => x.includes(":"));
+                        if (!v4.length && !v6.length) return;
+                        wd.svc.wifiModify(wd.i, ["ipv4.dns", v4.join(","), "ipv4.ignore-auto-dns", "yes", "ipv6.dns", v6.join(","), "ipv6.ignore-auto-dns", v6.length ? "yes" : "no"]);
+                    }
+                    UiText { anchors.centerIn: parent; text: "Save"; px: 13; w: 700; color: "#FFFFFF" } }
             }
             UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-                text: "Auto uses the system DNS: encrypted Cloudflare + Google for every network (gets around ISP blocking)." }
+                text: wd.customDns ? "Separate servers with commas. IPv6 addresses (with “:”) can go in the same box."
+                                   : "Auto uses the system DNS: encrypted Cloudflare + Google for every network (gets around ISP blocking)." }
         }
 
         // IPv4

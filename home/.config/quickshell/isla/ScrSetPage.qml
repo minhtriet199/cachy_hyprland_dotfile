@@ -10,8 +10,10 @@ Item {
     signal go(string screen)
     signal close()
     signal back()
-    readonly property real cx: 56
-    readonly property real cw: width - 56 - 26
+    readonly property bool narrow: width < 600                     // shown on the upright phone
+    readonly property real cx: narrow ? 18 : 56
+    readonly property real cw: width - cx - (narrow ? 18 : 26)
+    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
     readonly property var info: ({
         wifi:  ["Wi-Fi", "Networks and passwords", "wifi", Theme.gOn],
         bt:    ["Bluetooth", "Earbuds, pads, devices", "bluetooth", Theme.gLilac],
@@ -25,7 +27,7 @@ Item {
 
     // header
     Item {
-        x: pg.cx; y: 18; width: pg.cw; height: 44
+        x: pg.cx; y: 18 + pg.topPad; width: pg.cw; height: 44
         UiCandy {
             width: tcol.implicitWidth + 8 + 28 + 10 + 18 + 5; height: 44
             radius: 16; ink: Theme.inkPhone; hiColor: Qt.rgba(1, 1, 1, 0.6); fill: pg.info[3]; pressable: true
@@ -37,13 +39,13 @@ Item {
                 UiText { text: pg.info[0]; px: 18; w: 700; color: Theme.textDeep; height: 19 }
                 UiText { text: pg.info[1]; fam: "n"; w: 800; px: 10.5; color: Theme.textMuted } }
         }
-        SetHeaderBtn { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; svc: pg.svc; onClose: pg.close() }
+        SetHeaderBtn { anchors.right: parent.right; y: pg.narrow ? -50 : (parent.height - height) / 2; svc: pg.svc; onClose: pg.close() }
     }
 
     // body (scrolls if it is taller than the screen)
     Flickable {
         id: fl
-        x: pg.cx; y: 18 + 44 + 14; width: pg.cw; height: pg.height - y - 18
+        x: pg.cx; y: 18 + pg.topPad + 44 + 14; width: pg.cw; height: pg.height - y - 18
         clip: true; contentHeight: body.height; boundsBehavior: Flickable.StopAtBounds
         Loader {
             id: body
@@ -55,7 +57,7 @@ Item {
     }
     Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
     Component { id: cBt; BtPanel { svc: pg.svc; listH: fl.height - 50 } }
-    Component { id: cSound; SoundPanel { svc: pg.svc; wide: true } }
+    Component { id: cSound; SoundPanel { svc: pg.svc; wide: !pg.narrow } }
     Component { id: cPower; PowerPanel { svc: pg.svc } }
     Component { id: cDisplays; DisplaysPanel { svc: pg.svc } }
     Component { id: cKeys; KeysPanel { svc: pg.svc; listH: fl.height - 46; focus: true } }

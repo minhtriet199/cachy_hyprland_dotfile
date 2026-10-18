@@ -10,6 +10,14 @@ Row {
     property bool showClose: false     // every landscape screen has a Back button now; Esc / click outside still close
     signal close()
     spacing: 10
+    // ↻ turn the phone upright (every screen works both ways)
+    UiCandy {
+        visible: !!h.svc
+        anchors.verticalCenter: parent.verticalCenter
+        width: h.closeSize; height: h.closeSize; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper; pressable: true
+        onClicked: h.svc.rotatePhone()
+        Glyph { anchors.centerIn: parent; name: "rotate"; size: 17; stroke: 2.4 }
+    }
     // big mode: phone grows to ~3/4 of the screen and lies flat
     UiCandy {
         visible: !!h.svc && h.svc.phoneBig !== undefined

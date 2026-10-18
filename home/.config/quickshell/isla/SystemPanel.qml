@@ -5,8 +5,10 @@ Item {
     id: sp
     property var svc
     readonly property var v: svc.sys
-    readonly property real colW: (width - 20) / 2
-    implicitHeight: Math.max(left.implicitHeight, right.implicitHeight)
+    readonly property bool narrow: width < 560
+    readonly property real colW: narrow ? width : (width - 20) / 2
+    readonly property real leftH: left.implicitHeight
+    implicitHeight: narrow ? left.implicitHeight + 20 + right.implicitHeight : Math.max(left.implicitHeight, right.implicitHeight)
     Component.onCompleted: svc.loadSys()
 
     Column {
@@ -52,7 +54,7 @@ Item {
 
     Column {
         id: right
-        x: sp.colW + 20; width: sp.colW; spacing: 6
+        x: sp.narrow ? 0 : sp.colW + 20; y: sp.narrow ? sp.leftH + 20 : 0; width: sp.colW; spacing: 6
         UiText { text: "ABOUT"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 16 }
         UiCandy {
             width: parent.width; height: about.implicitHeight + 24; radius: 16; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream

@@ -8,8 +8,10 @@ Item {
     signal close()
     signal back()
     signal soon(string what)
-    readonly property real cx: 56
-    readonly property real cw: width - 56 - 26
+    readonly property bool narrow: width < 600                     // shown on the upright phone
+    readonly property real cx: narrow ? 18 : 56
+    readonly property real cw: width - cx - (narrow ? 18 : 26)
+    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
     // [number, title, line, colour, glyph, phone screen or "app:<name>" for the user's own settings apps]
     readonly property var cats: [
         ["01", "Wi-Fi", "Networks and passwords", "#55BFC6", "wifi", "settingsWifi"],
@@ -26,7 +28,7 @@ Item {
     function openCat(c) { st.go(c[5]) }
     // header
     Item {
-        x: st.cx; y: 20; width: st.cw; height: 46
+        x: st.cx; y: 20 + st.topPad; width: st.cw; height: 46
         UiCandy {
             width: tcol.implicitWidth + 8 + 30 + 10 + 18 + 5; height: 46
             radius: 16; ink: Theme.inkPhone; hiColor: Qt.rgba(1, 1, 1, 0.6); fill: Theme.gOn; pressable: true
@@ -38,19 +40,23 @@ Item {
                 UiText { text: "Settings"; px: 18; w: 700; color: Theme.textDeep; height: 19 }
                 UiText { text: "Pick what you want to change"; fam: "n"; w: 800; px: 10.5; color: "#3F5F69" } }
         }
-        SetHeaderBtn { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; svc: st.svc; onClose: st.close() }
+        SetHeaderBtn { anchors.right: parent.right; y: st.narrow ? -50 : (parent.height - height) / 2; svc: st.svc; onClose: st.close() }
     }
     // cards (5 × 2)
+    Flickable {
+        id: cardsFl
+        x: st.cx; y: 20 + st.topPad + 46 + 14; width: st.cw; height: st.height - y - 14
+        contentHeight: cardsGrid.height; clip: true; boundsBehavior: Flickable.StopAtBounds
     Grid {
-        x: st.cx; y: 20 + 46 + 14
-        columns: 5; rowSpacing: 12; columnSpacing: 12
+        id: cardsGrid
+        columns: st.narrow ? 2 : 5; rowSpacing: 12; columnSpacing: 12
         Repeater {
             model: st.cats
             delegate: UiCandy {
                 id: card
                 required property var modelData
                 readonly property bool ext: modelData[5].startsWith("app:")
-                width: (st.cw - 48) / 5; height: (st.height - 20 - 46 - 14 - 12 - 20) / 2
+                width: st.narrow ? (st.cw - 12) / 2 : (st.cw - 48) / 5; height: st.narrow ? 132 : (st.height - 20 - 46 - 14 - 12 - 20) / 2
                 radius: 20; ink: Theme.inkPhone; drop: 4; hi: 4; hiColor: Qt.rgba(1, 1, 1, 0.9); pressable: true
                 onClicked: st.openCat(modelData)
                 Item { x: 14; y: 14; width: 32; height: 32
@@ -66,6 +72,7 @@ Item {
                     UiText { width: parent.width; text: card.modelData[2]; fam: "n"; w: 800; px: 10; color: Theme.textSoft; wrapMode: Text.Wrap; maximumLineCount: 2 } }
             }
         }
+    }
     }
     focus: true
     Keys.onEscapePressed: st.close()

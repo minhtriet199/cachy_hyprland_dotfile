@@ -9,15 +9,17 @@ Item {
     signal close()
     signal back()
     signal soon(string what)
-    readonly property real cx: 56
-    readonly property real cw: width - 56 - 26
+    readonly property bool narrow: width < 600                     // shown on the upright phone
+    readonly property real cx: narrow ? 18 : 56
+    readonly property real cw: width - cx - (narrow ? 18 : 26)
+    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
     Flickable {
         id: page
         anchors.fill: parent; contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
         WheelHandler { onWheel: e => page.contentY = Math.max(0, Math.min(Math.max(0, page.contentHeight - page.height), page.contentY - e.angleDelta.y / 2)) }
     Column {
         id: pageCol
-        x: sq.cx; y: 18; width: sq.cw
+        x: sq.cx; y: 18 + sq.topPad; width: sq.cw
         spacing: 14
         // header
         Item {
@@ -34,7 +36,7 @@ Item {
                     UiText { text: "Bar, dock and notifications"; fam: "n"; w: 800; px: 10.5; color: "#4A3F78" } }
             }
             Row {
-                anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right; y: sq.narrow ? -50 : (parent.height - height) / 2
                 spacing: 10
                 UiCandy {
                     anchors.verticalCenter: parent.verticalCenter
@@ -51,8 +53,8 @@ Item {
         SetSection {
             title: "Shell"; tagColor: Theme.pinkSoft; stripes: true
             Grid {
-                columns: 3; rowSpacing: 10; columnSpacing: 12
-                readonly property real tw: (sq.cw - 33 - 24) / 3
+                columns: sq.narrow ? 1 : 3; rowSpacing: 10; columnSpacing: 12
+                readonly property real tw: sq.narrow ? sq.cw - 33 : (sq.cw - 33 - 24) / 3
                 SetToggle { width: parent.tw; glyph: "bell"; title: "Notifications"; on: sq.prefs.notifications; onClicked: sq.prefs.flip("notifications") }
                 SetToggle { width: parent.tw; glyph: "moon"; title: "Night light"; on: sq.svc.nightLight; onClicked: sq.svc.toggle("night") }
                 SetToggle { width: parent.tw; glyph: "bolt"; title: "Keep awake"; on: sq.svc.keepAwake; onClicked: sq.svc.toggle("awake") }

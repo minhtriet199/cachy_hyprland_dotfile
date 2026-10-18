@@ -20,7 +20,20 @@ Item {
     Behavior on flatP { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
     property real texScale: big ? 4 : 2.2          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
-    readonly property bool wantLand: landScreens.indexOf(screen) >= 0
+    // orientation: "auto" = each screen's own (settings sideways, the rest upright); the ↻ button forces one until the phone closes
+    property string orient: "auto"
+    function landFor(scr) { return orient === "landscape" || (orient === "auto" && landScreens.indexOf(scr) >= 0) }
+    readonly property bool wantLand: landFor(screen)
+    readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "settings", "settingsQuick", "wallpapers",
+                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
+    readonly property var tallScreens: ["quick", "clipboard", "profile"]       // upright layouts that scroll on the short sideways phone
+    function rotate() {
+        if (!shown) return;
+        const was = wantLand;
+        orient = was ? "portrait" : "landscape";
+        transition(screen, !was, was);
+    }
+    Connections { target: stage.svc; function onPhoneRotate() { stage.rotate() } }
     signal closed()
     signal soon(string what)
 
@@ -36,16 +49,19 @@ Item {
 
     function open(scr) {
         if (scr === "search") scr = "home";           // search lives on the home screen now
-        const land = landScreens.indexOf(scr) >= 0;
+        transition(scr, landFor(scr), shown && wantLand);
+    }
+    // was = the sideways phone is the one showing now; land = it should be after this
+    function transition(scr, land, was) {
         if (land) {
-            if (rise > 0.5 && !wantLand && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
-            else if (rise > 0.5 && !wantLand) { viaTurn = true; setScreen(scr); toLand.restart() }
-            else if (wantLand && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
+            if (rise > 0.5 && !was && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
+            else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); toLand.restart() }
+            else if (was && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
             else { viaTurn = false; setScreen(scr); slideAnim.from = slideIn; slideAnim.to = 1; slideAnim.restart() }
         } else {
-            if (wantLand && !viaTurn && hand > 0.5 && turn < 0.01 && rise > 0.5) { setScreen(scr); fadeAnim.to = 0; fadeAnim.restart() }   // big cross-fade back
-            else if (wantLand && viaTurn && hand > 0.5) { setScreen(scr); toPort.restart() }
-            else if (wantLand && slideIn > 0.5) { slideAnim.from = slideIn; slideAnim.to = 0; slideAnim.restart(); setScreen(scr); riseUp() }
+            if (was && !viaTurn && hand > 0.5 && turn < 0.01 && rise > 0.5) { setScreen(scr); fadeAnim.to = 0; fadeAnim.restart() }   // big cross-fade back
+            else if (was && viaTurn && hand > 0.5) { setScreen(scr); toPort.restart() }
+            else if (was && slideIn > 0.5) { slideAnim.from = slideIn; slideAnim.to = 0; slideAnim.restart(); setScreen(scr); riseUp() }
             else { setScreen(scr); if (rise < 0.99 || !shown) riseUp() }
         }
         shown = true;
@@ -107,7 +123,7 @@ Item {
             NumberAnimation { target: stage; property: "slideIn"; to: 0; duration: 380; easing.type: Easing.InBack }
             NumberAnimation { target: stage; property: "hand"; to: 0; duration: 260 }
         }
-        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.screen = "home"; stage.closed() } }
+        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "auto"; stage.screen = "home"; stage.closed() } }
     }
 
     // ── scrim (click outside = close) ──
@@ -153,7 +169,7 @@ Item {
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
             Repeater {
-                model: ["home", "search", "quick", "islands", "clipboard", "profile"]
+                model: stage.allScreens
                 delegate: Loader {
                     id: ld
                     required property string modelData
@@ -166,7 +182,7 @@ Item {
                     enabled: stage.screen === modelData
                     x: stage.screen === modelData && stage.swapT < 1 ? (1 - stage.swapT) * 28 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 28 * stage.navDir : 0)
                     focus: stage.screen === modelData
-                    sourceComponent: modelData === "home" ? cHome : modelData === "search" ? cSearch : modelData === "quick" ? cQuick : modelData === "clipboard" ? cClip : modelData === "profile" ? cProfile : cIslands
+                    sourceComponent: stage.compFor(modelData, false)
                     onCurChanged: if (cur && item && item.focusField) item.focusField()
                     onLoaded: if (cur && item.focusField) item.focusField()
                 }
@@ -186,7 +202,7 @@ Item {
                     id: navRow
                     anchors.centerIn: parent; spacing: 4
                     Repeater {
-                        model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["clipboard", "clipboard"], ["settings", "gear"], ["big", "full"]]
+                        model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["clipboard", "clipboard"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
                         delegate: UiCandy {
                             id: nb
                             required property var modelData
@@ -204,7 +220,7 @@ Item {
                             opacity: nb.t
                             width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
                             fill: cur ? Theme.gOn : "transparent"; pressable: true
-                            onClicked: modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                            onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
                                      : modelData[0] === "back" ? stage.back()
                                      : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
                             Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
@@ -234,7 +250,7 @@ Item {
             spacing: 8
             Repeater {
                 model: [["back", "back", "Back"], ["home", "home", "Home"], ["quick", "sliders", "Quick"], ["islands", "map", "Islands"],
-                        ["clipboard", "clipboard", "Clipboard"], ["settings", "gear", "Settings"], ["big", "full", "Big phone"]]
+                        ["clipboard", "clipboard", "Clipboard"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn sideways"], ["big", "full", "Big phone"]]
                 delegate: UiCandy {
                     id: rb
                     required property var modelData
@@ -244,7 +260,7 @@ Item {
                     property real t: 0
                     SequentialAnimation {
                         id: slide
-                        PauseAnimation { duration: rail.on ? rb.index * 45 : (6 - rb.index) * 35 }
+                        PauseAnimation { duration: rail.on ? rb.index * 45 : Math.max(0, 7 - rb.index) * 35 }
                         NumberAnimation { target: rb; property: "t"; to: rail.on ? 1 : 0; duration: rail.on ? 320 : 200; easing.type: rail.on ? Easing.OutBack : Easing.InCubic }
                     }
                     Connections { target: rail; function onOnChanged() { slide.restart() } }
@@ -255,7 +271,7 @@ Item {
                     enabled: rb.t > 0.9
                     width: 46; height: 46; bw: 2.5; ink: Theme.inkPhone; drop: cur ? 2 : 4; hi: 3
                     fill: cur ? Theme.gOn : modelData[0] === "back" ? Theme.gSun : Theme.paper; pressable: true
-                    onClicked: modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                    onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
                              : modelData[0] === "back" ? stage.back()
                              : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
                     Glyph { anchors.centerIn: parent; name: rb.modelData[1]; size: 19; stroke: rb.modelData[0] === "back" ? 3 : 2.5 }
@@ -297,7 +313,7 @@ Item {
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
             Repeater {
-                model: stage.landScreens
+                model: stage.allScreens
                 delegate: Loader {
                     required property string modelData
                     readonly property bool cur: stage.screen === modelData
@@ -308,7 +324,7 @@ Item {
                     visible: opacity > 0
                     enabled: cur
                     focus: cur
-                    sourceComponent: modelData === "settings" ? cSettings : modelData === "settingsQuick" ? cSettingsQuick : modelData === "wallpapers" ? cWallpapers : cSetPage
+                    sourceComponent: stage.compFor(modelData, true)
                 }
             }
         }
@@ -316,6 +332,18 @@ Item {
 
     // ── screens ──
     property string pendingQuery: ""
+    function compFor(n, land) {
+        if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : cProfileTall;
+        return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, profile: cProfile, settings: cSettings,
+                  settingsQuick: cSettingsQuick, wallpapers: cWallpapers })[n] || cSetPage;
+    }
+    // upright layouts inside a scroller for the short sideways phone
+    Component { id: cQuickTall; Flickable { clip: true; contentHeight: 844; boundsBehavior: Flickable.StopAtBounds
+        ScrQuick { width: parent.width; height: 844; focus: true; svc: stage.svc; onGo: s => s === "quickedit" ? stage.soon("Edit buttons") : stage.go(s) } } }
+    Component { id: cClipTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
+        ScrClipboard { width: parent.width; height: 760; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
+    Component { id: cProfileTall; Flickable { clip: true; contentHeight: 820; boundsBehavior: Flickable.StopAtBounds
+        ScrProfile { width: parent.width; height: 820; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
     Component { id: cHome; ScrHome { svc: stage.svc; onGo: s => stage.go(s); onLaunch: a => { stage.svc.launch(a); stage.close() }
         onTyped: t => { stage.pendingQuery = t; stage.open("search") } } }
     Component { id: cSearch; ScrSearch { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close()

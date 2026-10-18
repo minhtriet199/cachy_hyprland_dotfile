@@ -491,6 +491,8 @@ Singleton {
     // ── power menu ──
     property bool hasLocker: true                   // Isla has its own lock screen
     signal lockRequested()
+    signal phoneRotate()
+    function rotatePhone() { phoneRotate() }
     // Wallpapers → Paste image (clipboard picture or a copied image link)
     property string pasteMsg: ""
     signal pastedWallpaper(string path)

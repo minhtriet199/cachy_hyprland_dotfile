@@ -13,8 +13,10 @@ Item {
     readonly property var day: days.length ? days[dayIdx] : null
     readonly property var app: day && appId ? day.apps.find(a => a.id === appId) || null : null
     readonly property var hours: app ? app.hourly : (day ? day.hourly : [])
-    readonly property real colW: (width - 20) / 2
-    implicitHeight: 300
+    readonly property bool narrow: width < 560
+    readonly property real colW: narrow ? width : (width - 20) / 2
+    readonly property real leftH: 330
+    implicitHeight: narrow ? 330 + 20 + 40 + (day ? day.apps.length * 38 : 0) : 300
     Component.onCompleted: svc.loadScreenTime()
     Timer { interval: 60000; running: tp.visible; repeat: true; onTriggered: tp.svc.loadScreenTime() }
     function hm(sec) { const h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60); return h ? h + " h " + m + " m" : m + " min" }
@@ -82,7 +84,7 @@ Item {
     // ── right: apps of the picked day ──
     Column {
         visible: !!tp.day
-        x: tp.colW + 20; width: tp.colW; spacing: 4
+        x: tp.narrow ? 0 : tp.colW + 20; y: tp.narrow ? tp.leftH + 20 : 0; width: tp.colW; spacing: 4
         UiText { text: "TOP APPS · CLICK ONE"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 16 }
         Repeater {
             model: tp.day ? tp.day.apps : []

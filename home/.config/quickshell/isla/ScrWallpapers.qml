@@ -18,8 +18,10 @@ Item {
     signal soon(string what)
     readonly property color ink: Theme.inkPhone
     readonly property color accent: Theme.seaSoft
-    readonly property real cx: 54
-    readonly property real cw: width - 54 - 24
+    readonly property bool narrow: width < 600                     // shown on the upright phone
+    readonly property real cx: narrow ? 18 : 54
+    readonly property real cw: width - cx - (narrow ? 18 : 24)
+    readonly property real topPad: narrow ? 40 : 0                     // below the punch hole
     FolderListModel {
         id: files
         folder: "file://" + wp.prefs.wallDir
@@ -44,12 +46,12 @@ Item {
     onNChanged: if (i >= n) i = 0
 
     // header
-    Row {
-        x: wp.cx; y: 16; width: wp.cw; height: 36
+    Flow {
+        x: wp.cx; y: 16 + wp.topPad; width: wp.cw
         spacing: 10
         // back button + title (same as the other Settings pages)
         UiCandy {
-            anchors.verticalCenter: parent.verticalCenter
+            
             width: wtc.implicitWidth + 48 + 14; height: 40; radius: 14; ink: wp.ink; drop: 3; hi: 0; fill: wp.accent; pressable: true
             onClicked: wp.back()
             Rectangle { x: 8; anchors.verticalCenter: parent.verticalCenter; width: 28; height: 28; radius: 10; color: wp.ink
@@ -60,7 +62,7 @@ Item {
                 UiText { text: "Spin the string"; fam: "n"; w: 800; px: 10.5; color: wp.ink; opacity: 0.8 } }
         }
         UiCandy {
-            anchors.verticalCenter: parent.verticalCenter
+            
             width: tabsRow.implicitWidth + 13; height: 34; radius: 12; ink: wp.ink; drop: 0; hi: 0
             Row { id: tabsRow; anchors.centerIn: parent; spacing: 4
                 Repeater { model: ["Desktop", "Phone", "Lockscreen"]
@@ -71,10 +73,10 @@ Item {
                         UiText { id: tl; anchors.centerIn: parent; text: modelData; px: 12; w: parent.on ? 700 : 600 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: wp.target = modelData } } } }
         }
-        UiText { anchors.verticalCenter: parent.verticalCenter; text: "Setting the " + wp.target.toLowerCase() + " · " + wp.n + " wallpapers"; fam: "n"; w: 800; px: 11; color: Theme.textSoft }
+        UiText { visible: !wp.narrow; text: "Setting the " + wp.target.toLowerCase() + " · " + wp.n + " wallpapers"; fam: "n"; w: 800; px: 11; color: Theme.textSoft }
     }
     Row {
-        anchors.right: parent.right; anchors.rightMargin: 24; y: 16; height: 36
+        anchors.right: parent.right; anchors.rightMargin: wp.narrow ? 18 : 24; y: wp.narrow ? 16 + wp.topPad + 92 : 16; height: 36
         spacing: 10
         UiCandy {
             anchors.verticalCenter: parent.verticalCenter
@@ -113,7 +115,7 @@ Item {
                 }
             }
         }
-        UiCandy { anchors.verticalCenter: parent.verticalCenter; width: cl.implicitWidth + 25; height: 34; radius: 11; ink: wp.ink; drop: 0; hi: 0
+        UiCandy { width: cl.implicitWidth + 25; height: 34; radius: 11; ink: wp.ink; drop: 0; hi: 0
             UiText { id: cl; anchors.centerIn: parent; text: wp.svc.timeText; px: 13; w: 700 } }
 
     }
@@ -121,7 +123,9 @@ Item {
     // string + photos
     Item {
         id: stage
-        x: wp.cx; y: 16 + 36 + 4; width: wp.cw; height: wp.height - y - 14 - 87 - 4
+        // drawn for an 800-wide sideways screen; on the upright phone it's scaled down to fit
+        scale: Math.min(1, wp.cw / 800); transformOrigin: Item.TopLeft
+        x: wp.cx; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: wp.cw / scale; height: (wp.height - y - 14 - 87 - 4) / scale
         Canvas {
             x: 10; y: 4; width: 780; height: 80
             onPaint: { const g = getContext("2d"); g.reset(); g.strokeStyle = wp.ink; g.lineWidth = 4; g.lineCap = "round"
@@ -172,16 +176,20 @@ Item {
 
     // caption + actions
     Column {
-        anchors.horizontalCenter: stage.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 14
+        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: wp.narrow ? 70 : 14
         spacing: 6
         UiStrokeText { anchors.horizontalCenter: parent.horizontalCenter; text: wp.cur ? wp.cur.name : "—"; px: 18; strokeW: 5; strokeColor: wp.ink }
         UiCandy { anchors.horizontalCenter: parent.horizontalCenter; width: il.implicitWidth + 24; height: 19; bw: 2; ink: wp.ink; drop: 0; hi: 0
             UiText { id: il; anchors.centerIn: parent; text: (wp.n ? wp.i + 1 : 0) + " / " + wp.n; px: 11; w: 700 } }
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
+            anchors.horizontalCenter: parent.horizontalCenter; spacing: 10; height: 40
             WpButton { text: "‹ Previous"; h: 30; onClicked: wp.step(-1) }
             WpButton { text: wp.applied ? "✓ Applied" : "Set as " + wp.target; h: 36; bold: true; drop: 3; fill: wp.applied ? wp.accent : Theme.paper; onClicked: wp.apply() }
             WpButton { text: "Next ›"; h: 30; onClicked: wp.step(1) }
+            WpButton { visible: !wp.narrow; text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
+        }
+        Row {   // upright phone: paste goes on its own line
+            visible: wp.narrow; anchors.horizontalCenter: parent.horizontalCenter; height: 34
             WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
         }
     }
