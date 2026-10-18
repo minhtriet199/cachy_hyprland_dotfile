@@ -62,6 +62,10 @@ Item {
             wp.vel = wp.vel * 0.6 + v * 0.4; wp.swing = Math.max(-16, Math.min(16, -wp.vel * 7)) } }
     function apply() { if (cur) prefs.set(targetKey, cur.path) }
     function applyTo(key) { if (cur) prefs.set(key, cur.path) }
+    // Preview: show the picture on the desktop (the phone fades away); ← → keep browsing, Esc / Back ends it
+    readonly property bool previewing: !!svc && svc.wallPreview !== ""
+    function preview() { if (cur) svc.wallPreview = cur.path }
+    onCurChanged: if (previewing && cur) svc.wallPreview = cur.path
     // washi tape colours for the strips that hold each photo
     readonly property var tapes: [Theme.pinkSoft, Theme.seaSoft, Theme.sun, Theme.lilacSoft, Theme.peach]
 
@@ -296,6 +300,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 8; height: 34
             WpButton { readonly property bool done: !!wp.cur && wp.prefs.phoneBg === wp.cur.path
                 text: (done ? "✓ " : "📱 ") + "Phone"; h: 28; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo("phoneBg") }
+            WpButton { text: "👁 Preview"; h: 28; onClicked: wp.preview() }
             WpButton { text: "🗑"; h: 28; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
             WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 28; onClicked: wp.svc.pasteWallpaper() }
         }
@@ -331,5 +336,6 @@ Item {
     Keys.onLeftPressed: step(-1)
     Keys.onRightPressed: step(1)
     Keys.onReturnPressed: apply()
-    Keys.onEscapePressed: close()
+    Keys.onEscapePressed: previewing ? (svc.wallPreview = "") : close()
+    Keys.onSpacePressed: previewing ? (svc.wallPreview = "") : preview()      // Space = preview on / off
 }

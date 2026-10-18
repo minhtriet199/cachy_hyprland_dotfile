@@ -177,7 +177,7 @@ ShellRoot {
                     WlrLayershell.layer: WlrLayer.Background
                     WlrLayershell.namespace: "isla-wallpaper"
                     color: "#D3EAF0"
-                    Wallpaper { anchors.fill: parent; path: Prefs.wallpaper }
+                    Wallpaper { anchors.fill: parent; path: Services.wallPreview || Prefs.wallpaper }
                 }
 
                 // ── top bar ──

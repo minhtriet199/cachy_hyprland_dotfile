@@ -188,7 +188,8 @@ Singleton {
     property var warp: ({ connected: false })
     property bool imeVi: false
     property bool dnd: false
-    property bool airplane: false                  // every radio (Wi-Fi + Bluetooth) blocked (rfkill)
+    property bool airplane: false
+    property string wallPreview: ""               // wallpaper picker "Preview": shown on the desktop until Set / Back                  // every radio (Wi-Fi + Bluetooth) blocked (rfkill)
     // Do not disturb: by hand, for a while (dndFor), or by itself while a game is focused (Prefs.dndGaming)
     readonly property bool dndOn: dnd || (Prefs.dndGaming && gaming)
     property real dndUntil: 0

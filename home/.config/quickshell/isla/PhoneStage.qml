@@ -20,6 +20,10 @@ Item {
     Behavior on flatP { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
     // light mode (side button ⚡, or on by itself while a game has focus): the phone face is drawn at a lower
     // sharpness, animations are about half as long and the wobble is skipped — less GPU work next to the game
+    // wallpaper preview (Wallpapers → Preview): the phone fades away, the desktop shows the picture, a small bar floats
+    readonly property bool previewing: !!svc && svc.wallPreview !== ""
+    property real pv: previewing ? 1 : 0
+    Behavior on pv { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
     readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.gaming)
     readonly property real dur: lite ? 0.45 : 1
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
@@ -133,7 +137,7 @@ Item {
 
     // ── scrim (click outside = close) ──
     Rectangle {
-        anchors.fill: parent; color: Theme.scrim; opacity: Math.min(1, stage.visibleAmount)
+        anchors.fill: parent; color: Theme.scrim; opacity: Math.min(1, stage.visibleAmount) * (1 - stage.pv)
         MouseArea { anchors.fill: parent; enabled: stage.shown; onClicked: stage.close() }
     }
 
@@ -150,7 +154,7 @@ Item {
         readonly property real smallScale: 1.1
         scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844)
         visible: stage.r > 0.001 && stage.hand < 1
-        opacity: 1 - stage.hand
+        opacity: (1 - stage.hand) * (1 - stage.pv)
         readonly property real piv: 422 * (1 - stage.lk)
         readonly property var inner: M.about(195, 422, M.chain(
             M.T(0, (1 - stage.r) * 1150), M.T(51 * stage.lk, (-343.5 - (stage.height - 1080) / 2) * stage.lk + piv)   /* lands exactly on the sideways phone at any shell size */, M.S(1 + 0.213 * stage.lk),
@@ -249,7 +253,7 @@ Item {
         readonly property real ang: Math.atan2(edgeBot.x - edgeTop.x, edgeBot.y - edgeTop.y) * 180 / Math.PI
         readonly property bool on: stage.shown && !stage.big && !stage.wantLand && stage.r > 0.6 && stage.hand < 0.5
         visible: pHolder.visible
-        opacity: 1 - stage.hand
+        opacity: (1 - stage.hand) * (1 - stage.pv)
         x: edgeTop.x + 21; y: edgeTop.y              // a little air past the side keys
         rotation: -ang; transformOrigin: Item.TopLeft
         Column {
@@ -302,7 +306,7 @@ Item {
         readonly property real baseScale: 1.12                     // small mode: a little larger than the design
         scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
         visible: stage.hand > 0.001 || stage.slideIn > 0.001
-        opacity: Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
+        opacity: Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5)) * (1 - stage.pv)
         readonly property var inner: M.about(460, 220, stage.hand > 0.001
             ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.flat)), M.Rx(-24 * (1 - stage.flat)), M.Rz(-3 * (1 - stage.flat)))
             : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
@@ -416,7 +420,7 @@ Item {
         else return;
         e.accepted = true;
     }
-    onShownChanged: if (!shown) helpOn = false
+    onShownChanged: if (!shown) { helpOn = false; if (svc) svc.wallPreview = "" }   // closing the phone also ends a wallpaper preview
 
     // F1: the key list, on top of everything
     UiCandy {
@@ -443,4 +447,31 @@ Item {
         }
     }
     MouseArea { anchors.fill: parent; z: 1000; enabled: stage.shown; acceptedButtons: Qt.BackButton; onClicked: stage.back() }
+
+    // wallpaper preview bar: the picture's name, Set as Desktop / Lockscreen, Back (← → still browse)
+    UiCandy {
+        visible: stage.pv > 0.01; opacity: stage.pv; z: 1001
+        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 40 + (1 - stage.pv) * -30
+        width: pvRow.implicitWidth + 28; height: 64; radius: 24; bw: 3; drop: 5; hi: 0; ink: Theme.inkPhone; fill: Theme.cream
+        Row {
+            id: pvRow; anchors.centerIn: parent; spacing: 10
+            Column { anchors.verticalCenter: parent.verticalCenter; width: 200
+                UiText { width: parent.width; elide: Text.ElideMiddle; text: stage.svc ? stage.svc.wallPreview.split("/").pop() : ""; px: 13; w: 700 }
+                UiText { text: "Preview · ← → next picture · Esc back"; fam: "n"; px: 10; w: 800; color: Theme.textSoft } }
+            Repeater {
+                model: [["wallpaper", "🖥  Set as Desktop"], ["lockWallpaper", "🔒  Lockscreen"]]
+                delegate: UiCandy {
+                    required property var modelData
+                    readonly property bool done: !!stage.svc && stage.prefs[modelData[0]] === stage.svc.wallPreview
+                    anchors.verticalCenter: parent.verticalCenter; width: pt.implicitWidth + 26; height: 38; radius: 13; bw: 2.5; drop: 3; hi: 0
+                    fill: done ? Theme.gOn : Theme.paper; pressable: true
+                    onClicked: stage.prefs.set(modelData[0], stage.svc.wallPreview)
+                    UiText { id: pt; anchors.centerIn: parent; text: (parent.done ? "✓ " : "") + modelData[1]; px: 13; w: 700 }
+                }
+            }
+            UiCandy { anchors.verticalCenter: parent.verticalCenter; width: bt.implicitWidth + 26; height: 38; radius: 13; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
+                onClicked: stage.svc.wallPreview = ""
+                UiText { id: bt; anchors.centerIn: parent; text: "Back"; px: 13; w: 700; color: "#FFFFFF" } }
+        }
+    }
 }
