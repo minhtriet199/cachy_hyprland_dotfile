@@ -16,7 +16,6 @@ Item {
     Component.onCompleted: svc.loadClips()
     // the screen stays loaded between openings → refresh every time it shows, and while open
     onVisibleChanged: { if (visible) { svc.loadClips(); sel = 0 } else { field.text = ""; _shown = "" } }   // search starts empty next time
-    Timer { interval: 1500; running: c.visible; repeat: true; onTriggered: c.svc.loadClips() }
     // the list refreshes every 1.5 s with new objects: only reload the preview when a different item is picked (else it flickers)
     property string _shown: ""
     onCurChanged: { const id = cur ? cur.id : ""; if (id !== _shown) { _shown = id; svc.clipPreview(cur) } }

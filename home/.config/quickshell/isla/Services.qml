@@ -508,6 +508,9 @@ Singleton {
         return Qt.formatDate(t, "d MMM") + " " + hm;
     }
     function loadClips() { if (!clipList.running) clipList.running = true }
+    // new copy → tools/clip-store.sh appends to cliptimes → reload the list (no polling)
+    FileView { path: Quickshell.env("HOME") + "/.cache/isla/cliptimes"; watchChanges: true; printErrors: false
+        onFileChanged: { reload(); s.loadClips() } }
     Process { id: clipAct; onExited: s.loadClips() }
     function clipCopy(c) { run(["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id]) }
     function clipDelete(c) { if (clipAct.running) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }

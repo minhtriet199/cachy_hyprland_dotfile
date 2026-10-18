@@ -1,9 +1,10 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 
-// Privacy & location page: what is using the mic / camera / screen right now (checked every 3 s, only
-// while this page is open — tools/inuse.py), and Location: weather for where you are or a city you type,
+// Privacy & location page: what is using the mic / camera / screen right now (tools/inuse.py, only while this
+// page is open: when PipeWire links change = an app starts/stops recording, plus every 10 s for the camera), and Location: weather for where you are or a city you type,
 // plus auto time zone. Location here = this connection's rough place (IP), no GPS.
 Item {
     id: pv
@@ -12,7 +13,12 @@ Item {
     property var use: ({ mic: [], camera: [], screen: [] })
     Process { id: useP; command: ["python3", Quickshell.shellDir + "/tools/inuse.py"]
         stdout: StdioCollector { onStreamFinished: { try { pv.use = JSON.parse(this.text) } catch (e) {} } } }
-    Timer { interval: 3000; repeat: true; triggeredOnStart: true; running: pv.visible; onTriggered: if (!useP.running) useP.running = true }
+    function check() { if (pv.visible && !useP.running) useP.running = true }
+    readonly property int pwLinks: Pipewire.linkGroups.values.length
+    onPwLinksChanged: check()
+    onVisibleChanged: check()
+    Component.onCompleted: check()
+    Timer { interval: 10000; repeat: true; running: pv.visible; onTriggered: pv.check() }   // camera has no event to listen to
 
     component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
     component InUse: UiCandy {
