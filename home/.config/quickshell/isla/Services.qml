@@ -754,6 +754,7 @@ Singleton {
         ["Mouse & touchpad", "settingsMouse", "crosshair", "#8E7BE6", "mouse touchpad trackpad speed sensitivity tap click scroll natural cursor size text size accessibility"],
         ["Apps", "settingsApps", "box", "#F7A982", "apps default browser open with files video music pdf startup autostart login"],
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
+        ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
         ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale"],
         ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],

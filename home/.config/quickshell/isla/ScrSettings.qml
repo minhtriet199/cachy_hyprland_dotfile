@@ -28,7 +28,8 @@ Item {
         ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"],
         ["13", "Mouse & touchpad", "Speed, tap, cursor size", "#8E7BE6", "crosshair", "settingsMouse"],
         ["14", "Apps", "Default apps, startup", "#F7A982", "box", "settingsApps"],
-        ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"]
+        ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"],
+        ["16", "Disk map", "What fills your drive", "#FFC23C", "chart", "settingsDiskMap"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

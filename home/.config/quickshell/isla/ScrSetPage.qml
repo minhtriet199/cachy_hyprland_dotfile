@@ -27,7 +27,8 @@ Item {
         timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf],
         mouse: ["Mouse & touchpad", "Speed, tap, cursor size", "crosshair", Theme.gLilac],
         apps: ["Apps", "Default apps, startup", "box", Theme.gPeach],
-        privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry]
+        privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry],
+        diskmap: ["Disk map", "What fills your drive", "chart", Theme.gSun]
     })[kind] || ["", "", "gear", Theme.gOn]
 
     // header
@@ -58,7 +59,7 @@ Item {
             focus: true
             width: fl.width
             height: item ? item.implicitHeight : 0
-            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy })[pg.kind] || cWifi
+            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap })[pg.kind] || cWifi
         }
     }
     Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
@@ -74,6 +75,7 @@ Item {
     Component { id: cmouse; MousePanel { svc: pg.svc } }
     Component { id: capps; AppsPanel { svc: pg.svc } }
     Component { id: cprivacy; PrivacyPanel { svc: pg.svc } }
+    Component { id: cdiskmap; DiskMapPanel { svc: pg.svc } }
 
     focus: true
     Keys.onEscapePressed: pg.close()
