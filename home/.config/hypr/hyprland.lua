@@ -2,6 +2,7 @@
 
 require("config.animations")
 require("config.autostart")
+require("config.startup_isla")  -- startup apps from Isla Settings → Apps
 require("config.colors")
 require("config.decorations")
 require("config.look")        -- Isla Settings → Windows (after decorations so it wins)

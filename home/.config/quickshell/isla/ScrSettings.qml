@@ -25,7 +25,10 @@ Item {
         ["09", "Screen time", "Hours per app", "#2F9EAB", "chart", "settingsTime"],
         ["10", "System", "Charge limit, firewall, about", "#5E7A84", "gear", "settingsSystem"],
         ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"],
-        ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"]
+        ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"],
+        ["13", "Mouse & touchpad", "Speed, tap, cursor size", "#8E7BE6", "crosshair", "settingsMouse"],
+        ["14", "Apps", "Default apps, startup", "#F7A982", "box", "settingsApps"],
+        ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

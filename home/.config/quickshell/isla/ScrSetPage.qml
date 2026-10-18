@@ -24,7 +24,10 @@ Item {
         time: ["Screen time", "How long you used each app", "chart", Theme.gOn],
         system: ["System", "Charge limit, firewall, about", "gear", Theme.gChip],
         windows: ["Windows", "See-through, borders, corners, gaps", "sliders", Theme.gSea],
-        timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf]
+        timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf],
+        mouse: ["Mouse & touchpad", "Speed, tap, cursor size", "crosshair", Theme.gLilac],
+        apps: ["Apps", "Default apps, startup", "box", Theme.gPeach],
+        privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry]
     })[kind] || ["", "", "gear", Theme.gOn]
 
     // header
@@ -55,7 +58,7 @@ Item {
             focus: true
             width: fl.width
             height: item ? item.implicitHeight : 0
-            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang })[pg.kind] || cWifi
+            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy })[pg.kind] || cWifi
         }
     }
     Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
@@ -68,6 +71,9 @@ Item {
     Component { id: cSystem; SystemPanel { svc: pg.svc } }
     Component { id: cWindows; WindowsPanel { svc: pg.svc } }
     Component { id: ctimelang; TimeLangPanel { svc: pg.svc } }
+    Component { id: cmouse; MousePanel { svc: pg.svc } }
+    Component { id: capps; AppsPanel { svc: pg.svc } }
+    Component { id: cprivacy; PrivacyPanel { svc: pg.svc } }
 
     focus: true
     Keys.onEscapePressed: pg.close()
