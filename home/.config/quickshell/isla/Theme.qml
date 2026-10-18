@@ -52,7 +52,29 @@ Singleton {
             sea: "#7C83F0", seaDeep: "#5A61D0", seaSoft: "#C9C5F7",
             phoneA: "#8F92C9", phoneB: "#3C3F7A", phoneKey: "#A3A6D8", phoneKeyHi: "#C9C5F7", phoneWallA: "#6669A8", phoneWallB: "#33366C", phoneBack: "#1F2148" }
     })
-    readonly property var pal: palettes[Prefs.theme] || palettes.isla
+    // more themes made from one hue (0…1); sat 0 = greys. "custom" follows the hue slider in Settings → Shell → Look
+    function makePalette(name, h, sat) {
+        const c = (dh, s, l) => Qt.hsla(((h + dh) % 1 + 1) % 1, s * sat, l, 1);
+        return { name: name, hue: h, ink: c(0, .35, .30), inkPhone: c(0, .38, .24), inkClock: c(0, .36, .27),
+            text: c(0, .30, .28), textSoft: c(0, .22, .52), textMuted: c(0, .25, .42), textDeep: c(0, .38, .22),
+            cream: c(0, .9, .97), paper: c(0, 1, .985), sand: c(0, .5, .88), screenDot: c(0, .45, .86),
+            gSea: [c(0, .8, .94), c(0, .65, .86)], gChip: [c(0, .8, .94), c(0, .65, .86)], gOn: [c(0, .75, .92), c(0, .6, .80)],
+            gActive: [c(.04, .6, .80), c(.04, .55, .68)], gTab: [c(.04, .6, .80), c(.04, .55, .70)], gLilacSoft: [c(.04, .6, .80), c(.04, .55, .68)],
+            gPhone: [c(0, .55, .76), c(0, .5, .62)], gSettings: [c(0, .7, .92), c(0, .6, .80)], gDock: [c(0, 1, .985), c(0, .8, .93)],
+            sea: c(0, .55, .62), seaDeep: c(0, .55, .48), seaSoft: c(0, .6, .80), lilac: c(.05, .6, .72), lilacSoft: c(.05, .6, .78), purple: c(.05, .55, .62),
+            phoneA: c(0, .3, .56), phoneB: c(0, .35, .28), phoneKey: c(0, .32, .64), phoneKeyHi: c(0, .6, .80), phoneWallA: c(0, .3, .42), phoneWallB: c(0, .35, .26), phoneBack: c(0, .4, .15) };
+    }
+    readonly property var madePalettes: {
+        const o = {};
+        for (const [k, n, h] of [["cherry", "Cherry", .98], ["coral", "Coral", .03], ["peach", "Peach", .07], ["lemon", "Lemon", .14], ["matcha", "Matcha", .25],
+                                 ["forest", "Forest", .36], ["teal", "Teal", .47], ["sky", "Sky", .56], ["ocean", "Ocean", .61], ["indigo", "Indigo", .67],
+                                 ["grape", "Grape", .77], ["rose", "Rose", .92]]) o[k] = makePalette(n, h, 1);
+        o.mono = makePalette("Mono", .55, .12);
+        o.custom = makePalette("Custom", Prefs.themeHue, 1);
+        return o;
+    }
+    readonly property var allPalettes: Object.assign({}, palettes, madePalettes)
+    readonly property var pal: allPalettes[Prefs.theme] || palettes.isla
     function v(k, d) { return pal[k] !== undefined ? pal[k] : d }
     // box style: "candy" (outline + solid shadow) or "ring" (thick outline, a gap, then the filled pill)
     readonly property bool ring: Prefs.boxStyle === "ring"

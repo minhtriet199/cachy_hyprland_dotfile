@@ -15,11 +15,11 @@ Item {
     readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     Flickable {
         id: page
-        anchors.fill: parent; anchors.bottomMargin: (sq.svc && sq.svc.phoneBig && sq.narrow ? 64 : 0); contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
+        anchors.fill: parent; anchors.topMargin: sq.topPad; anchors.bottomMargin: (sq.svc && sq.svc.phoneBig && sq.narrow ? 64 : 0);   // starts below the punch hole contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
         WheelHandler { onWheel: e => page.contentY = Math.max(0, Math.min(Math.max(0, page.contentHeight - page.height), page.contentY - e.angleDelta.y / 2)) }
     Column {
         id: pageCol
-        x: sq.cx; y: 18 + sq.topPad; width: sq.cw
+        x: sq.cx; y: 18; width: sq.cw
         spacing: 14
         // header
         Item {
@@ -98,13 +98,13 @@ Item {
                 Flow {
                     width: sq.cw - 40; spacing: 10
                     Repeater {
-                        model: Object.keys(Theme.palettes)
+                        model: Object.keys(Theme.allPalettes)
                         delegate: UiCandy {
                             id: sw
                             required property string modelData
-                            readonly property var p: Theme.palettes[modelData]
+                            readonly property var p: Theme.allPalettes[modelData]
                             readonly property bool on: (sq.prefs.theme || "isla") === modelData
-                            width: 104; height: 58; radius: 16; bw: on ? 3 : 2.5; drop: on ? 0 : 3; hi: 0
+                            width: 92; height: 54; radius: 15; bw: on ? 3 : 2.5; drop: on ? 0 : 3; hi: 0
                             ink: p.ink || "#3D5A66"; fill: p.gOn || ["#D8F1F4", "#A9DDE4"]; pressable: true
                             onClicked: sq.prefs.set("theme", modelData)
                             Row { x: 10; y: 9; spacing: 4
@@ -113,6 +113,25 @@ Item {
                             UiText { x: 10; y: 30; text: (sw.on ? "✓ " : "") + sw.p.name; px: 13; w: 700; color: sw.p.textDeep || "#213F48" }
                         }
                     }
+                }
+                // Custom theme: pick any hue
+                Item {
+                    visible: sq.prefs.theme === "custom"
+                    width: sq.cw - 40; height: 34
+                    UiText { width: 70; height: 34; verticalAlignment: Text.AlignVCenter; text: "Colour"; px: 13; w: 700 }
+                    Rectangle {      // rainbow track under the slider
+                        x: 80; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 80; height: 12; radius: 6; border.width: 2; border.color: Theme.inkPhone
+                        gradient: Gradient { orientation: Gradient.Horizontal
+                            GradientStop { position: 0; color: Qt.hsla(0, .6, .7, 1) } GradientStop { position: .17; color: Qt.hsla(.17, .6, .7, 1) }
+                            GradientStop { position: .33; color: Qt.hsla(.33, .6, .7, 1) } GradientStop { position: .5; color: Qt.hsla(.5, .6, .7, 1) }
+                            GradientStop { position: .67; color: Qt.hsla(.67, .6, .7, 1) } GradientStop { position: .83; color: Qt.hsla(.83, .6, .7, 1) }
+                            GradientStop { position: 1; color: Qt.hsla(1, .6, .7, 1) } }
+                    }
+                    Rectangle { x: 80 + (parent.width - 80) * sq.prefs.themeHue - 9; anchors.verticalCenter: parent.verticalCenter; width: 18; height: 18; radius: 9
+                        color: Qt.hsla(sq.prefs.themeHue, .6, .7, 1); border.width: 2.5; border.color: Theme.inkPhone }
+                    MouseArea { x: 80; width: parent.width - 80; height: parent.height
+                        function pick(mx) { sq.prefs.themeHue = Math.round(Math.max(0, Math.min(1, mx / width)) * 200) / 200 }
+                        onPressed: m => pick(m.x); onPositionChanged: m => pick(m.x); onReleased: sq.prefs.save() }
                 }
                 SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring"]; current: sq.prefs.boxStyle === "ring" ? "Ring" : "Candy"
                     onPicked: v => sq.prefs.set("boxStyle", v === "Ring" ? "ring" : "candy") }

@@ -77,6 +77,7 @@ fcitx5-configtool
 fcitx5-gtk
 fcitx5-qt
 ffmpegthumbnailer
+ffmpegthumbs
 firefox
 firewall-config
 firewalld
@@ -107,6 +108,8 @@ inetutils
 iwd
 jfsutils
 kcalc
+kdegraphics-thumbnailers
+kimageformats
 kitty
 kvantum
 less
@@ -172,6 +175,7 @@ pv
 python
 python-defusedxml
 python-packaging
+qt6-imageformats
 quickshell
 realtime-privileges
 rebuild-detector
