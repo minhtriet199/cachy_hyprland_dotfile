@@ -24,7 +24,8 @@ Item {
         ["08", "Keyboard", "Shortcuts and keys", "#F7A982", "keyboard", "settingsKeys"],
         ["09", "Screen time", "Hours per app", "#2F9EAB", "chart", "settingsTime"],
         ["10", "System", "Charge limit, firewall, about", "#5E7A84", "gear", "settingsSystem"],
-        ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"]
+        ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"],
+        ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

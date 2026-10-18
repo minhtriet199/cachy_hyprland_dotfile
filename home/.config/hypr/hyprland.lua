@@ -8,6 +8,7 @@ require("config.look")        -- Isla Settings → Windows (after decorations so
 require("config.variables")
 require("config.environment")
 require("config.inputs")
+require("config.input_isla")   -- Isla Settings → Mouse & touchpad / keyboard layout (after inputs so it wins)
 require("config.binds")
 require("config.lid")         -- lid switch → Isla (Settings → Power)
 require("config.misc")

@@ -21,7 +21,13 @@ Singleton {
     property var idleLock: [15, 5]
     property var idleScreen: [10, 3]
     property var idleSleep: [0, 15]
-    property var lidClose: ["sleep", "sleep"]     // plugged in, on battery: sleep / screen / lock / nothing
+    property var lidClose: ["sleep", "sleep"]
+    property bool h24: false                    // 24-hour clock
+    property bool location: true                // weather / time zone may use this connection's location (IP)
+    property bool weatherAuto: true             // weather for where you are (needs location) instead of the city below
+    property string city: "Ho Chi Minh City"    // weather city when not automatic
+    property bool autoTz: false                 // set the time zone from your location when the network changes
+    property bool dndGaming: true               // no pop-ups while a game is focused     // plugged in, on battery: sleep / screen / lock / nothing
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
@@ -32,7 +38,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }

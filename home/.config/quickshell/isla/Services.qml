@@ -9,6 +9,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Bluetooth
 import Quickshell.Services.Notifications
 import Quickshell.Services.SystemTray
+import Quickshell.Services.Polkit
 
 // ─────────────────────────────────────────────────────────────
 //  Isla system data + actions (CachyOS · Hyprland).
@@ -18,8 +19,10 @@ Singleton {
     id: s
 
     // ═════════════ YOUR SETTINGS ═════════════
-    property string city: "Ho+Chi+Minh+City"            // weather (wttr.in)
-    property bool h24: false                            // 24-hour clock
+    // weather place (wttr.in): "" = where this connection is (Settings → Privacy & location)
+    readonly property string city: Prefs.location && Prefs.weatherAuto ? "" : encodeURIComponent(Prefs.city.trim()).replace(/%20/g, "+")
+    onCityChanged: refreshWeather()
+    readonly property bool h24: Prefs.h24                // 24-hour clock (Settings → Time & language)
     property string mainMonitor: "HDMI-A-1"             // gets the big clock + notification bubbles
     property real dockSize: 0.75                        // dock size (1 = original, 0.75 = smaller)
     // Optional nicer names + workspace numbering per monitor (base 10 = workspaces 11–19 shown as 1–9)
@@ -180,6 +183,13 @@ Singleton {
     property var warp: ({ connected: false })
     property bool imeVi: false
     property bool dnd: false
+    // Do not disturb: by hand, for a while (dndFor), or by itself while a game is focused (Prefs.dndGaming)
+    readonly property bool dndOn: dnd || (Prefs.dndGaming && gaming)
+    property real dndUntil: 0
+    function dndFor(mins) { dnd = true; dndUntil = Date.now() + mins * 60000; dndTimer.interval = mins * 60000; dndTimer.restart() }
+    function dndTomorrow() { const t = new Date(); t.setDate(t.getDate() + (t.getHours() >= 7 ? 1 : 0)); t.setHours(7, 0, 0, 0); dndFor((t - Date.now()) / 60000) }
+    onDndChanged: if (!dnd) { dndTimer.stop(); dndUntil = 0 }
+    Timer { id: dndTimer; onTriggered: s.dnd = false }
     property bool nightLight: false
     property bool keepAwake: false
     property bool gameMode: false
@@ -309,6 +319,20 @@ Singleton {
         onExited: code => { const cancelled = s._wifiCancelled; s._wifiCancelled = false; s.wifiBusy = false
             s.wifiError = code === 0 || cancelled ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120)
             s.wifiErrFor = code === 0 || cancelled ? "" : s.wifiTarget; s.wifiTarget = ""; s.wifiScan(); statusSoon.restart() } }
+    // auto time zone (Settings → Time & language): after start and when the Wi-Fi network changes,
+    // look up this connection's time zone and switch if it differs (asks for the password if needed)
+    readonly property string _ssid: wifi && wifi.ssid ? wifi.ssid : ""
+    on_SsidChanged: if (Prefs.autoTz && Prefs.location) autoTzT.restart()
+    Timer { id: autoTzT; interval: 15000; running: Prefs.autoTz && Prefs.location; onTriggered: s.checkTimeZone() }
+    function checkTimeZone() {
+        run(["sh", "-c", "tz=$(python3 \"$0\" autotz); cur=$(timedatectl show -p Timezone --value); [ -n \"$tz\" ] && [ \"$tz\" != \"$cur\" ] && timedatectl set-timezone \"$tz\"",
+             Quickshell.shellDir + "/tools/timelang.py"]);
+    }
+
+    // Isla is the polkit agent: system changes (time zone, auto time, region…) ask for the password in PolkitDialog
+    PolkitAgent { id: polkitAgent }
+    readonly property var authFlow: polkitAgent.isActive ? polkitAgent.flow : null
+
     // Bluetooth pairing agent (tools/bt-agent.py): a phone/PC asking to pair shows its code in the pair dialog.
     // btAsk = {id, kind: confirm|authorize|display, name, addr, key} or null
     property var btAsk: null
@@ -722,6 +746,7 @@ Singleton {
         ["Bluetooth", "settingsBt", "bluetooth", "#7C83F0", "bluetooth earbuds headphones controller pair"],
         ["Sound", "settingsSound", "volume", "#7CC47F", "sound audio volume speaker mic microphone output input mixer"],
         ["Power & battery", "settingsPower", "battery", "#FFC23C", "power battery brightness sleep turbo silent mode"],
+        ["Time & language", "settingsTimeLang", "globe", "#7CC47F", "time date clock timezone zone region language keyboard layout typing vietnamese 24-hour"],
         ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale"],
         ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
@@ -816,7 +841,7 @@ Singleton {
                 if (s.toast && s.toast.obj === n) s.toast = null;
                 s.toasts = s.toasts.filter(t => t.obj !== n); s.toastQueue = s.toastQueue.filter(t => t.obj !== n); s.pumpToasts();
             });
-            if (!s.dnd && Prefs.notifications) { s.toast = item; s.toastSerial++; s.pushToast(item) }
+            if (!s.dndOn && Prefs.notifications) { s.toast = item; s.toastSerial++; s.pushToast(item) }
         }
     }
     function activateNotification(item) {
