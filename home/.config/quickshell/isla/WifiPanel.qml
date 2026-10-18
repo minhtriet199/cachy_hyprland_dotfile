@@ -7,6 +7,7 @@ Item {
     property var svc
     property real listH: 260
     property string askFor: ""            // ssid waiting for a password
+    onAskForChanged: if (askFor) Qt.callLater(() => pw.forceActiveFocus())   // ready to type right away
     property string detail: ""            // ssid whose settings page is open ("" = the list)
     onVisibleChanged: if (!visible) detail = ""
     implicitHeight: detail ? det.implicitHeight : col.implicitHeight
@@ -42,7 +43,9 @@ Item {
                 onClicked: { pw.text = ""; w.askFor = "" }
                 Glyph { anchors.centerIn: parent; name: "close"; size: 11; stroke: 2.8 } }
             UiCandy {
-                x: 10; y: 34; width: parent.width - 20 - 82; height: 38; radius: 11; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                // thicker teal outline while you're typing in it
+                x: 10; y: 34; width: parent.width - 20 - 82; height: 38; radius: 11; bw: pw.activeFocus ? 3 : 2; drop: 0; hi: 0; fill: Theme.paper
+                ink: pw.activeFocus ? Theme.seaDeep : Theme.ink
                 TextInput {
                     id: pw
                     x: 10; width: parent.width - 20 - 28; anchors.verticalCenter: parent.verticalCenter
