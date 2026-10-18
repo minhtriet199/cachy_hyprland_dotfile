@@ -45,8 +45,8 @@ Item {
     // body (scrolls if it is taller than the screen)
     Flickable {
         id: fl
-        x: pg.cx; y: 18 + pg.topPad + 44 + 14; width: pg.cw; height: pg.height - y - 18 - (pg.svc && pg.svc.phoneBig && pg.narrow ? 52 : 0)
-        clip: true; contentHeight: body.height; boundsBehavior: Flickable.StopAtBounds
+        x: pg.cx; y: 18 + pg.topPad + 44 + 14; width: pg.cw; height: pg.height - y - 18 - (pg.svc && pg.svc.phoneBig && pg.narrow ? 64 : 0)
+        clip: true; contentHeight: body.height + 14; boundsBehavior: Flickable.StopAtBounds
         Loader {
             id: body
             focus: true

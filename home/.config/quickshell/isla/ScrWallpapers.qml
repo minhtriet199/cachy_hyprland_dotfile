@@ -176,7 +176,7 @@ Item {
 
     // caption + actions
     Column {
-        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: (wp.narrow ? 70 : 14) + (wp.svc && wp.svc.phoneBig && wp.narrow ? 52 : 0)
+        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: (wp.narrow ? 70 : 14) + (wp.svc && wp.svc.phoneBig && wp.narrow ? 64 : 0)
         spacing: 6
         UiStrokeText { anchors.horizontalCenter: parent.horizontalCenter; text: wp.cur ? wp.cur.name : "—"; px: 18; strokeW: 5; strokeColor: wp.ink }
         UiCandy { anchors.horizontalCenter: parent.horizontalCenter; width: il.implicitWidth + 24; height: 19; bw: 2; ink: wp.ink; drop: 0; hi: 0
