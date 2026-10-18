@@ -48,6 +48,19 @@ Item {
                 UiSwitch { on: !!b.ad && b.ad.enabled; onColor: Theme.sea; onToggled: if (b.ad) b.ad.enabled = !b.ad.enabled }
             }
         }
+        // visible = other devices (phone, another PC) can find this laptop when they scan
+        Item {
+            visible: !!b.ad && b.ad.enabled
+            width: parent.width; height: 36
+            Column {
+                anchors.verticalCenter: parent.verticalCenter; width: parent.width - visSw.width - 10
+                UiText { width: parent.width; text: "Visible to other devices"; px: 13; w: 700; height: 16 }
+                UiText { width: parent.width; text: b.ad && b.ad.discoverable ? "Others can find \"" + b.ad.name + "\"" : "Hidden · turn on to pair from your phone"
+                    fam: "n"; px: 10.5; w: 800; color: Theme.textSoft; height: 14 }
+            }
+            UiSwitch { id: visSw; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                on: !!b.ad && b.ad.discoverable; onColor: Theme.sea; onToggled: if (b.ad) b.ad.discoverable = !b.ad.discoverable }
+        }
         UiText { visible: !b.ad; width: parent.width; text: "No Bluetooth adapter found"; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
         ListView {
             id: list
