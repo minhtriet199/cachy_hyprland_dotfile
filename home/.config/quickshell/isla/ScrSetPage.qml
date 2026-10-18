@@ -22,7 +22,8 @@ Item {
         displays: ["Displays", "Layout, brightness, HDR, resolution", "monitor", Theme.gSettings],
         keys: ["Keyboard", "Click a shortcut to change it", "keyboard", Theme.gPeach],
         time: ["Screen time", "How long you used each app", "chart", Theme.gOn],
-        system: ["System", "Charge limit, firewall, about", "gear", Theme.gChip]
+        system: ["System", "Charge limit, firewall, about", "gear", Theme.gChip],
+        windows: ["Windows", "See-through, borders, corners, gaps", "sliders", Theme.gSea]
     })[kind] || ["", "", "gear", Theme.gOn]
 
     // header
@@ -53,7 +54,7 @@ Item {
             focus: true
             width: fl.width
             height: item ? item.implicitHeight : 0
-            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem })[pg.kind] || cWifi
+            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows })[pg.kind] || cWifi
         }
     }
     Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
@@ -64,6 +65,7 @@ Item {
     Component { id: cKeys; KeysPanel { svc: pg.svc; listH: fl.height - 46; focus: true } }
     Component { id: cTime; TimePanel { svc: pg.svc } }
     Component { id: cSystem; SystemPanel { svc: pg.svc } }
+    Component { id: cWindows; WindowsPanel { svc: pg.svc } }
 
     focus: true
     Keys.onEscapePressed: pg.close()

@@ -8,6 +8,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Bluetooth
 import Quickshell.Services.Notifications
+import Quickshell.Services.SystemTray
 
 // ─────────────────────────────────────────────────────────────
 //  Isla system data + actions (CachyOS · Hyprland).
@@ -173,7 +174,9 @@ Singleton {
 
     // ── status poll (every 4 s) ──
     property var wifi: ({ on: true, ssid: "" })
-    property var bluetooth: ({ on: false, devices: 0, name: "" })
+    // live from BlueZ (no bluetoothctl polling)
+    readonly property var bluetooth: { const a = Bluetooth.defaultAdapter; const c = a ? a.devices.values.filter(d => d.connected) : []
+        return { on: !!a && a.enabled, devices: c.length, name: c.length ? (c[0].name || c[0].address) : "" } }
     property var warp: ({ connected: false })
     property bool imeVi: false
     property bool dnd: false
@@ -196,15 +199,10 @@ Singleton {
     property var _net: null
     function speed(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + " MB/s" : (b > 1024 ? Math.round(b / 1024) + " KB/s" : Math.round(b) + " B/s") }
     Process { id: status; command: ["sh", "-c", [
-            "echo wifi=$(nmcli -t -f WIFI g 2>/dev/null)",
-            "echo ssid=$(nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep '^yes' | head -1 | cut -d: -f2-)",
-            "echo sig=$(nmcli -t -f ACTIVE,SIGNAL dev wifi 2>/dev/null | grep '^yes' | head -1 | cut -d: -f2)",
-            "echo nm=$(nmcli -t -f STATE g 2>/dev/null)",
-            "echo conn=$(nmcli -t -f CONNECTIVITY g 2>/dev/null)",
-            "echo bt=$(bluetoothctl show 2>/dev/null | grep -q 'Powered: yes' && echo on || echo off)",
-            "echo btname=$(bluetoothctl devices Connected 2>/dev/null | head -1 | cut -d' ' -f3-)",
+            // one nmcli for the general state, one for the network in use (SSID last: it may contain ":")
+            "g=$(nmcli -t -f WIFI,STATE,CONNECTIVITY g 2>/dev/null); echo wifi=${g%%:*}; g=${g#*:}; echo nm=${g%:*}; echo conn=${g##*:}",
+            "a=$(nmcli -t -f ACTIVE,SIGNAL,SSID dev wifi 2>/dev/null | grep -m1 '^yes'); a=${a#yes:}; echo sig=${a%%:*}; echo ssid=${a#*:}",
             "echo warp=$(warp-cli --accept-tos status 2>/dev/null | grep -q 'Status update: Connected' && echo on || echo off)",
-            "echo ime=$(fcitx5-remote 2>/dev/null)",
             "echo vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)",
             "echo mic=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null)",
             "echo bri=$(brightnessctl -m 2>/dev/null | cut -d, -f4 | tr -d %)",
@@ -213,9 +211,8 @@ Singleton {
             "echo ac=$(cat /sys/class/power_supply/A*/online 2>/dev/null | head -1)",
             "echo energy=$(cat /sys/class/power_supply/BAT*/energy_now /sys/class/power_supply/BAT*/energy_full /sys/class/power_supply/BAT*/energy_full_design /sys/class/power_supply/BAT*/power_now 2>/dev/null | tr '\\n' ' ')",
             "echo prof=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)",
-            "echo night=$(pgrep -x hyprsunset >/dev/null && echo on || echo off)",
-            "echo fx=$(pgrep -x easyeffects >/dev/null && echo on || echo off)",
-            "echo rec=$(pgrep -x wf-recorder >/dev/null && echo on || echo off)",
+            // one ps instead of three pgreps
+            "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects rec:wf-recorder; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
             "echo net=$(awk 'NR>2 && $1 !~ /lo:/ {r+=$2; t+=$10} END {print r\" \"t}' /proc/net/dev)"
         ].join("; ")]
         stdout: StdioCollector { onStreamFinished: {
@@ -223,9 +220,7 @@ Singleton {
             s.wifi = { on: v.wifi === "enabled", ssid: v.ssid || "" };
             s.wifiSignal = parseInt(v.sig) || 0;
             s.nmState = v.nm || ""; s.nmConn = v.conn || "";
-            s.bluetooth = { on: v.bt === "on", devices: v.btname ? 1 : 0, name: v.btname || "" };
             s.warp = { connected: v.warp === "on" };
-            s.imeVi = v.ime === "2";
             let m = /([\d.]+)/.exec(v.vol || ""); if (m) s.volume = parseFloat(m[1]); s.muted = (v.vol || "").includes("MUTED");
             m = /([\d.]+)/.exec(v.mic || ""); if (m) s.micVolume = parseFloat(m[1]); s.micOn = !(v.mic || "").includes("MUTED");
             if (v.bri) s.brightness = parseInt(v.bri) / 100;
@@ -247,9 +242,14 @@ Singleton {
     Timer { interval: 1000; repeat: true; running: s.wifiConnecting; onTriggered: if (!status.running) status.running = true }
 
     // EN/VI changes with Ctrl+Shift in fcitx5 — check it often so the bar follows quickly
+    // fcitx's tray icon changes with the input method (fcitx_bamboo = VI, input-keyboard = EN): follow it, no polling.
+    // If there's no fcitx tray icon, fall back to asking fcitx5-remote every 2 s.
+    readonly property var fcitxTray: SystemTray.items.values.find(i => i.id === "Fcitx") || null
+    readonly property string fcitxIcon: fcitxTray ? String(fcitxTray.icon) : ""
+    onFcitxIconChanged: if (fcitxIcon) imeVi = !fcitxIcon.includes("keyboard")
     Process { id: imeQuery; command: ["fcitx5-remote"]
         stdout: StdioCollector { onStreamFinished: { const v = this.text.trim(); if (v) s.imeVi = v === "2" } } }
-    Timer { interval: 300; running: true; repeat: true; onTriggered: if (!imeQuery.running) imeQuery.running = true }
+    Timer { interval: 2000; running: !s.fcitxTray; repeat: true; triggeredOnStart: true; onTriggered: if (!imeQuery.running) imeQuery.running = true }
 
     // ── Wi-Fi list (nmcli) ──
     property var wifiNets: []            // [{ ssid, signal, secure, active, known }] strongest first
@@ -680,6 +680,7 @@ Singleton {
         ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
         ["System", "settingsSystem", "gear", "#5E7A84", "system about charge limit firewall ssh"],
+        ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps"],
         ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition"],
         ["Wallpapers", "wallpapers", "wallpaper", "#A08AEA", "wallpaper background picture lockscreen phone"],
         ["Clipboard", "clipboard", "clipboard", "#FFC23C", "clipboard copy paste history"],

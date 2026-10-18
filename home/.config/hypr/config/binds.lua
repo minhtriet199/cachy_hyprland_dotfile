@@ -20,7 +20,7 @@ end)
 
 -- Windows
 hl.bind("SUPER + Escape", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle session"), { description = "Power menu" })
-hl.bind("SUPER + Q", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh settings-toggle"), { description = "Noctalia settings" })
+hl.bind("SUPER + Q", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh settings-toggle"), { description = "Isla settings" })
 hl.bind("SUPER + D", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh bar-toggle"), { description = "Show / hide top bar" })
 hl.bind("SUPER + W", hl.dsp.window.close(), { description = "Close window" })
 hl.bind("SUPER + A", hl.dsp.window.float({ action = "toggle" }), { description = "Toggle floating" })

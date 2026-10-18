@@ -23,7 +23,8 @@ Item {
         ["07", "Displays", "Layout, HDR, refresh", "#8E7BE6", "monitor", "settingsDisplays"],
         ["08", "Keyboard", "Shortcuts and keys", "#F7A982", "keyboard", "settingsKeys"],
         ["09", "Screen time", "Hours per app", "#2F9EAB", "chart", "settingsTime"],
-        ["10", "System", "Charge limit, firewall, about", "#5E7A84", "gear", "settingsSystem"]
+        ["10", "System", "Charge limit, firewall, about", "#5E7A84", "gear", "settingsSystem"],
+        ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

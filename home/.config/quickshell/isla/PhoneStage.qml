@@ -19,14 +19,14 @@ Item {
     property real flatP: big && (!wantLand || hand < 0.999) ? 1 : 0   // big portrait: centred, larger, upright; held while it fades out
     Behavior on flatP { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
     property real texScale: big ? 4 : 2.2          // phone face is drawn flat at this sharpness, then tilted
-    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
+    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
     // A fresh phone opens upright.
     property string orient: "portrait"
     function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
     readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "settings", "settingsQuick", "wallpapers",
-                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
+                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows"]
     readonly property var tallScreens: ["quick", "clipboard", "profile"]       // upright layouts that scroll on the short sideways phone
     function rotate() {
         if (!shown) return;
@@ -360,7 +360,7 @@ Item {
     Component { id: cSettingsQuick; ScrSettingsQuick { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     // Wi-Fi / Bluetooth / Sound / Power pages (kind comes from the screen name: settingsWifi → wifi)
     Component { id: cSetPage; ScrSetPage { svc: stage.svc; prefs: stage.prefs
-        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
+        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
         onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back() } }
     Component { id: cWallpapers; ScrWallpapers { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
 
