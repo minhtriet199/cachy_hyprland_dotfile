@@ -20,6 +20,12 @@ Item {
     onCurChanged: svc.clipPreview(cur)
     onQueryChanged: sel = 0
     function copy() { if (!cur) return; svc.clipCopy(cur); c.done() }
+    // typing while on the list goes to the search box (letters, numbers, Backspace)
+    Keys.onPressed: e => {
+        if (field.activeFocus || (e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) return;
+        if (e.key === Qt.Key_Backspace) { field.forceActiveFocus(); field.text = field.text.slice(0, -1); e.accepted = true }
+        else if (e.text.length === 1 && e.text > " ") { field.forceActiveFocus(); field.text += e.text; field.cursorPosition = field.text.length; e.accepted = true }
+    }
 
     Column {
         x: 18; y: 16; width: parent.width - 36
@@ -58,7 +64,7 @@ Item {
         // list
         ListView {
             id: lv
-            width: parent.width; height: 6 * 46 - 7
+            width: parent.width; height: 5 * 53 - 7
             clip: true; spacing: 7; boundsBehavior: Flickable.StopAtBounds
             topMargin: 4; bottomMargin: 4; leftMargin: 4        // room for the keyboard focus ring
             model: c.list
@@ -70,14 +76,18 @@ Item {
                 required property var modelData
                 required property int index
                 readonly property bool picked: index === c.sel
-                width: lv.width - 8; height: 39; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: picked ? 3 : 0; hi: 0
+                width: lv.width - 8; height: 46; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: picked ? 3 : 0; hi: 0
                 fill: picked ? Theme.gLilac : Theme.paper; pressable: true
+                // moving with the keys shows it in the preview right away, so one Enter copies it
+                onActiveFocusChanged: if (activeFocus) c.sel = index
                 onClicked: { if (c.sel === index) c.copy(); else c.sel = index }
                 onRightClicked: c.svc.clipDelete(modelData)
                 UiCandy { x: 10; anchors.verticalCenter: parent.verticalCenter; width: 38; height: 20; radius: 7; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
                     fill: c.chip[modelData.kind] || Theme.paper
                     UiText { anchors.centerIn: parent; text: modelData.kind; fam: "n"; px: 9.5; w: 900 } }
-                UiText { x: 58; width: parent.width - 58 - 40; anchors.verticalCenter: parent.verticalCenter; text: modelData.text.replace(/\s+/g, " "); px: 13; w: 600 }
+                Column { x: 58; width: parent.width - 58 - 40; anchors.verticalCenter: parent.verticalCenter
+                    UiText { width: parent.width; text: modelData.text.replace(/\s+/g, " "); px: 13; w: 600; height: 17 }
+                    UiText { visible: text !== ""; width: parent.width; text: c.svc.ago(modelData.time); fam: "n"; px: 10; w: 800; color: Theme.textSoft; height: 13 } }
                 UiCandy { x: parent.width - 32; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
                     fill: Theme.paper; pressable: true
                     onClicked: c.svc.clipDelete(modelData)

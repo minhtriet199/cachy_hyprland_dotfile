@@ -476,7 +476,7 @@ Singleton {
     function sysCmd(cmd) { if (sysAct.running) return; sysAct.command = cmd; sysAct.running = true }
 
     // ── clipboard history (cliphist) ──
-    property var clips: []                         // [{ id, text, kind, info }] newest first
+    property var clips: []                         // [{ id, text, kind, info, time }] newest first (time = ms, 0 = not known)
     readonly property string clipCache: Quickshell.env("HOME") + "/.cache/isla/clip"
     function clipKind(t) {
         if (t.startsWith("[[ binary data")) return "IMG";
@@ -485,14 +485,28 @@ Singleton {
         if (/^(sudo|cd|git|docker|ls|cp|mv|rm|mkdir|python3?|npm|pnpm|yarn|paru|yay|pacman|nmcli|hyprctl|systemctl|qs|ssh|curl|wget|cat|grep|kitty|bash|sh|fish|code|chmod|journalctl)\b/.test(t.trim())) return "CMD";
         return "TXT";
     }
-    Process { id: clipList; command: ["cliphist", "list"]
+    // copy times come from tools/clip-store.sh (the clipboard saver writes "<id> <unix time>")
+    Process { id: clipList; command: ["sh", "-c", "cliphist list; echo '@@'; tail -n 600 \"$HOME/.cache/isla/cliptimes\" 2>/dev/null"]
         stdout: StdioCollector { onStreamFinished: {
-            s.clips = this.text.split("\n").filter(l => l.includes("\t")).slice(0, 300).map(l => {
-                const i = l.indexOf("\t"), t = l.slice(i + 1), k = s.clipKind(t);
+            const parts = this.text.split("\n@@\n"), times = {};
+            for (const l of (parts[1] || "").split("\n")) { const p = l.split(" "); if (p.length === 2) times[p[0]] = parseInt(p[1]) * 1000 }
+            s.clips = parts[0].split("\n").filter(l => l.includes("\t")).slice(0, 300).map(l => {
+                const i = l.indexOf("\t"), id = l.slice(0, i), t = l.slice(i + 1), k = s.clipKind(t);
                 const m = /binary data ([\d.]+ \w+) (\w+) (\d+x\d+)/.exec(t);
-                return { id: l.slice(0, i), text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: k, info: m ? m[1] : "" };
+                return { id: id, text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: k, info: m ? m[1] : "", time: times[id] || 0 };
             });
         } } }
+    // "just now", "5 min ago", "2 h ago", "Yesterday 14:20", "17 Oct 09:30"
+    function ago(ms) {
+        if (!ms) return "";
+        const d = (Date.now() - ms) / 60000, t = new Date(ms), hm = Qt.formatTime(t, h24 ? "HH:mm" : "h:mm AP");
+        if (d < 1) return "just now";
+        if (d < 60) return Math.floor(d) + " min ago";
+        const y = new Date(); y.setHours(0, 0, 0, 0);
+        if (ms >= y.getTime()) return Math.floor(d / 60) + " h ago · " + hm;
+        if (ms >= y.getTime() - 86400000) return "Yesterday " + hm;
+        return Qt.formatDate(t, "d MMM") + " " + hm;
+    }
     function loadClips() { if (!clipList.running) clipList.running = true }
     Process { id: clipAct; onExited: s.loadClips() }
     function clipCopy(c) { run(["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id]) }
@@ -508,7 +522,7 @@ Singleton {
     function clipPreview(c) {
         clipFull = ""; clipImage = ""; if (!c) return;
         clipDec.running = false;
-        if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1\"", c.id, f] }
+        if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"", c.id, f] }   // whole file or nothing (moving fast stops a half-written one)
         else { clipDec.want = ""; clipDec.command = ["sh", "-c", "cliphist decode \"$0\" | head -c 4000", c.id] }
         clipDec.running = true;
     }

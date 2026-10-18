@@ -37,5 +37,6 @@
   "autoTz": false,
   "dndGaming": false,
   "theme": "isla",
-  "boxStyle": "ring"
+  "boxStyle": "candy",
+  "themeHue": 0.85
 }
