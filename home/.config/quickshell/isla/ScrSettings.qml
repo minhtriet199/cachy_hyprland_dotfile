@@ -52,7 +52,7 @@ Item {
     Flickable {
         id: cardsFl
         x: st.cx; y: 20 + st.topPad + 46 + 14; width: st.cw; height: st.height - y - 14 - (st.svc && st.svc.phoneBig && st.narrow ? 64 : 0)
-        contentHeight: cardsGrid.height + 14; clip: true          // + room for the last row's shadow; boundsBehavior: Flickable.StopAtBounds
+        contentHeight: cardsGrid.height + 14; clip: true; boundsBehavior: Flickable.StopAtBounds   // + 14 = room for the last row's shadow
     Grid {
         id: cardsGrid
         columns: st.narrow ? 2 : 5; rowSpacing: 12; columnSpacing: 12
