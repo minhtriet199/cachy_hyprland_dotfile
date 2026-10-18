@@ -67,6 +67,7 @@ Item {
                 subColor: b.failAddr === modelData.address ? Theme.berry : Theme.textSoft
                 sub: b.failAddr === modelData.address && !modelData.connected ? "Couldn't connect · hold its pairing button, then tap again"
                      : (modelData.connected ? "Connected" : modelData.paired ? "Paired" : "New device")
+                       + (modelData.paired && modelData.trusted ? " · Trusted" : "")
                      + (modelData.batteryAvailable ? " · 🔋 " + Math.round(modelData.battery * 100) + "%" : "")
                 onClicked: {
                     if (modelData.connected) modelData.disconnect();
