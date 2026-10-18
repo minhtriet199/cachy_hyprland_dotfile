@@ -144,8 +144,10 @@ Item {
     Item {
         id: stage
         // drawn for an 800-wide sideways screen; on the upright phone it's scaled down to fit
-        scale: Math.min(1, wp.cw / 800); transformOrigin: Item.TopLeft
-        x: wp.cx; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: wp.cw / scale; height: (wp.height - y - 14 - 87 - 4) / scale
+        // and shrunk to fit above the name + buttons (≈ 270 design px tall), centred
+        readonly property real room: wp.height - (16 + wp.topPad + (wp.narrow ? 170 : 40)) - caption.height - caption.anchors.bottomMargin - 10
+        scale: Math.max(0.3, Math.min(1, wp.cw / 800, room / 270)); transformOrigin: Item.TopLeft
+        x: wp.cx + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: 800; height: room / scale
         Canvas {
             id: rope
             x: 10; y: 4; width: 780; height: 100
@@ -226,8 +228,12 @@ Item {
                 opacity: sl[3]
                 visible: wp.n > 0 && opacity > 0.01 && Math.abs(o) <= wp.n / 2
                 // two strings from the rope down to the photo's top corners
+                // two strings from the rope (wherever it is above that corner) down to the photo's top corners
                 Repeater { model: [0.18, 0.82]
-                    delegate: Rectangle { required property real modelData; x: card.width * modelData - 1; y: 0; width: 2; height: 24; color: wp.ink } }
+                    delegate: Rectangle {
+                        required property real modelData
+                        readonly property real ropeAt: stage.stringY(card.x + card.width * modelData) - card.y
+                        x: card.width * modelData - 1; y: Math.min(ropeAt, 20); width: 2; height: 24 - y; color: wp.ink } }
                 UiCandy {
                     id: photo
                     y: 22; width: card.width; height: card.sl[2]
@@ -259,6 +265,7 @@ Item {
 
     // caption + actions
     Column {
+        id: caption
         anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: (wp.narrow ? 70 : 14) + (wp.svc && wp.svc.phoneBig && wp.narrow ? 64 : 0)
         spacing: 6
         UiStrokeText { anchors.horizontalCenter: parent.horizontalCenter; text: wp.cur ? wp.cur.name : "—"; px: 18; strokeW: 5; strokeColor: wp.ink }

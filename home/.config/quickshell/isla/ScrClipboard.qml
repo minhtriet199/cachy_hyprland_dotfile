@@ -15,9 +15,11 @@ Item {
     function focusField() { field.forceActiveFocus() }
     Component.onCompleted: svc.loadClips()
     // the screen stays loaded between openings → refresh every time it shows, and while open
-    onVisibleChanged: { if (visible) { svc.loadClips(); sel = 0 } else field.text = "" }   // search starts empty next time
+    onVisibleChanged: { if (visible) { svc.loadClips(); sel = 0 } else { field.text = ""; _shown = "" } }   // search starts empty next time
     Timer { interval: 1500; running: c.visible; repeat: true; onTriggered: c.svc.loadClips() }
-    onCurChanged: svc.clipPreview(cur)
+    // the list refreshes every 1.5 s with new objects: only reload the preview when a different item is picked (else it flickers)
+    property string _shown: ""
+    onCurChanged: { const id = cur ? cur.id : ""; if (id !== _shown) { _shown = id; svc.clipPreview(cur) } }
     onQueryChanged: sel = 0
     function copy() { if (!cur) return; svc.clipCopy(cur); c.done() }
     // typing while on the list goes to the search box (letters, numbers, Backspace)
