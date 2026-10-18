@@ -148,25 +148,27 @@ Item {
         readonly property real room: wp.height - (16 + wp.topPad + (wp.narrow ? 170 : 40)) - caption.height - caption.anchors.bottomMargin - 10
         scale: Math.max(0.3, Math.min(1, wp.cw / 800, room / 270)); transformOrigin: Item.TopLeft
         x: wp.cx + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: 800; height: room / scale
+        // the rope runs past both sides (x -220 … 1020) so the outer photos hang from it too.
+        // Quadratic curve (-220,110) → ctrl (400,-50) → (1020,110) in stage coords; the canvas sits at x -230
         Canvas {
             id: rope
-            x: 10; y: 4; width: 780; height: 100
+            x: -230; y: 0; width: 1260; height: 150
             property color inkC: wp.ink
             property color dotC: Theme.paper
             onInkCChanged: requestPaint()
             onPaint: {
                 const g = getContext("2d"); g.reset(); g.strokeStyle = inkC; g.lineCap = "round"
-                const at = (t, a, b, c) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c
-                g.lineWidth = 4; g.beginPath(); g.moveTo(10, 70); g.quadraticCurveTo(390, -30, 770, 70); g.stroke()       // main rope
-                g.lineWidth = 2.5; g.beginPath(); g.moveTo(34, 84); g.quadraticCurveTo(390, -10, 746, 84); g.stroke()     // thin rope under it
-                for (const t of [0.1, 0.27, 0.5, 0.73, 0.9]) {
-                    const x = at(t, 10, 390, 770), y = at(t, 70, -30, 70), y2 = at((x - 34) / 712, 84, -10, 84)
-                    g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y2); g.stroke()                       // little strut
+                const ox = 230, Y = t => (1 - t) * (1 - t) * 110 + 2 * (1 - t) * t * -50 + t * t * 110
+                g.lineWidth = 4; g.beginPath(); g.moveTo(ox - 220, 110); g.quadraticCurveTo(ox + 400, -50, ox + 1020, 110); g.stroke()       // main rope
+                g.lineWidth = 2.5; g.beginPath(); g.moveTo(ox - 200, 126); g.quadraticCurveTo(ox + 400, -32, ox + 1000, 126); g.stroke()     // thin rope under it
+                for (const x of [70, 220, 400, 580, 730]) {
+                    const t = (x + 220) / 1240, y = Y(t), y2 = Y((x + 200) / 1200) + 16
+                    g.lineWidth = 2; g.beginPath(); g.moveTo(ox + x, y); g.lineTo(ox + x, y2); g.stroke()                       // little strut
                     g.fillStyle = dotC; g.beginPath()
-                    if (t === 0.5) { g.moveTo(x, y - 7); g.lineTo(x + 7, y); g.lineTo(x, y + 7); g.lineTo(x - 7, y); g.closePath() }
-                    else g.arc(x, y, 6, 0, 2 * Math.PI)
+                    if (x === 400) { g.moveTo(ox + x, y - 7); g.lineTo(ox + x + 7, y); g.lineTo(ox + x, y + 7); g.lineTo(ox + x - 7, y); g.closePath() }
+                    else g.arc(ox + x, y, 6, 0, 2 * Math.PI)
                     g.fill(); g.lineWidth = 2.5; g.stroke()
-                    if (t !== 0.5) { g.fillStyle = inkC; g.beginPath(); g.arc(x, y, 2, 0, 2 * Math.PI); g.fill() }
+                    if (x !== 400) { g.fillStyle = inkC; g.beginPath(); g.arc(ox + x, y, 2, 0, 2 * Math.PI); g.fill() }
                 }
             }
         }
@@ -192,9 +194,9 @@ Item {
             onCanceled: finish()
         }
         WheelHandler { onWheel: e => wp.step(e.angleDelta.y > 0 ? -1 : 1) }
-        // the string: quadratic curve (10,70) → ctrl (390,-30) → (770,70) in the Canvas (which sits at 10,4)
-        function stringY(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return (1 - t) * (1 - t) * 70 + 2 * (1 - t) * t * -30 + t * t * 70 + 4 }
-        function stringAngle(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return Math.atan2(-200 * (1 - t) + 200 * t, 760) * 180 / Math.PI }
+        // height / slope of the main rope at stage x (same curve as the Canvas above; x is linear in t there)
+        function stringY(xs) { const t = Math.max(0, Math.min(1, (xs + 220) / 1240)); return (1 - t) * (1 - t) * 110 + 2 * (1 - t) * t * -50 + t * t * 110 }
+        function stringAngle(xs) { const t = Math.max(0, Math.min(1, (xs + 220) / 1240)); return Math.atan2(-320 * (1 - t) + 320 * t, 1240) * 180 / Math.PI }
         property real sway: 0
         SequentialAnimation on sway { running: wp.visible; loops: Animation.Infinite
             NumberAnimation { from: -1; to: 1; duration: 2200; easing.type: Easing.InOutSine } NumberAnimation { from: 1; to: -1; duration: 2200; easing.type: Easing.InOutSine } }
