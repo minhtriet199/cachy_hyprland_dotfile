@@ -12,5 +12,17 @@
   "phoneBg": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
   "lockWallpaper": "",
   "wipeBg": "cream",
-  "wipeIcon": "leaf"
+  "wipeIcon": "leaf",
+  "idleLock": [
+    15,
+    5
+  ],
+  "idleScreen": [
+    10,
+    3
+  ],
+  "idleSleep": [
+    0,
+    15
+  ]
 }

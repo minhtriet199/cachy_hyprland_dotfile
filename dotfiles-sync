@@ -2,7 +2,7 @@
 # Copy the tracked config/scripts/apps into this repo, then commit and push.
 # Usage: dotfiles-sync "short message describing what changed"
 set -uo pipefail
-REPO="$(cd "$(dirname "$0")" && pwd)"
+REPO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"   # follow the ~/.local/bin link back to the repo
 MSG="${1:-update dotfiles}"
 cd "$REPO" || exit 1
 

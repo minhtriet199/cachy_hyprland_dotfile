@@ -31,7 +31,7 @@ Item {
                 UiSwitch { on: w.svc.wifi.on; onToggled: w.svc.toggle("wifi") }
             }
         }
-        UiText { visible: w.svc.wifiError !== ""; width: parent.width; text: "⚠ " + w.svc.wifiError; fam: "n"; px: 11; w: 800; color: Theme.berry; wrapMode: Text.Wrap; maximumLineCount: 2 }
+        UiText { visible: w.svc.wifiError !== "" && w.svc.wifiErrFor === ""; width: parent.width; text: "⚠ " + w.svc.wifiError; fam: "n"; px: 11; w: 800; color: Theme.berry; wrapMode: Text.Wrap; maximumLineCount: 2 }
         // password box
         UiCandy {
             visible: w.askFor !== ""
@@ -76,17 +76,25 @@ Item {
             onCountChanged: if (!moving) positionViewAtBeginning()   // list refreshes → stay at the top
             model: w.svc.wifiNets
             delegate: UiRow {
+                id: net
                 required property var modelData
                 width: list.width
                 glyph: modelData.signal > 30 ? "wifi" : "wifiOff"
                 title: modelData.ssid
                 active: modelData.active
-                sub: (modelData.active ? "Connected · " : modelData.known ? "Saved · " : "") + modelData.signal + "%" + (modelData.secure ? " · 🔒" : "")
+                readonly property bool failed: w.svc.wifiErrFor === modelData.ssid
+                busy: w.svc.wifiTarget === modelData.ssid
+                busyText: "Connecting…"
+                subColor: failed ? Theme.berry : Theme.textSoft
+                sub: failed ? "⚠ " + w.svc.wifiError : (modelData.active ? "Connected · " : modelData.known ? "Saved · " : "") + modelData.signal + "%" + (modelData.secure ? " · 🔒" : "")
                 onClicked: {
                     if (modelData.active) { w.detail = modelData.ssid; return }
                     if (modelData.secure && !modelData.known) { w.askFor = modelData.ssid; pw.forceActiveFocus() }
                     else w.svc.wifiConnect(modelData, "");
                 }
+                // spinner while this one is connecting
+                Glyph { id: rs; visible: net.busy; name: "reload"; size: 15; stroke: 2.6; color: Theme.seaDeep
+                    RotationAnimation on rotation { running: rs.visible; loops: Animation.Infinite; from: 0; to: 360; duration: 900 } }
                 // settings page for saved networks
                 UiCandy { visible: modelData.active || modelData.known; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: w.detail = modelData.ssid
@@ -98,6 +106,5 @@ Item {
         }
         UiText { visible: w.svc.wifi.on && w.svc.wifiNets.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter; height: 40
             text: "Looking for networks…"; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
-        UiText { visible: w.svc.wifiBusy; width: parent.width; text: "Connecting…"; fam: "n"; px: 11; w: 800; color: Theme.seaDeep }
     }
 }

@@ -52,6 +52,12 @@ end
 for desc, s in pairs(screens) do
     hl.monitor(screenSpec(desc, s, defaults[desc]))
 end
+
+-- With HDR on, a fullscreen SDR game (most games, e.g. Risk of Rain 2) sent straight to the screen
+-- skips the SDR→HDR conversion and looks burnt / blown out. So no direct scanout while any screen is in HDR.
+for _, s in pairs(screens) do
+    if s.hdr == "1" then hl.config({ render = { direct_scanout = 0 } }) break end
+end
 for desc, d in pairs(defaults) do
     if not screens[desc] then hl.monitor(screenSpec(desc, {}, d)) end
 end

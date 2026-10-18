@@ -255,6 +255,8 @@ Singleton {
     property var wifiNets: []            // [{ ssid, signal, secure, active, known }] strongest first
     property bool wifiBusy: false
     property string wifiError: ""
+    property string wifiTarget: ""       // ssid being connected right now (its row says "Connecting…")
+    property string wifiErrFor: ""       // ssid the last error belongs to (shown in its row)
     function nmSplit(line) {             // nmcli -t escapes ":" as "\:"
         const out = []; let cur = "";
         for (let i = 0; i < line.length; i++) {
@@ -304,9 +306,12 @@ Singleton {
     Process { id: wifiAct
         stdout: StdioCollector { id: wifiOut }
         stderr: StdioCollector { id: wifiErr }
-        onExited: code => { s.wifiBusy = false; s.wifiError = code === 0 ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120); s.wifiScan(); statusSoon.restart() } }
-    function wifiRun(cmd) { if (wifiAct.running) return; wifiBusy = true; wifiError = ""; wifiAct.command = cmd; wifiAct.running = true }
+        onExited: code => { s.wifiBusy = false; s.wifiError = code === 0 ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120)
+            s.wifiErrFor = code === 0 ? "" : s.wifiTarget; s.wifiTarget = ""; s.wifiScan(); statusSoon.restart() } }
+    function wifiRun(cmd) { if (wifiAct.running) return; wifiBusy = true; wifiError = ""; wifiErrFor = ""; wifiAct.command = cmd; wifiAct.running = true }
     function wifiConnect(n, password) {
+        if (wifiAct.running) return;
+        wifiTarget = n.ssid;
         if (n.known) wifiRun(["nmcli", "con", "up", "id", n.ssid]);
         else if (password) wifiRun(["nmcli", "dev", "wifi", "connect", n.ssid, "password", password]);
         else wifiRun(["nmcli", "dev", "wifi", "connect", n.ssid]);

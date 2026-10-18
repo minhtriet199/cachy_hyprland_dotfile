@@ -8,6 +8,8 @@ UiCandy {
     property string sub: ""
     property bool active: false
     property bool busy: false
+    property string busyText: "Working…"
+    property color subColor: Theme.textSoft
     default property alias trailing: slot.data
     height: 50; radius: 15; bw: 2.5; drop: active ? 3 : 0; hi: 0
     fill: active ? Theme.gOn : Theme.cream; pressable: true
@@ -17,7 +19,7 @@ UiCandy {
     Column {
         x: 50; y: (r.height - implicitHeight) / 2; width: r.width - 50 - slot.width - 14
         UiText { width: parent.width; text: r.title; px: 14; w: 700; height: 17 }
-        UiText { visible: text !== ""; width: parent.width; text: r.busy ? "Working…" : r.sub; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft; height: 14 }
+        UiText { visible: text !== ""; width: parent.width; text: r.busy ? r.busyText : r.sub; fam: "n"; px: 10.5; w: 800; color: r.busy ? Theme.seaDeep : r.subColor; height: 14 }
     }
     Row { id: slot; x: r.width - width - 10; y: (r.height - height) / 2; spacing: 6 }
 }
