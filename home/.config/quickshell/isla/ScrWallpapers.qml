@@ -6,7 +6,14 @@ Item {
     id: wp
     property var svc
     property var prefs
-    property int i: 0
+    // the string slides smoothly: `view` is the live position (any real number, follows your drag),
+    // `viewTarget` is where it settles; i = the picked picture (wrapped into 0…n-1)
+    property real view: 0
+    property real viewTarget: 0
+    property bool dragging: false
+    property bool snap: false
+    Behavior on view { enabled: !wp.dragging && !wp.snap; SpringAnimation { spring: 3.2; damping: 0.3; epsilon: 0.002 } }
+    readonly property int i: n ? ((Math.round(viewTarget) % n) + n) % n : 0
     property string filter: ""
     property bool lockTab: false               // (old name, kept) true when target is Lockscreen
     property string target: "Desktop"          // Desktop · Phone · Lockscreen — what "Set" changes
@@ -42,9 +49,18 @@ Item {
     readonly property int n: list.length
     readonly property var cur: n ? list[((i % n) + n) % n] : null
     readonly property bool applied: !!cur && cur.path === prefs[targetKey]
-    function step(d) { if (n) i = ((i + d) % n + n) % n }
+    function settle(t) { viewTarget = t; view = t }
+    function step(d) { if (n) settle(Math.round(viewTarget) + d) }
+    function jump(k) { snap = true; settle(k); snap = false }
+    // swing: photos lag behind when the string moves and wobble back, like clothes on a line
+    property real vel: 0                          // pictures / second
+    property real _last: 0
+    property real swing: 0
+    Behavior on swing { SpringAnimation { spring: 2.4; damping: 0.1; epsilon: 0.05 } }
+    FrameAnimation { running: wp.visible && (wp.dragging || Math.abs(wp.view - wp.viewTarget) > 0.001 || Math.abs(wp.vel) > 0.01)
+        onTriggered: { const v = frameTime > 0 ? (wp.view - wp._last) / frameTime : 0; wp._last = wp.view
+            wp.vel = wp.vel * 0.6 + v * 0.4; wp.swing = Math.max(-16, Math.min(16, -wp.vel * 7)) } }
     function apply() { if (cur) prefs.set(targetKey, cur.path) }
-    onNChanged: if (i >= n) i = 0
 
     // header
     Flow {
@@ -85,7 +101,7 @@ Item {
             Glyph { x: 12.5; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: 14; stroke: 3 }
             TextInput { id: q; x: 12.5 + 14 + 6; width: 90; anchors.verticalCenter: parent.verticalCenter; clip: true
                 font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
-                onTextChanged: { wp.filter = text; wp.i = 0 }
+                onTextChanged: { wp.filter = text; wp.jump(0) }
                 Keys.onEscapePressed: { if (text) text = ""; else wp.forceActiveFocus() }
                 UiText { visible: !q.text; text: "Search…"; fam: "n"; w: 800; px: 12; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
         }
@@ -109,7 +125,7 @@ Item {
                             required property var modelData
                             width: sortCol.width; height: 28; radius: 8; bw: 0; drop: 0; hi: 0
                             fill: modelData[0] === wp.sortMode ? Theme.seaSoft : "transparent"; pressable: true
-                            onClicked: { wp.sortMode = modelData[0]; wp.sortOpen = false; wp.i = 0 }
+                            onClicked: { wp.sortMode = modelData[0]; wp.sortOpen = false; wp.jump(0) }
                             UiText { x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData[1]; px: 12; w: 600 }
                         }
                     }
@@ -132,53 +148,78 @@ Item {
             onPaint: { const g = getContext("2d"); g.reset(); g.strokeStyle = wp.ink; g.lineWidth = 4; g.lineCap = "round"
                 g.beginPath(); g.moveTo(10, 70); g.quadraticCurveTo(390, -30, 770, 70); g.stroke() }
         }
-        // drag left/right on the string to spin it (one picture every ~90 px)
+        // drag the string left/right: the photos follow your hand, then spring onto the nearest one.
+        // A short click picks the photo under the pointer (middle one = set it).
         MouseArea {
-            anchors.fill: parent; z: -1
-            property real startX: 0
-            property real moved: 0
-            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-            onPressed: m => { startX = m.x; moved = 0 }
-            onPositionChanged: m => { if (!pressed) return; const d = m.x - startX; if (Math.abs(d) >= 90) { wp.step(d > 0 ? -1 : 1); startX = m.x; moved++ } }
+            anchors.fill: parent; z: 50
+            property real sx: 0
+            property real sv: 0
+            property bool moved: false
+            cursorShape: wp.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: m => { sx = m.x; sv = wp.view; moved = false }
+            onPositionChanged: m => { if (!pressed) return; const d = m.x - sx
+                if (!moved && Math.abs(d) > 6) { moved = true; wp.dragging = true }
+                if (moved) wp.view = sv - d / 170 }
+            function finish() { if (!moved) return; moved = false; wp.dragging = false
+                wp.settle(Math.round(wp.view + Math.max(-3, Math.min(3, wp.vel * 0.18)))) }
+            onReleased: m => { if (moved) { finish(); return }
+                let hit = null
+                for (let k = 0; k < cards.count; k++) { const c = cards.itemAt(k); if (!c || !c.visible || c.opacity < 0.3) continue
+                    const pt = c.mapFromItem(stage, m.x, m.y); if (c.contains(pt) && (!hit || c.z > hit.z)) hit = c }
+                if (hit) { const o = Math.round(hit.o); if (o === 0) wp.apply(); else wp.step(o) } }
+            onCanceled: finish()
         }
         WheelHandler { onWheel: e => wp.step(e.angleDelta.y > 0 ? -1 : 1) }
         // the string: quadratic curve (10,70) → ctrl (390,-30) → (770,70) in the Canvas (which sits at 10,4)
         function stringY(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return (1 - t) * (1 - t) * 70 + 2 * (1 - t) * t * -30 + t * t * 70 + 4 }
         function stringAngle(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return Math.atan2(-200 * (1 - t) + 200 * t, 760) * 180 / Math.PI }
         property real sway: 0
-        SequentialAnimation on sway { loops: Animation.Infinite
+        SequentialAnimation on sway { running: wp.visible; loops: Animation.Infinite
             NumberAnimation { from: -1; to: 1; duration: 2200; easing.type: Easing.InOutSine } NumberAnimation { from: 1; to: -1; duration: 2200; easing.type: Easing.InOutSine } }
+        // spots along the string by distance from the middle: [x, width, photo height, opacity]; in-between = blended
+        readonly property var slots: [[-110, 100, 72, 0], [18, 120, 86, 1], [136, 150, 106, 1], [302, 190, 132, 1], [512, 150, 106, 1], [650, 120, 86, 1], [800, 100, 72, 0]]
+        function slot(o) {
+            const c = Math.max(-3, Math.min(3, o)), a = Math.min(2, Math.floor(c)), f = c - a
+            const A = slots[a + 3], B = slots[a + 4]
+            return [A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f, A[2] + (B[2] - A[2]) * f, A[3] + (B[3] - A[3]) * f]
+        }
+        // 7 pegs; peg k always holds a picture whose number ≡ k (mod 7), so it only swaps its picture off-screen
         Repeater {
-            model: [[-2, 18, 230, 120, 86, -9], [-1, 136, 140, 150, 106, -5], [0, 302, 70, 190, 132, 0], [1, 512, 140, 150, 106, 5], [2, 650, 230, 120, 86, 9]]
+            id: cards
+            model: 7
             delegate: Item {
                 id: card
-                required property var modelData
-                readonly property int off: modelData[0]
-                readonly property var pic: wp.n ? wp.list[(((wp.i + off) % wp.n) + wp.n) % wp.n] : null
-                readonly property real pinX: modelData[1] + modelData[3] / 2
-                // clip sits on the string; the photo hangs below it, tilted with the string and swaying a little
-                x: modelData[1]; y: stage.stringY(pinX) - 9
-                width: modelData[3]; height: 16 + modelData[4]
-                rotation: stage.stringAngle(pinX) * 0.8 + stage.sway * (1.6 - Math.abs(off) * 0.3) * (off % 2 ? -1 : 1)
+                required property int index
+                readonly property int a: index + 7 * Math.round((wp.view - index) / 7)     // picture number on this peg
+                readonly property real o: a - wp.view                                      // distance from the middle (-3.5 … 3.5)
+                readonly property var sl: stage.slot(o)
+                readonly property bool mid: Math.abs(o) < 0.5
+                readonly property var pic: wp.n ? wp.list[((a % wp.n) + wp.n) % wp.n] : null
+                readonly property real pinX: sl[0] + sl[1] / 2
+                // clip sits on the string; the photo hangs below it, tilted with the string, swaying and swinging
+                x: sl[0]; y: stage.stringY(pinX) - 9
+                width: sl[1]; height: 16 + sl[2]
+                rotation: stage.stringAngle(pinX) * 0.8 + stage.sway * (1.6 - Math.abs(o) * 0.3) * (((a % 2) + 2) % 2 ? -1 : 1)
+                          + wp.swing * (1 - Math.min(3, Math.abs(o)) * 0.15)
                 transformOrigin: Item.Top
-                z: 10 - Math.abs(off)
-                visible: wp.n > 0 && (wp.n >= 5 || Math.abs(off) <= Math.floor(wp.n / 2))
+                z: 10 - Math.abs(o)
+                opacity: sl[3]
+                visible: wp.n > 0 && opacity > 0.01 && Math.abs(o) <= wp.n / 2
                 UiCandy {
                     id: photo
-                    y: 16; width: card.width; height: card.modelData[4]
-                    radius: 12; ink: wp.ink; bw: card.off === 0 ? 4 : 3; drop: card.off === 0 ? 7 : 4; hi: 0
-                    fill: "#DDF4FA"; pressable: true
-                    onClicked: card.off === 0 ? wp.apply() : wp.step(card.off)
+                    y: 16; width: card.width; height: card.sl[2]
+                    radius: 12; ink: wp.ink; bw: card.mid ? 4 : 3; drop: card.mid ? 7 : 4; hi: 0
+                    fill: "#DDF4FA"
                     Image {
                         x: photo.bw; y: photo.bw; width: photo.width - 2 * photo.bw; height: photo.height - 2 * photo.bw
                         source: card.pic ? "file://" + card.pic.path : ""
-                        sourceSize: Qt.size(width * 2, height * 2); fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
-                        layer.enabled: false
+                        sourceSize: Qt.size(380, 264); fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
                     }
-                    Rectangle { visible: card.off === 0; x: photo.bw; y: photo.bw; width: photo.width - 2 * photo.bw; height: photo.height - 2 * photo.bw
+                    Rectangle { x: photo.bw; y: photo.bw; width: photo.width - 2 * photo.bw; height: photo.height - 2 * photo.bw
+                        opacity: Math.max(0, 1 - Math.abs(card.o) * 2)
                         radius: 8; color: "transparent"; border.width: 6; border.color: Theme.paper }
                 }
-                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: 14; height: 22; radius: 4; color: card.off === 0 ? Theme.sun : Theme.paper; border.width: 2; border.color: wp.ink }
+                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: 14; height: 22; radius: 4; color: card.mid ? Theme.sun : Theme.paper; border.width: 2; border.color: wp.ink }
             }
         }
         UiText { visible: wp.n === 0; anchors.centerIn: parent; horizontalAlignment: Text.AlignHCenter; fam: "n"; w: 800; px: 13; color: Theme.textSoft
@@ -232,7 +273,7 @@ Item {
     // Ctrl+V: paste a picture (or image link) from the clipboard; jump to it once it's saved
     Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_V) { wp.svc.pasteWallpaper(); e.accepted = true } }
     Connections { target: wp.svc; function onPastedWallpaper(path) { wp.sortMode = "newest"; wp.filter = ""; jumpTo.path = path; jumpTo.restart() } }
-    Timer { id: jumpTo; property string path: ""; interval: 600; onTriggered: { const k = wp.list.findIndex(x => x.path === path); if (k >= 0) wp.i = k } }
+    Timer { id: jumpTo; property string path: ""; interval: 600; onTriggered: { const k = wp.list.findIndex(x => x.path === path); if (k >= 0) wp.jump(k) } }
     Keys.onLeftPressed: step(-1)
     Keys.onRightPressed: step(1)
     Keys.onReturnPressed: apply()

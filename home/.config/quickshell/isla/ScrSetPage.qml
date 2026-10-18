@@ -29,17 +29,18 @@ Item {
     Item {
         x: pg.cx; y: 18 + pg.topPad; width: pg.cw; height: 44
         UiCandy {
-            width: tcol.implicitWidth + 8 + 28 + 10 + 18 + 5; height: 44
+            // shrink (subtitle gets "…") so it, and its yellow keyboard ring, stay clear of the clock
+            width: Math.min(Math.max(ttl.implicitWidth, tsub.implicitWidth) + 8 + 28 + 10 + 18 + 5, pg.cw - hdrBtn.width - 14); height: 44
             radius: 16; ink: Theme.inkPhone; hiColor: Qt.rgba(1, 1, 1, 0.6); fill: pg.info[3]; pressable: true
             onClicked: pg.back()
             Rectangle { x: 10.5; anchors.verticalCenter: parent.verticalCenter; width: 28; height: 28; radius: 10; color: Theme.inkPhone
                 Rectangle { anchors.fill: parent; anchors.margins: 2; radius: 8; color: Theme.paper }
                 Glyph { anchors.centerIn: parent; name: "back"; size: 15; stroke: 3 } }
-            Column { id: tcol; x: 48.5; anchors.verticalCenter: parent.verticalCenter
-                UiText { text: pg.info[0]; px: 18; w: 700; color: Theme.textDeep; height: 19 }
-                UiText { text: pg.info[1]; fam: "n"; w: 800; px: 10.5; color: Theme.textMuted } }
+            Column { id: tcol; x: 48.5; anchors.verticalCenter: parent.verticalCenter; width: parent.width - x - 14
+                UiText { id: ttl; width: parent.width; text: pg.info[0]; px: 18; w: 700; color: Theme.textDeep; height: 19 }
+                UiText { id: tsub; width: parent.width; text: pg.info[1]; fam: "n"; w: 800; px: 10.5; color: Theme.textMuted } }
         }
-        SetHeaderBtn { anchors.right: parent.right; y: (parent.height - height) / 2; clockOnly: pg.narrow; svc: pg.svc; onClose: pg.close() }
+        SetHeaderBtn { id: hdrBtn; anchors.right: parent.right; y: (parent.height - height) / 2; clockOnly: pg.narrow; svc: pg.svc; onClose: pg.close() }
     }
 
     // body (scrolls if it is taller than the screen)

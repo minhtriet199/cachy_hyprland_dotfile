@@ -74,7 +74,10 @@ Item {
             width: parent.width; height: Math.min(w.listH, Math.max(1, count) * 56 - 6)
             clip: true; spacing: 6; boundsBehavior: Flickable.StopAtBounds
             onCountChanged: if (!moving) positionViewAtBeginning()   // list refreshes → stay at the top
-            model: w.svc.wifiNets
+            // the network being connected goes to the top, so you can see it
+            model: { const t = w.svc.wifiTarget, a = w.svc.wifiNets; const k = t ? a.findIndex(x => x.ssid === t) : -1
+                     return k > 0 ? [a[k]].concat(a.slice(0, k), a.slice(k + 1)) : a }
+            Connections { target: w.svc; function onWifiTargetChanged() { if (w.svc.wifiTarget) list.positionViewAtBeginning() } }
             delegate: UiRow {
                 id: net
                 required property var modelData
@@ -92,8 +95,12 @@ Item {
                     if (modelData.secure && !modelData.known) { w.askFor = modelData.ssid; pw.forceActiveFocus() }
                     else w.svc.wifiConnect(modelData, "");
                 }
+                // cancel while connecting (otherwise it waits until nmcli gives up)
+                UiCandy { visible: w.svc.wifiTarget === modelData.ssid; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: w.svc.wifiCancel()
+                    Glyph { anchors.centerIn: parent; name: "close"; size: 12; stroke: 2.6 } }
                 // settings page for saved networks
-                UiCandy { visible: modelData.active || modelData.known; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                UiCandy { visible: (modelData.active || modelData.known) && w.svc.wifiTarget !== modelData.ssid; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: w.detail = modelData.ssid
                     Glyph { anchors.centerIn: parent; name: "gear"; size: 13; stroke: 2.2 } }
                 UiCandy { visible: modelData.active; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true

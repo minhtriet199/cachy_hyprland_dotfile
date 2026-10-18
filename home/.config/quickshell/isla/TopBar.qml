@@ -78,7 +78,8 @@ Item {
                 Item {
                     id: disc
                     anchors.centerIn: parent; width: 28; height: 28
-                    RotationAnimation on rotation { running: musicPill.playing; loops: Animation.Infinite; from: disc.rotation; to: disc.rotation + 360; duration: 9000 }
+                    // slow spin in small steps (20 fps, not 120) so the bar doesn't redraw every frame; stops while gaming
+                    Timer { interval: 50; repeat: true; running: musicPill.playing && !bar.svc.gaming; onTriggered: disc.rotation = (disc.rotation + 2) % 360 }
                     Rectangle { anchors.fill: parent; radius: width / 2; color: Theme.inkPhone }
                     ClippingRectangle {
                         anchors.fill: parent; anchors.margins: 1.5; radius: width / 2; color: Theme.lilacSoft
@@ -118,7 +119,6 @@ Item {
                                 GradientStop { position: 0; color: bar.svc.artPalette[index < 5 ? 0 : index < 10 ? 1 : 2] }
                                 GradientStop { position: 1; color: Qt.darker(bar.svc.artPalette[index < 5 ? 0 : index < 10 ? 1 : 2], 1.25) }
                             }
-                            Behavior on height { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
                         }
                     }
                 }

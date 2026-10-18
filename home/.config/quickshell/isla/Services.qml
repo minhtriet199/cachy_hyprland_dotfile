@@ -306,12 +306,23 @@ Singleton {
     Process { id: wifiAct
         stdout: StdioCollector { id: wifiOut }
         stderr: StdioCollector { id: wifiErr }
-        onExited: code => { s.wifiBusy = false; s.wifiError = code === 0 ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120)
-            s.wifiErrFor = code === 0 ? "" : s.wifiTarget; s.wifiTarget = ""; s.wifiScan(); statusSoon.restart() } }
+        onExited: code => { const cancelled = s._wifiCancelled; s._wifiCancelled = false; s.wifiBusy = false
+            s.wifiError = code === 0 || cancelled ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120)
+            s.wifiErrFor = code === 0 || cancelled ? "" : s.wifiTarget; s.wifiTarget = ""; s.wifiScan(); statusSoon.restart() } }
+    // ✕ on the "Connecting…" row: stop waiting, and stop NetworkManager trying (a new network's half-made profile is removed)
+    property bool _wifiCancelled: false
+    property bool _wifiTargetKnown: false
+    Process { id: wifiStop; onExited: { s.wifiScan(); statusSoon.restart() } }
+    function wifiCancel() {
+        if (!wifiAct.running || !wifiTarget) return;
+        _wifiCancelled = true;
+        wifiStop.command = ["nmcli", "con", _wifiTargetKnown ? "down" : "delete", "id", wifiTarget];
+        wifiAct.running = false; wifiStop.running = true;
+    }
     function wifiRun(cmd) { if (wifiAct.running) return; wifiBusy = true; wifiError = ""; wifiErrFor = ""; wifiAct.command = cmd; wifiAct.running = true }
     function wifiConnect(n, password) {
         if (wifiAct.running) return;
-        wifiTarget = n.ssid;
+        wifiTarget = n.ssid; _wifiTargetKnown = n.known;
         if (n.known) wifiRun(["nmcli", "con", "up", "id", n.ssid]);
         else if (password) wifiRun(["nmcli", "dev", "wifi", "connect", n.ssid, "password", password]);
         else wifiRun(["nmcli", "dev", "wifi", "connect", n.ssid]);
@@ -597,12 +608,14 @@ Singleton {
         } } }
     Timer { interval: 30 * 60 * 1000; running: true; repeat: true; triggeredOnStart: true; onTriggered: wx.running = true }
 
-    // ── music visualizer (cava, only while something is playing) ──
+    // a game window is open (Steam / Proton / gamescope) → the bar stops its moving bits so the GPU stays with the game
+    readonly property bool gaming: Hyprland.toplevels.values.some(t => /^(steam_app.*|gamescope)$/.test((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || ""))
+    // ── music visualizer (cava, only while something is playing, not while gaming) ──
     property var viz: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Process {
         id: cava
         command: ["cava", "-p", Quickshell.shellDir + "/cava.conf"]
-        running: !!s.media && s.media.playing
+        running: !!s.media && s.media.playing && !s.gaming
         onRunningChanged: if (!running) s.viz = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         stdout: SplitParser { onRead: line => { const v = line.split(";").filter(x => x !== "").map(Number); if (v.length) s.viz = v } }
     }
