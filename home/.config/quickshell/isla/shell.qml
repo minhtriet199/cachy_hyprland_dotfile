@@ -60,8 +60,10 @@ ShellRoot {
             id: toDeskAnim                                   // lock → desktop: close on the lock screen, open on the desktop
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
-            ScriptAction { script: { lockCtl.deskWipe = "full"; sessionLock.locked = false; lockCtl.password = "" } }
-            PauseAnimation { duration: 380 }          // leaf moment
+            ScriptAction { script: lockCtl.deskWipe = "full" }
+            PauseAnimation { duration: 120 }          // let the desktop cover appear under the lock screen first
+            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = "" } }
+            PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
             ScriptAction { script: lockCtl.deskWipe = "none" }
@@ -75,14 +77,15 @@ ShellRoot {
             stdout: StdioCollector { onStreamFinished: {
                 const age = parseInt(this.text) || 99999;
                 if (age < 90) { lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "full"; sessionLock.locked = true; bootReveal.start() }
-                else { lockCtl.deskWipe = "full"; startWipe.start() }
+                else startWipe.start()
             } }
         }
-        Timer { id: bootReveal; interval: 500; onTriggered: { lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; bootRevealAnim.restart() } }
-        NumberAnimation { id: bootRevealAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 700; onFinished: lockCtl.lockWipe = "none" }
-        Timer { id: startWipe; interval: 350; onTriggered: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR"; startAnim.restart() } }
-        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 700; onFinished: lockCtl.deskWipe = "none" }
-        Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; sessionAge.running = true }
+        // lock surfaces need a moment to be on screen; the cream + leaf cover holds until then, then the desktop cover goes away
+        Timer { id: bootReveal; interval: 900; onTriggered: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; bootRevealAnim.restart() } }
+        NumberAnimation { id: bootRevealAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
+        Timer { id: startWipe; interval: 450; onTriggered: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR"; startAnim.restart() } }
+        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.deskWipe = "none" }
+        Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "full"; sessionAge.running = true }   // covered from the first frame
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: sessionLock.locked = false }
         function lockTest() { lockNow(); lockTestTimer.restart() }
@@ -133,6 +136,7 @@ ShellRoot {
         function lock(): void { lockCtl.lockNow() }
         function locktest(): void { lockCtl.lockTest() }
         function big(): void { Services.phoneBig = !Services.phoneBig }
+        function preview(): void { Services.previewWipe() }
     }
 
     Variants {
