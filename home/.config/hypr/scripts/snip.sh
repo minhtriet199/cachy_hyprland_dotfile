@@ -10,7 +10,8 @@ mons=$(hyprctl -j monitors | python3 -c 'import json,sys
 for m in json.load(sys.stdin):
     w, h = (m["height"], m["width"]) if m["transform"] % 2 else (m["width"], m["height"])
     print(m["name"], m["x"], m["y"], round(w / m["scale"]), round(h / m["scale"]), m["scale"])')
-echo "$mons" | { while read -r name _; do grim -o "$name" "$tmp/$name.png" & done; wait; }
+# raw (ppm) grabs: ~0.05 s each instead of ~0.5 s for png, so the freeze shows up right away
+echo "$mons" | { while read -r name _; do grim -t ppm -o "$name" "$tmp/$name.ppm" & done; wait; }
 
 hyprpicker -r -z -d -q &
 freeze=$!
@@ -31,8 +32,8 @@ for line in sys.stdin:
     if mx <= x and my <= y and x + w <= mx + mw and y + h <= my + mh:
         print(n, "%dx%d+%d+%d" % (round(w * s), round(h * s), round((x - mx) * s), round((y - my) * s))); break' "$region")
 kill $freeze 2>/dev/null           # unfreeze right away
-if [ -n "$crop" ] && [ -f "$tmp/${crop%% *}.png" ]; then
-    magick "$tmp/${crop%% *}.png" -crop "${crop#* }" +repage "$file" || exit 1
+if [ -n "$crop" ] && [ -f "$tmp/${crop%% *}.ppm" ]; then
+    magick "$tmp/${crop%% *}.ppm" -crop "${crop#* }" +repage "$file" || exit 1
 else
     sleep 0.05; grim -g "$region" "$file" || exit 1
 fi
