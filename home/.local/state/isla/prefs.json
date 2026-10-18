@@ -24,5 +24,6 @@
   "idleSleep": [
     0,
     15
-  ]
+  ],
+  "phoneLite": true
 }

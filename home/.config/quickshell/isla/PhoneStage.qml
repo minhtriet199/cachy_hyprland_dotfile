@@ -146,7 +146,9 @@ Item {
         readonly property real baseY: stage.height + 250 - 844        // as designed: bottom of the phone below the screen edge
         y: baseY + stage.flatP * ((stage.height / 2 - 422) - baseY)
         width: 390; height: 844
-        scale: 1 + stage.flatP * (Math.min(1.25, stage.height * 0.9 / 844) - 1)
+        // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
+        readonly property real smallScale: 1.1
+        scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844)
         visible: stage.r > 0.001 && stage.hand < 1
         opacity: 1 - stage.hand
         readonly property real piv: 422 * (1 - stage.lk)
