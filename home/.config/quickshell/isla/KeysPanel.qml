@@ -9,7 +9,12 @@ FocusScope {
     property var svc
     property real listH: 300
     property string filter: ""
-    property int recIndex: -1
+    property int recIndex: -1               // -2 = recording keys for a NEW shortcut
+    property bool adding: false
+    property var nameField: null
+    property var cmdField: null
+    readonly property var newName: nameField || ({ text: "" })
+    readonly property var newCmd: cmdField || ({ text: "" })
     property string recKeys: ""
     implicitHeight: col.implicitHeight
     Component.onCompleted: { svc.loadBinds(); svc.bindMsg = "" }
@@ -22,7 +27,8 @@ FocusScope {
         return out.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || a.index - b.index);
     }
     function editable(b) { return b.action !== "ws_digits" && !b.keys.includes("mouse") && b.keys.split(" + ").length > 0 }
-    function startRec(i) { recIndex = i; recKeys = ""; svc.bindMsg = ""; svc.submap("keycapture"); kp.forceActiveFocus() }
+    function startRec(i) { if (i === -2 && (!newName.text.trim() || !newCmd.text.trim())) { svc.bindMsg = "Not ready — fill in name and command"; return }
+        recIndex = i; recKeys = ""; svc.bindMsg = ""; svc.submap("keycapture"); kp.forceActiveFocus() }
     function stopRec() { recIndex = -1; svc.submap("reset") }
 
     // Qt key → Hyprland key name (same names the Keyboard Shortcuts app writes)
@@ -48,7 +54,9 @@ FocusScope {
         else if (named[e.key]) key = named[e.key];
         else return;
         recKeys = mods.concat([key]).join(" + ");
-        const i = recIndex; stopRec(); svc.setBind(i, recKeys);
+        const i = recIndex; stopRec();
+        if (i === -2) { svc.addBind(newName.text, newCmd.text, recKeys); adding = false; newName.text = ""; newCmd.text = "" }
+        else svc.setBind(i, recKeys);
     }
 
     Column {
@@ -57,7 +65,7 @@ FocusScope {
         Item {
             width: parent.width; height: 34
             UiCandy {
-                width: parent.width - msg.width - 12; height: 34; radius: 12; bw: 2.5; drop: 0; hi: 0; fill: Theme.paper
+                width: parent.width - msg.width - 12 - addBtn.width - 8; height: 34; radius: 12; bw: 2.5; drop: 0; hi: 0; fill: Theme.paper
                 Glyph { x: 10; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: 15; stroke: 2.6 }
                 TextInput {
                     id: q; x: 32; width: parent.width - 42; anchors.verticalCenter: parent.verticalCenter; clip: true
@@ -66,13 +74,49 @@ FocusScope {
                     UiText { visible: !q.text; text: "Search shortcuts…"; fam: "n"; px: 13; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
                 }
             }
-            UiText { id: msg; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: Math.min(implicitWidth, 320)
-                text: kp.recIndex >= 0 ? "Press the new keys · Esc cancels" : kp.svc.bindMsg; fam: "n"; px: 11; w: 800
-                color: kp.recIndex >= 0 ? Theme.purple : kp.svc.bindMsg.startsWith("Not") ? Theme.berry : Theme.leafDeep }
+            UiCandy {
+                id: addBtn
+                x: parent.width - msg.width - 8 - width; anchors.verticalCenter: parent.verticalCenter
+                width: al.implicitWidth + 24; height: 34; radius: 12; bw: 2.5; drop: kp.adding ? 0 : 3; hi: 3
+                fill: kp.adding ? Theme.gOn : Theme.gLeaf; pressable: true
+                onClicked: { kp.adding = !kp.adding; if (kp.adding) newName.forceActiveFocus() }
+                UiText { id: al; anchors.centerIn: parent; text: kp.adding ? "Cancel" : "+ Add"; px: 13; w: 700 }
+            }
+            UiText { id: msg; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: Math.min(implicitWidth, kp.width * 0.3)
+                text: kp.recIndex !== -1 ? "Press the keys · Esc cancels" : kp.svc.bindMsg; fam: "n"; px: 11; w: 800
+                color: kp.recIndex !== -1 ? Theme.purple : kp.svc.bindMsg.startsWith("Not") ? Theme.berry : Theme.leafDeep }
+        }
+        // new shortcut: name + command, then record the keys
+        UiCandy {
+            visible: kp.adding
+            width: parent.width; height: addCol.implicitHeight + 20; radius: 14; bw: 2.5; drop: 3; hi: 0; fill: Theme.gSun
+            Column {
+                id: addCol; x: 10; y: 10; width: parent.width - 20; spacing: 8
+                UiText { text: "New shortcut"; px: 14; w: 700; height: 18 }
+                Repeater {
+                    model: [["Name, e.g. Open Discord", "n"], ["Command, e.g. discord", "c"]]
+                    delegate: UiCandy {
+                        required property var modelData
+                        width: addCol.width; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                        TextInput {
+                            id: ti; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
+                            font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
+                            Component.onCompleted: if (modelData[1] === "n") kp.nameField = ti; else kp.cmdField = ti
+                            UiText { visible: !ti.text; text: modelData[0]; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
+                        }
+                    }
+                }
+                UiCandy {
+                    width: rl.implicitWidth + 28; height: 32; radius: 10; bw: 2.5; drop: kp.recIndex === -2 ? 0 : 3; hi: 3
+                    fill: kp.recIndex === -2 ? Theme.gLilac : Theme.gGo; pressable: true
+                    onClicked: kp.recIndex === -2 ? kp.stopRec() : kp.startRec(-2)
+                    UiText { id: rl; anchors.centerIn: parent; text: kp.recIndex === -2 ? "Press the keys now…" : "⌨  Record keys & save"; px: 13; w: 700; color: kp.recIndex === -2 ? Theme.text : "#FFFFFF" }
+                }
+            }
         }
         ListView {
             id: list
-            width: parent.width; height: kp.listH
+            width: parent.width; height: kp.listH - (kp.adding ? addCol.implicitHeight + 30 : 0)
             clip: true; spacing: 5; boundsBehavior: Flickable.StopAtBounds
             model: kp.rows
             delegate: Column {
@@ -104,6 +148,10 @@ FocusScope {
                         }
                     }
                     UiText { visible: row.modelData.action === "ws_digits"; text: "+ 1…9"; fam: "n"; px: 11; w: 900; anchors.verticalCenter: parent.verticalCenter }
+                    // shortcuts you added can be removed
+                    UiCandy { visible: row.modelData.category === "Custom"; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.pinkSoft; pressable: true
+                        onClicked: kp.svc.removeBind(row.modelData.index)
+                        Glyph { anchors.centerIn: parent; name: "trash"; size: 12; stroke: 2.4 } }
                 }
             }
             }

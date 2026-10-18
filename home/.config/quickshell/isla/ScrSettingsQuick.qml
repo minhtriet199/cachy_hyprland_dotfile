@@ -39,6 +39,7 @@ Item {
                 anchors.right: parent.right; y: (parent.height - height) / 2
                 spacing: 10
                 UiCandy {
+                    visible: !sq.narrow
                     anchors.verticalCenter: parent.verticalCenter
                     width: 12 + 14 + 7 + ml.implicitWidth + 12 + 5; height: 36
                     radius: 12; ink: Theme.inkPhone; drop: 3; hi: 0; pressable: true
@@ -88,8 +89,8 @@ Item {
             title: "Bar"; tagColor: "#FFE39A"; padTop: 20
             Column {
                 spacing: 9
-                SetSeg { label: "Style"; options: ["Float", "Straight", "Transparent"]; current: sq.prefs.barStyle; onPicked: v => sq.prefs.set("barStyle", v) }
-                SetSeg { label: "Position"; options: ["Top", "Right", "Bottom", "Left"]; current: sq.prefs.barPos
+                SetSeg { width: sq.cw - 40; label: "Style"; options: ["Float", "Straight", "Transparent"]; current: sq.prefs.barStyle; onPicked: v => sq.prefs.set("barStyle", v) }
+                SetSeg { width: sq.cw - 40; label: "Position"; options: ["Top", "Right", "Bottom", "Left"]; current: sq.prefs.barPos
                     onPicked: v => (v === "Top" || v === "Bottom") ? sq.prefs.set("barPos", v) : sq.soon("Side bar") }
             }
         }
@@ -98,8 +99,8 @@ Item {
             title: "Transition"; tagColor: "#BFE6C2"; padTop: 20
             Column {
                 spacing: 10
-                Row {
-                    spacing: 10
+                Flow {
+                    width: sq.cw - 40; spacing: 10
                     UiText { width: 84; height: 30; text: "Background"; px: 13; w: 700; color: Theme.textDeep }
                     Repeater {
                         model: Object.keys(sq.prefs.wipeBgs)
@@ -112,8 +113,8 @@ Item {
                         }
                     }
                 }
-                Row {
-                    spacing: 10
+                Flow {
+                    width: sq.cw - 40; spacing: 10
                     UiText { width: 84; height: 38; text: "Icon"; px: 13; w: 700; color: Theme.textDeep }
                     Repeater {
                         model: ["leaf", "star", "bell", "apple", "flower", "heart", "shell", "none"]

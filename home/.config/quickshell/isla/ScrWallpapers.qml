@@ -31,6 +31,7 @@ Item {
         sortReversed: wp.sortMode === "oldest" || wp.sortMode === "nameDesc"
     }
     property string sortMode: "newest"
+    property var askDelete: null                 // { name, path } waiting for "Delete?" confirmation
     property bool sortOpen: false
     readonly property var sorts: [["newest", "Newest"], ["oldest", "Oldest"], ["name", "Name A–Z"], ["nameDesc", "Name Z–A"]]
     readonly property var list: {
@@ -131,6 +132,16 @@ Item {
             onPaint: { const g = getContext("2d"); g.reset(); g.strokeStyle = wp.ink; g.lineWidth = 4; g.lineCap = "round"
                 g.beginPath(); g.moveTo(10, 70); g.quadraticCurveTo(390, -30, 770, 70); g.stroke() }
         }
+        // drag left/right on the string to spin it (one picture every ~90 px)
+        MouseArea {
+            anchors.fill: parent; z: -1
+            property real startX: 0
+            property real moved: 0
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: m => { startX = m.x; moved = 0 }
+            onPositionChanged: m => { if (!pressed) return; const d = m.x - startX; if (Math.abs(d) >= 90) { wp.step(d > 0 ? -1 : 1); startX = m.x; moved++ } }
+        }
+        WheelHandler { onWheel: e => wp.step(e.angleDelta.y > 0 ? -1 : 1) }
         // the string: quadratic curve (10,70) → ctrl (390,-30) → (770,70) in the Canvas (which sits at 10,4)
         function stringY(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return (1 - t) * (1 - t) * 70 + 2 * (1 - t) * t * -30 + t * t * 70 + 4 }
         function stringAngle(xs) { const t = Math.max(0, Math.min(1, (xs - 20) / 760)); return Math.atan2(-200 * (1 - t) + 200 * t, 760) * 180 / Math.PI }
@@ -186,11 +197,35 @@ Item {
             WpButton { text: "‹ Previous"; h: 30; onClicked: wp.step(-1) }
             WpButton { text: wp.applied ? "✓ Applied" : "Set as " + wp.target; h: 36; bold: true; drop: 3; fill: wp.applied ? wp.accent : Theme.paper; onClicked: wp.apply() }
             WpButton { text: "Next ›"; h: 30; onClicked: wp.step(1) }
+            WpButton { text: "🗑"; h: 30; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
             WpButton { visible: !wp.narrow; text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
         }
         Row {   // upright phone: paste goes on its own line
             visible: wp.narrow; anchors.horizontalCenter: parent.horizontalCenter; height: 34
             WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 30; onClicked: wp.svc.pasteWallpaper() }
+        }
+    }
+    // delete confirmation (moves the picture to the Trash, so it can be restored)
+    Rectangle {
+        visible: !!wp.askDelete; z: 80; anchors.fill: parent; radius: 40; color: Qt.rgba(33 / 255, 63 / 255, 72 / 255, 0.35)
+        MouseArea { anchors.fill: parent; onClicked: wp.askDelete = null }
+        UiCandy {
+            anchors.centerIn: parent; width: Math.min(420, parent.width - 40); height: dcol.implicitHeight + 32; radius: 22; bw: 3; ink: wp.ink; drop: 6; hi: 0; fill: Theme.cream
+            MouseArea { anchors.fill: parent; z: -1 }
+            Column {
+                id: dcol; x: 18; y: 16; width: parent.width - 36; spacing: 10
+                UiText { width: parent.width; text: "Delete this picture?"; px: 19; w: 700; color: Theme.textDeep }
+                UiText { width: parent.width; text: wp.askDelete ? wp.askDelete.name : ""; fam: "n"; px: 12; w: 800; color: Theme.textMuted; wrapMode: Text.WrapAnywhere }
+                UiText { width: parent.width; text: "It goes to the Trash — you can restore it from Dolphin."; fam: "n"; px: 11; w: 800; color: Theme.textSoft; wrapMode: Text.Wrap }
+                Row {
+                    anchors.right: parent.right; spacing: 10
+                    UiCandy { width: 90; height: 36; radius: 12; bw: 2.5; ink: wp.ink; drop: 3; hi: 0; fill: Theme.paper; pressable: true; onClicked: wp.askDelete = null
+                        UiText { anchors.centerIn: parent; text: "Cancel"; px: 13; w: 700 } }
+                    UiCandy { width: 100; height: 36; radius: 12; bw: 2.5; ink: wp.ink; drop: 3; hi: 3; fill: Theme.gBerry; pressable: true
+                        onClicked: { wp.svc.trashFile(wp.askDelete.path); wp.askDelete = null }
+                        UiText { anchors.centerIn: parent; text: "Delete"; px: 13; w: 700 } }
+                }
+            }
         }
     }
     focus: true

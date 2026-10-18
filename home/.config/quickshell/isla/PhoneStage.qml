@@ -320,7 +320,9 @@ Item {
                     required property string modelData
                     readonly property bool cur: stage.screen === modelData
                     readonly property bool prev: stage.prevScreen === modelData && stage.wantLand
-                    anchors.fill: parent
+                    width: parent.width; height: parent.height
+                    // slide in from the side you're going to (like the upright phone), old screen slides out
+                    x: cur && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
                     active: cur || prev || item !== null
                     opacity: (cur ? stage.swapT : (prev ? 1 - stage.swapT : 0)) * stage.landContent
                     visible: opacity > 0

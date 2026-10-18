@@ -13,6 +13,14 @@ Item {
         UiText { text: "SCREEN BRIGHTNESS · " + Math.round(pp.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
         UiSlider { width: parent.width; value: pp.svc.brightness; color: Theme.sunDeep; onPicked: v => pp.svc.setBrightness(Math.max(0.05, v)) }
         Item { width: 1; height: 4 }
+        // Windows-style timers
+        UiText { text: "SCREEN & SLEEP"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
+        PowerTimer { width: parent.width; key: "idleLock"; glyph: "lock"; title: "Lock the screen after" }
+        PowerTimer { width: parent.width; key: "idleScreen"; glyph: "monitor"; title: "Turn off my screen after" }
+        PowerTimer { width: parent.width; key: "idleSleep"; glyph: "moon"; title: "Put the laptop to sleep after" }
+        UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+            text: "Counts from your last mouse or key press. Videos and games that keep the screen awake pause it, and so does Keep awake." }
+        Item { width: 1; height: 2 }
         UiRow {
             width: parent.width; glyph: "moon"; title: "Keep awake"; sub: pp.svc.keepAwake ? "Screen will not sleep" : "Normal sleep"
             active: pp.svc.keepAwake; onClicked: pp.svc.toggle("awake")

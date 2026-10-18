@@ -317,6 +317,16 @@ Singleton {
     signal appOpened()                             // shell closes the phone + dropdowns
     function openApp(cmd) { app(cmd); appOpened() }       // start a program and close the phone / dropdowns
 
+    // ── idle timers (Settings → Power): lock, screens off, sleep — plugged-in / battery values from Prefs ──
+    readonly property int _ix: battery.plugged ? 0 : 1
+    function _mins(a) { return a && a.length > _ix ? Number(a[_ix]) || 0 : 0 }
+    IdleMonitor { id: idleLockM; enabled: s._mins(Prefs.idleLock) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleLock)) * 60; respectInhibitors: true
+        onIsIdleChanged: if (isIdle) s.lockRequested() }
+    IdleMonitor { id: idleScreenM; enabled: s._mins(Prefs.idleScreen) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleScreen)) * 60; respectInhibitors: true
+        onIsIdleChanged: if (isIdle) s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) }
+    IdleMonitor { id: idleSleepM; enabled: s._mins(Prefs.idleSleep) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleSleep)) * 60; respectInhibitors: true
+        onIsIdleChanged: if (isIdle) { s.lockRequested(); s.run(["sh", "-c", "sleep 2; systemctl suspend"]) } }   // lock first, then sleep
+
     // ── screen time recorder (Noctalia did this; only runs while Noctalia is off) ──
     property var _stPending: ({})
     IdleMonitor { id: idle; timeout: 300; respectInhibitors: true }
@@ -350,6 +360,8 @@ Singleton {
     Process { id: bindSet
         stdout: StdioCollector { id: bindOut }
         onExited: code => { s.bindMsg = code === 0 ? "Saved ✓" : "Not saved — " + bindOut.text.trim().slice(0, 140); s.loadBinds() } }
+    function addBind(name, cmd, keys) { if (bindSet.running) return; bindMsg = "Saving…"; bindSet.command = ["python3", Quickshell.shellDir + "/tools/addbind.py", "add", name, cmd, keys]; bindSet.running = true }
+    function removeBind(index) { if (bindSet.running) return; bindMsg = "Removing…"; bindSet.command = ["python3", Quickshell.shellDir + "/tools/addbind.py", "remove", String(index)]; bindSet.running = true }
     function setBind(index, keys) { if (bindSet.running) return; bindMsg = "Saving…"; bindSet.command = ["python3", Quickshell.shellDir + "/tools/setbind.py", String(index), keys]; bindSet.running = true }
     function submap(name) { run(["hyprctl", "dispatch", "hl.dsp.submap(\"" + name + "\")"]) }
 
@@ -491,6 +503,7 @@ Singleton {
     // ── power menu ──
     property bool hasLocker: true                   // Isla has its own lock screen
     signal lockRequested()
+    function trashFile(p) { run(["gio", "trash", p]) }
     signal phoneRotate()
     function rotatePhone() { phoneRotate() }
     // Wallpapers → Paste image (clipboard picture or a copied image link)

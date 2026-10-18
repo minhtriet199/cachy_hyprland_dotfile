@@ -17,6 +17,10 @@ Singleton {
     property string displayName: ""         // name shown on the profile card ("" = system full name)
     property string avatar: "smile"         // profile glyph
     property string lockWallpaper: ""       // lock screen picture ("" = Isla's sky with blobs)
+    // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
+    property var idleLock: [15, 5]
+    property var idleScreen: [10, 3]
+    property var idleSleep: [0, 15]
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
@@ -26,7 +30,7 @@ Singleton {
                                        peach: ["#FDECE3", "#F6CDB9"], mint: ["#E7F6E7", "#C3E6C5"], sun: ["#FFF6D6", "#F5DE95"] })
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }
