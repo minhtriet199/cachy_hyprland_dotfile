@@ -307,7 +307,8 @@ ShellRoot {
                     exclusiveZone: 0
                     color: "transparent"
                     WlrLayershell.namespace: "isla-dock"
-                    mask: Region { item: dockWin.shown ? dockBox : dockTrigger }
+                    // while a game is focused the bottom edge belongs to the game (edge scrolling), so no hover strip
+                    mask: Region { item: dockWin.shown ? dockBox : Services.gaming ? null : dockTrigger }
                     onShownChanged: if (!shown) dock.hoverKey = ""
                     Timer { id: holdTimer; interval: 450 }                         // small delay before hiding
                     Item {

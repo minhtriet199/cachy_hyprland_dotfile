@@ -22,6 +22,7 @@ end
 
 local lastSteam = { mon = nil, t = 0 }
 local lastUser = nil -- last focused non-game window, to give focus back to
+local playing = false -- a game window has focus right now
 local gameWs = {}    -- game class -> workspace id
 
 hl.on("window.active", function(w)
@@ -31,6 +32,12 @@ hl.on("window.active", function(w)
             lastSteam.mon, lastSteam.t = w.monitor.name, os.time()
         end
         if not isGame(w) then lastUser = w end
+        -- While a game has focus, only a click moves focus (follow_mouse 2): the pointer wandering onto
+        -- the other screen no longer pulls keyboard focus / EN-VI away from the game. Normal again after.
+        if isGame(w) ~= playing then
+            playing = isGame(w)
+            hl.config({ input = { follow_mouse = playing and 2 or 1 } })
+        end
     end)
 end)
 
@@ -85,7 +92,8 @@ hl.on("window.open", function(w)
         local you = lastUser
         local youMon = you and you.monitor and you.monitor.name
         hl.dispatch(hl.dsp.focus({ workspace = target }))
-        if you and youMon and youMon ~= monName then
+        -- (not when you're already playing: a game opening its next window must keep focus)
+        if not playing and you and youMon and youMon ~= monName then
             local addr = you.address
             -- Hyprland focuses new windows after this handler, so hand focus back a moment later
             hl.timer(function()
