@@ -1,2 +1,5 @@
 [General]
 theme=Isla
+
+[Applications]
+IslaDark=dolphin

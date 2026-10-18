@@ -1,0 +1,27 @@
+[General]
+ShowFullPath=true
+Version=202
+ViewPropsTimestamp=2026,10,11,16,55,1.9300000000000002
+GlobalViewProps=true
+ShowSpaceInfo=true
+ShowZoomSlider=true
+BrowseThroughArchives=true
+
+[IconsMode]
+IconSize=80
+PreviewSize=96
+TextWidthIndex=1
+
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22
+
+[MainWindow]
+MenuBar=Disabled
+
+[UiSettings]
+ColorScheme=IslaDark
+
+[PreviewSettings]
+Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,directorythumbnail,fontthumbnail,imagethumbnail,jpegthumbnail,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,mobithumbnail,opendocumentthumbnail,gsthumbnail,rawthumbnail,svgthumbnail,ffmpegthumbs
+MaximumSize=104857600

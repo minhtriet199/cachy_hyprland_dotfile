@@ -21,7 +21,10 @@ cp -a "$HOME/.local/state/isla/prefs.json" "home/.local/state/isla/" 2>/dev/null
 mkdir -p home/.config/Kvantum home/.local/share/icons home/.local/share/color-schemes home/.config/qt6ct/colors home/.local/share/fonts home/Pictures/Wallpapers
 rsync -a --delete --exclude='*.bak*' "$HOME/.config/Kvantum/" "home/.config/Kvantum/"
 rsync -a --delete "$HOME/.local/share/icons/Isla/" "home/.local/share/icons/Isla/"
-cp -a "$HOME/.local/share/color-schemes/Isla.colors" "home/.local/share/color-schemes/" 2>/dev/null
+cp -a "$HOME/.local/share/color-schemes/Isla.colors" "$HOME/.local/share/color-schemes/IslaDark.colors" "home/.local/share/color-schemes/" 2>/dev/null
+# Dolphin look (icon view, previews, panels, Isla Dark colours)
+cp -a "$HOME/.config/dolphinrc" "home/.config/" 2>/dev/null
+mkdir -p home/.local/share/dolphin/view_properties/global && cp -a "$HOME/.local/share/dolphin/view_properties/global/.directory" "home/.local/share/dolphin/view_properties/global/" 2>/dev/null
 cp -a "$HOME/.config/qt6ct/qt6ct.conf" "home/.config/qt6ct/" 2>/dev/null
 cp -a "$HOME/.config/qt6ct/colors/isla.conf" "home/.config/qt6ct/colors/" 2>/dev/null
 cp -a "$HOME/.config/kdeglobals" "home/.config/" 2>/dev/null
