@@ -4,11 +4,13 @@ import QtQuick
 // Click a shortcut → press the new keys (Esc cancels). While recording, Hyprland is put in the empty
 // "keycapture" submap so existing binds don't fire (same trick as the Keyboard Shortcuts app).
 // Saving goes through tools/setbind.py → the app's own apply(): reload + roll back on errors.
+// Filter chips: All · Same keys (two shortcuts on one key combo) · Mine (added here) · each group.
 FocusScope {
     id: kp
     property var svc
     property real listH: 300
     property string filter: ""
+    property string chip: "all"             // all · dup · custom · a category name
     property int recIndex: -1               // -2 = recording keys for a NEW shortcut
     property bool adding: false
     property var nameField: null
@@ -20,9 +22,25 @@ FocusScope {
     Component.onCompleted: { svc.loadBinds(); svc.bindMsg = "" }
     Component.onDestruction: if (recIndex >= 0) svc.submap("reset")
 
+    // same keys = same modifiers + key in any order; "Super + 1…9" rows count as their ten number keys
+    function combos(b) {
+        const base = b.keys.split("+").map(p => p.trim().toUpperCase()).filter(p => p);
+        const one = extra => base.concat(extra).sort().join("+");
+        if (b.action !== "ws_digits") return [one([])];
+        const out = []; for (let c = 10; c <= 19; c++) out.push(one(["CODE:" + c])); return out;
+    }
+    readonly property var dupSet: {
+        const seen = {}, dup = {};
+        svc.binds.forEach((b, i) => combos(b).forEach(c => { if (seen[c] !== undefined && seen[c] !== i) { dup[i] = true; dup[seen[c]] = true } else seen[c] = i }));
+        return dup;
+    }
+    readonly property int dupCount: Object.keys(dupSet).length
+    readonly property var cats: { const o = []; for (const b of svc.binds) if (!o.includes(b.category)) o.push(b.category); return o }
     readonly property var rows: {
         const f = filter.toLowerCase(), out = [];
-        svc.binds.forEach((b, i) => { if (!f || (b.desc + " " + b.keys + " " + b.category).toLowerCase().includes(f)) out.push(Object.assign({ index: i }, b)) });
+        svc.binds.forEach((b, i) => {
+            if (chip === "dup" ? !dupSet[i] : chip === "custom" ? b.category !== "Custom" : chip !== "all" && b.category !== chip) return;
+            if (!f || (b.desc + " " + b.keys + " " + b.category).toLowerCase().includes(f)) out.push(Object.assign({ index: i }, b)) });
         const order = []; for (const b of out) if (!order.includes(b.category)) order.push(b.category);
         return out.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || a.index - b.index);
     }
@@ -86,6 +104,28 @@ FocusScope {
                 text: kp.recIndex !== -1 ? "Press the keys · Esc cancels" : kp.svc.bindMsg; fam: "n"; px: 11; w: 800
                 color: kp.recIndex !== -1 ? Theme.purple : kp.svc.bindMsg.startsWith("Not") ? Theme.berry : Theme.leafDeep }
         }
+        // filter chips (scroll sideways on the narrow phone)
+        Flickable {
+            width: parent.width; height: 30; clip: true
+            contentWidth: chipRow.width; flickableDirection: Flickable.HorizontalFlick; boundsBehavior: Flickable.StopAtBounds
+            Row {
+                id: chipRow; spacing: 6
+                Repeater {
+                    model: [["all", "All"], ["dup", "Same keys · " + kp.dupCount], ["custom", "Mine"]].concat(kp.cats.filter(c => c !== "Custom").map(c => [c, c]))
+                    delegate: UiCandy {
+                        required property var modelData
+                        readonly property bool on: kp.chip === modelData[0]
+                        readonly property bool warn: modelData[0] === "dup" && kp.dupCount > 0
+                        width: ct.implicitWidth + 22; height: 28; radius: 10; bw: 2; drop: on ? 0 : 2; hi: 0
+                        fill: on ? Theme.gOn : warn ? Theme.pinkSoft : Theme.cream; pressable: true
+                        onClicked: kp.chip = on && modelData[0] !== "all" ? "all" : modelData[0]
+                        UiText { id: ct; anchors.centerIn: parent; text: modelData[1]; px: 12; w: 700 }
+                    }
+                }
+            }
+        }
+        UiText { visible: kp.rows.length === 0; width: parent.width; height: 30; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+            text: kp.chip === "dup" ? "No two shortcuts share the same keys ✓" : "Nothing here"; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
         // new shortcut: name + command, then record the keys
         UiCandy {
             visible: kp.adding
@@ -116,7 +156,7 @@ FocusScope {
         }
         ListView {
             id: list
-            width: parent.width; height: kp.listH - (kp.adding ? addCol.implicitHeight + 30 : 0)
+            width: parent.width; height: kp.listH - 40 - (kp.adding ? addCol.implicitHeight + 30 : 0)
             clip: true; spacing: 5; boundsBehavior: Flickable.StopAtBounds
             model: kp.rows
             delegate: Column {
@@ -148,6 +188,9 @@ FocusScope {
                         }
                     }
                     UiText { visible: row.modelData.action === "ws_digits"; text: "+ 1…9"; fam: "n"; px: 11; w: 900; anchors.verticalCenter: parent.verticalCenter }
+                    // same keys as another shortcut: only one of them will work
+                    UiCandy { visible: !!kp.dupSet[row.modelData.index]; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.berry
+                        UiText { anchors.centerIn: parent; text: "!"; px: 13; w: 700; color: "#FFFFFF" } }
                     // shortcuts you added can be removed
                     UiCandy { visible: row.modelData.category === "Custom"; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.pinkSoft; pressable: true
                         onClicked: kp.svc.removeBind(row.modelData.index)

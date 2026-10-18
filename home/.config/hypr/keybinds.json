@@ -13,7 +13,7 @@
   "action": "exec",
   "arg": "~/.config/hypr/scripts/shell-cmd.sh settings-toggle",
   "category": "Windows",
-  "desc": "Noctalia settings",
+  "desc": "Isla settings",
   "locked": false,
   "repeating": false
  },
