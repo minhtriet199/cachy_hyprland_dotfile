@@ -65,7 +65,7 @@ Item {
         // notifications
         Item {
             width: parent.width
-            height: q.height - y - 18 - 14 - 12 - (q.svc.phoneBig ? 50 : 0)   // big mode: stop above the nav bar
+            height: q.height - y - 18 - 14 - 12 - ((q.svc.phoneBig && q.height > q.width) ? 50 : 0)   // big mode: stop above the nav bar
             Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
             UiCandy {
                 y: 12; width: parent.width; height: parent.height

@@ -164,7 +164,7 @@ Item {
     ListView {
         id: apps
         x: 18; y: topCol.y + topCol.height + 6; width: is.cw
-        height: is.height - y - (is.svc.phoneBig ? 64 : 22)
+        height: is.height - y - ((is.svc.phoneBig && is.height > is.width) ? 64 : 22)
         clip: true; spacing: 8; boundsBehavior: Flickable.StopAtBounds
         model: is.wins
         // empty space → big phone

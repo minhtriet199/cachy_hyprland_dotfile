@@ -94,8 +94,8 @@ Item {
         id: grid
         visible: home.q === "" && home.mode <= 1
         x: 18; y: top.y + top.height + 12; width: parent.width - 36
-        height: home.height - y - 18 - (home.svc.phoneBig ? 52 : 4)
-        cellWidth: width / 4; cellHeight: 98
+        height: home.height - y - 18 - ((home.svc.phoneBig && home.height > home.width) ? 52 : 4)
+        cellWidth: width / Math.max(4, Math.floor(width / 110)); cellHeight: 98     // more columns on the wide (sideways) phone
         clip: true; boundsBehavior: Flickable.StopAtBounds
         model: home.svc.entries.slice().sort((a, b) => a.name.localeCompare(b.name))
         delegate: Item {
@@ -126,7 +126,7 @@ Item {
         id: list
         visible: home.q !== ""
         x: 18; y: top.y + top.height + 12; width: parent.width - 36
-        height: home.height - y - 18 - (home.svc.phoneBig ? 52 : 26)          // room for the hint footer
+        height: home.height - y - 18 - ((home.svc.phoneBig && home.height > home.width) ? 52 : 26)          // room for the hint footer
         clip: true; spacing: 6; boundsBehavior: Flickable.StopAtBounds
         model: home.rows
         onCountChanged: positionViewAtBeginning()
@@ -193,7 +193,7 @@ Item {
 
     // footer hints while searching
     Row {
-        visible: home.q !== "" && !home.svc.phoneBig
+        visible: home.q !== "" && !(home.svc.phoneBig && home.height > home.width)
         anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10
         spacing: 12
         Repeater { model: home.mode >= 2 ? ["↵ open", "⇧↵ show in folder", "Tab type"] : ["↵ open", "↑↓ move", "Tab type", "Esc clear"]

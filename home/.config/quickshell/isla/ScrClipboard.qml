@@ -85,7 +85,7 @@ Item {
         }
         // preview
         Item {
-            width: parent.width; height: 214 - (c.svc.phoneBig ? 44 : 0)     // big mode: stop above the nav bar
+            width: parent.width; height: 214 - ((c.svc.phoneBig && c.height > c.width) ? 44 : 0)     // big mode: stop above the nav bar
             Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
             UiCandy {
                 y: 10; width: parent.width; height: parent.height - 10; radius: 20; bw: 3; ink: Theme.inkPhone; drop: 4; hi: 0; fill: Theme.paper
