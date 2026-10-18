@@ -135,8 +135,9 @@ Item {
                         function pick(mx) { sq.prefs.themeHue = Math.round(Math.max(0, Math.min(1, mx / width)) * 200) / 200 }
                         onPressed: m => pick(m.x); onPositionChanged: m => pick(m.x); onReleased: sq.prefs.save() }
                 }
-                SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring"]; current: sq.prefs.boxStyle === "ring" ? "Ring" : "Candy"
-                    onPicked: v => sq.prefs.set("boxStyle", v === "Ring" ? "ring" : "candy") }
+                SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring", "Pop", "Soft", "Flat", "Glass"]
+                    current: (sq.prefs.boxStyle || "candy").charAt(0).toUpperCase() + (sq.prefs.boxStyle || "candy").slice(1)
+                    onPicked: v => sq.prefs.set("boxStyle", v.toLowerCase()) }
             }
         }
         // Bar

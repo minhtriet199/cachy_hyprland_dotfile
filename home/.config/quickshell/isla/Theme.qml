@@ -76,8 +76,9 @@ Singleton {
     readonly property var allPalettes: Object.assign({}, palettes, madePalettes)
     readonly property var pal: allPalettes[Prefs.theme] || palettes.isla
     function v(k, d) { return pal[k] !== undefined ? pal[k] : d }
-    // box style: "candy" (outline + solid shadow) or "ring" (thick outline, a gap, then the filled pill)
-    readonly property bool ring: Prefs.boxStyle === "ring"
+    // box style (Settings → Shell → Look): candy · ring · pop · soft · flat · glass — see UiCandy
+    readonly property string boxStyle: Prefs.boxStyle || "candy"
+    readonly property bool ring: boxStyle === "ring"
 
     // ── Ink (outlines + solid drop shadows) ──
     readonly property color ink: v("ink", "#3D5A66")          // bar, dock, desktop widgets

@@ -20,9 +20,19 @@ Item {
     readonly property bool fillIsList: fill !== null && typeof fill === "object" && fill.length !== undefined   // JS array or QVariantList
     readonly property color fillTop: fillIsList ? fill[0] : fill
     readonly property color fillBottom: fillIsList ? fill[fill.length - 1] : fill
-    readonly property real ir: Math.max(0, Math.min(radius, Math.min(width, height) / 2) - bw)
-    // "ring" box style (Theme.ring): a light gap between the outline and the fill, soft tinted shadow
-    readonly property real gap: Theme.ring && !dashed ? (Math.min(width, height) < 30 ? 2 : Math.min(width, height) < 44 ? 3.5 : 5) : 0
+    // box style (Theme.boxStyle) — what is actually drawn; sizes and layout stay the same in every style:
+    //   candy = outline + solid shadow + shine · ring = outline, light gap, then the fill · pop = thicker outline, big solid shadow
+    //   soft = no outline, faint see-through shadow · flat = outline only · glass = see-through fill, thin white edge
+    readonly property string bs: dashed ? "candy" : Theme.boxStyle
+    readonly property real eb: bs === "soft" ? 0 : bs === "glass" ? Math.min(bw, 1.5) : bs === "pop" && bw > 0 ? bw + 0.5 : bw
+    readonly property real ed: bs === "flat" || bs === "glass" ? 0 : bs === "pop" && drop > 0 ? drop + 3 : bs === "soft" && drop > 0 ? drop + 1 : drop
+    readonly property real eh: bs === "candy" ? hi : 0
+    readonly property color edgeColor: bs === "glass" ? Qt.rgba(1, 1, 1, 0.85) : ink
+    readonly property real fillAlpha: bs === "glass" ? 0.55 : 1
+    readonly property color edropColor: bs === "ring" ? Qt.rgba(fillBottom.r, fillBottom.g, fillBottom.b, 0.85)
+                                      : bs === "soft" ? Qt.rgba(ink.r, ink.g, ink.b, 0.16) : dropColor
+    readonly property real ir: Math.max(0, Math.min(radius, Math.min(width, height) / 2) - eb)
+    readonly property real gap: bs === "ring" ? (Math.min(width, height) < 30 ? 2 : Math.min(width, height) < 44 ? 3.5 : 5) : 0
     default property alias content: holder.data
     signal clicked()
     signal rightClicked()
@@ -59,23 +69,22 @@ Item {
     Item {
         id: body
         width: r.width; height: r.height
-        y: r.down ? Math.min(2, r.drop) : 0
+        y: r.down ? Math.min(2, r.ed) : 0
         Behavior on y { NumberAnimation { duration: 70 } }
 
-        Rectangle { visible: r.drop > 0 && !r.dashed; y: r.drop - body.y; width: parent.width; height: parent.height; radius: r.radius
-            color: Theme.ring ? Qt.rgba(r.fillBottom.r, r.fillBottom.g, r.fillBottom.b, 0.85) : r.dropColor }
-        Rectangle { visible: r.gap > 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: Theme.paper }
-        Rectangle { visible: !r.dashed && r.hi > 0 && r.gap === 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.fillTop }
-        Rectangle { visible: !r.dashed && r.hi > 0 && r.gap === 0; x: r.bw; y: r.bw; width: parent.width - 2 * r.bw; height: parent.height - 2 * r.bw; radius: r.ir; color: r.hiColor }
+        Rectangle { visible: r.ed > 0 && !r.dashed; y: r.ed - body.y; width: parent.width; height: parent.height; radius: r.radius; color: r.edropColor }
+        Rectangle { visible: r.gap > 0; x: r.eb; y: r.eb; width: parent.width - 2 * r.eb; height: parent.height - 2 * r.eb; radius: r.ir; color: Theme.paper }
+        Rectangle { visible: !r.dashed && r.eh > 0; x: r.eb; y: r.eb; width: parent.width - 2 * r.eb; height: parent.height - 2 * r.eb; radius: r.ir; color: r.fillTop }
+        Rectangle { visible: !r.dashed && r.eh > 0; x: r.eb; y: r.eb; width: parent.width - 2 * r.eb; height: parent.height - 2 * r.eb; radius: r.ir; color: r.hiColor }
         Rectangle {
             visible: !r.dashed
-            readonly property real inset: r.bw + r.gap
-            readonly property real hiRoom: r.gap > 0 ? 0 : r.hi
-            x: inset; y: inset + hiRoom; width: parent.width - 2 * inset; height: parent.height - 2 * inset - hiRoom; radius: Math.max(0, r.ir - r.gap)
+            readonly property real inset: r.eb + r.gap
+            x: inset; y: inset + r.eh; width: parent.width - 2 * inset; height: parent.height - 2 * inset - r.eh; radius: Math.max(0, r.ir - r.gap)
+            opacity: r.fillAlpha
             gradient: Gradient { GradientStop { position: 0; color: r.fillTop } GradientStop { position: 1; color: r.fillBottom } }
         }
         // outline ring on top (so see-through fills stay clean)
-        Rectangle { visible: !r.dashed; anchors.fill: parent; radius: r.radius; color: "transparent"; border.width: r.bw; border.color: r.ink }
+        Rectangle { visible: !r.dashed && r.eb > 0; anchors.fill: parent; radius: r.radius; color: "transparent"; border.width: r.eb; border.color: r.edgeColor }
         UiDashed { visible: r.dashed; anchors.fill: parent; radius: r.radius; bw: r.bw; color: r.ink; fillColor: r.fillTop }
         Rectangle { anchors.fill: parent; radius: r.radius; color: "white"; opacity: r.hoverable && r.hovered && !r.down ? 0.18 : 0
             Behavior on opacity { NumberAnimation { duration: 120 } } }
