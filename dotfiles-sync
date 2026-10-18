@@ -44,6 +44,9 @@ done
 pacman -Qqen > packages-native.txt
 pacman -Qqem > packages-aur.txt
 
+# --- also publish Isla to its own repo (github.com/minhtriet199/Cachy-OS-Hyprland-Island) ---
+[ -x "$HOME/isla-island/isla-sync" ] && "$HOME/isla-island/isla-sync" "$MSG"
+
 git add -A
 if git diff --cached --quiet; then
     echo "Nothing changed."
