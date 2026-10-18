@@ -36,7 +36,11 @@ Item {
         UiCandy {
             visible: w.askFor !== ""
             width: parent.width; height: 84; radius: 15; bw: 2.5; drop: 3; hi: 0; fill: Theme.gSun
-            UiText { x: 12; y: 8; width: parent.width - 24; text: "Password for " + w.askFor; px: 13; w: 700 }
+            UiText { x: 12; y: 8; width: parent.width - 24 - 30; text: "Password for " + w.askFor; px: 13; w: 700 }
+            // cancel (Esc in the box does the same)
+            UiCandy { x: parent.width - 32; y: 6; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                onClicked: { pw.text = ""; w.askFor = "" }
+                Glyph { anchors.centerIn: parent; name: "close"; size: 11; stroke: 2.8 } }
             UiCandy {
                 x: 10; y: 34; width: parent.width - 20 - 82; height: 38; radius: 11; bw: 2; drop: 0; hi: 0; fill: Theme.paper
                 TextInput {
