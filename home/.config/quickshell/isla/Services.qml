@@ -612,8 +612,9 @@ Singleton {
         } } }
     Timer { interval: 30 * 60 * 1000; running: true; repeat: true; triggeredOnStart: true; onTriggered: wx.running = true }
 
-    // a game window is open (Steam / Proton / gamescope) → the bar stops its moving bits so the GPU stays with the game
-    readonly property bool gaming: Hyprland.toplevels.values.some(t => /^(steam_app.*|gamescope)$/.test((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || ""))
+    // you're in a game (Steam / Proton / gamescope window focused) → the bar stops its moving bits so the GPU stays with the game
+    readonly property bool gaming: { const t = Hyprland.activeToplevel
+        return !!t && /^(steam_app.*|gamescope)$/.test((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "") }
     // ── music visualizer (cava, only while something is playing, not while gaming) ──
     property var viz: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Process {
