@@ -127,7 +127,12 @@ Singleton {
             try { s.clients = JSON.parse(parts[2]).map(c => ({ cls: c["class"] || c.initialClass || "app", title: c.title, workspace: c.workspace.id, address: c.address })) } catch (e) {}
         } } }
     Timer { id: refreshSoon; interval: 80; onTriggered: hyprQuery.running = true }
-    Connections { target: Hyprland; function onRawEvent(ev) { refreshSoon.restart() } }
+    // only events that change windows / workspaces / screens (title changes from browsers & terminals are constant: skip them)
+    readonly property var _hyprEvents: ["openwindow", "closewindow", "movewindow", "movewindowv2", "workspace", "workspacev2", "createworkspace", "createworkspacev2",
+        "destroyworkspace", "destroyworkspacev2", "moveworkspace", "moveworkspacev2", "renameworkspace", "focusedmon", "focusedmonv2", "monitoradded", "monitoraddedv2",
+        "monitorremoved", "monitorremovedv2", "activespecial", "activespecialv2", "changefloatingmode", "fullscreen", "pin"]
+    Connections { target: Hyprland; function onRawEvent(ev) { if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
+    Timer { interval: 60000; running: true; repeat: true; onTriggered: hyprQuery.running = true }   // safety net only
     readonly property var monitors: hMonitors.map(m => ({ name: m.name, label: (monitorNames[m.name] && monitorNames[m.name].label) || m.name }))
     function base(mon) { return (monitorNames[mon] && monitorNames[mon].base) || 0 }
     // "ASUS · Workspace 1" for a Wayland toplevel (dock previews)
@@ -250,7 +255,9 @@ Singleton {
             if (s._net) { const dt = (t - s._net.t) / 1000; s.netDown = s.speed((n[0] - s._net.r) / dt); s.netUp = s.speed((n[1] - s._net.x) / dt) }
             s._net = { r: n[0], x: n[1], t: t };
         } } }
-    Timer { interval: 4000; running: true; repeat: true; triggeredOnStart: true; onTriggered: { status.running = true; hyprQuery.running = true } }
+    // Wi-Fi / battery / brightness / net speed: the bar shows them live → a timer, slower while a game is focused
+    Timer { interval: s.gaming ? 12000 : 4000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!status.running) status.running = true }
+    Component.onCompleted: hyprQuery.running = true
     Timer { id: statusSoon; interval: 600; onTriggered: status.running = true }
     Timer { interval: 1000; repeat: true; running: s.wifiConnecting; onTriggered: if (!status.running) status.running = true }
 
@@ -558,7 +565,7 @@ Singleton {
                          fanCpu: v.fc || 0, fanGpu: v.fg || 0 };
             s.cpuHist = s._push(s.cpuHist, cpu); s.ramHist = s._push(s.ramHist, ram); s.gpuHist = s._push(s.gpuHist, Math.round(v.gpu || 0));
         } } }
-    Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!sysmonP.running) sysmonP.running = true }
+    Timer { interval: s.gaming ? 6000 : 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!sysmonP.running) sysmonP.running = true }   // bar CPU/RAM/GPU, slower in games
     // the gaming GPU's real name (e.g. "RX 6700S"), read once from Vulkan
     property string gpuName: "GPU"
     Process { running: true; command: ["sh", "-c", "vulkaninfo --summary 2>/dev/null | grep -A1 DISCRETE_GPU | sed -n 's/.*deviceName *= *//p' | head -1"]

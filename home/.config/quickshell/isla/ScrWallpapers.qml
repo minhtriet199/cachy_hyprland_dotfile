@@ -140,14 +140,17 @@ Item {
 
     }
 
-    // string + photos
+    // string + photos, cut at the screen's edges (the rope is longer than the screen)
+    Item {
+        id: stageClip
+        x: 12; width: wp.width - 24; height: wp.height; clip: true      // 12 = phone frame around the screen
     Item {
         id: stage
         // drawn for an 800-wide sideways screen; on the upright phone it's scaled down to fit
         // and shrunk to fit above the name + buttons (≈ 270 design px tall), centred
         readonly property real room: wp.height - (16 + wp.topPad + (wp.narrow ? 170 : 40)) - caption.height - caption.anchors.bottomMargin - 10
         scale: Math.max(0.3, Math.min(1, wp.cw / 800, room / 270)); transformOrigin: Item.TopLeft
-        x: wp.cx + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: 800; height: room / scale
+        x: wp.cx - stageClip.x + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: 800; height: room / scale
         // the rope runs past both sides (x -220 … 1020) so the outer photos hang from it too.
         // Quadratic curve (-220,110) → ctrl (400,-50) → (1020,110) in stage coords; the canvas sits at x -230
         Canvas {
@@ -263,6 +266,8 @@ Item {
         }
         UiText { visible: wp.n === 0; anchors.centerIn: parent; horizontalAlignment: Text.AlignHCenter; fam: "n"; w: 800; px: 13; color: Theme.textSoft
             text: "No pictures in " + wp.prefs.wallDir + "\nPut some wallpapers there and come back ✿" }
+    }
+
     }
 
     // caption + actions
