@@ -319,7 +319,27 @@ Singleton {
     Timer { id: btAgentRestart; interval: 3000; onTriggered: btAgent.running = true }
     Timer { id: btDisplayHide; interval: 30000; running: !!s.btAsk && s.btAsk.kind === "display"; onTriggered: s.btAsk = null }
     // ans: "yes" | "no" | "trust" (= allow and trust from now on)
-    function btAnswer(ans) { if (btAsk && btAsk.kind !== "display") btAgent.write(btAsk.id + " " + ans + "\n"); btAsk = null }
+    function btAnswer(ans) {
+        if (!btAsk) return;
+        if (btAsk.kind === "newdev") { if (ans !== "no") _btPair(btAsk.addr, btAsk.path, ans === "trust") }
+        else if (btAsk.kind !== "display") btAgent.write(btAsk.id + " " + ans + "\n");
+        btAsk = null;
+    }
+    // tapping a new device in the panel: ask first (Pair only / Pair & trust), then pair + connect.
+    // Codes (phones) show in the same dialog through the agent; failure shows in the device row.
+    property string btPairAddr: ""
+    property string btFailAddr: ""
+    function btPairAsk(d) {
+        if (btPairP.running) return;
+        btAsk = { id: -1, kind: "newdev", name: d.name || d.address, addr: d.address,
+                  path: d.dbusPath || ("/org/bluez/hci0/dev_" + d.address.replace(/:/g, "_")), key: null };
+    }
+    function _btPair(addr, path, trust) {
+        btFailAddr = ""; btPairAddr = addr;
+        btPairP.command = ["sh", "-c", "busctl call --timeout=60 org.bluez $2 org.bluez.Device1 Pair; [ $3 = 1 ] && bluetoothctl trust $1 >/dev/null; timeout 20 bluetoothctl connect $1 | grep -q 'Connection successful'", "sh", addr, path, trust ? "1" : "0"];
+        btPairP.running = true;
+    }
+    Process { id: btPairP; onExited: code => { if (code !== 0) s.btFailAddr = s.btPairAddr; s.btPairAddr = "" } }
 
     // ✕ on the "Connecting…" row: stop waiting, and stop NetworkManager trying (a new network's half-made profile is removed)
     property bool _wifiCancelled: false

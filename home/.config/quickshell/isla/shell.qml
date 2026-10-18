@@ -412,7 +412,7 @@ ShellRoot {
                         screen: scr.modelData
                         anchors.top: true
                         margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
-                        implicitWidth: Math.ceil(360 * scr.sc)
+                        implicitWidth: Math.ceil(390 * scr.sc)
                         implicitHeight: Math.ceil((pairBox.height + 16) * scr.sc)
                         exclusionMode: ExclusionMode.Ignore
                         color: "transparent"

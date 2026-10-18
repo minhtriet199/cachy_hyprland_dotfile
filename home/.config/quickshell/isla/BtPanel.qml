@@ -12,18 +12,9 @@ Item {
     readonly property var ad: Bluetooth.defaultAdapter
     readonly property var devs: ad ? ad.devices.values.slice().sort((x, y) => (y.connected - x.connected) || (y.paired - x.paired) || (x.name || "").localeCompare(y.name || "")) : []
     implicitHeight: col.implicitHeight
-    // Pairs through Isla's agent (tools/bt-agent.py): a code shows in the pair dialog, then connects. Trust is left to the shield button. Fails → the row says so.
-    property string pairAddr: ""
-    property string failAddr: ""
-    function pairNew(d) {
-        if (pairP.running) return
-        failAddr = ""; pairAddr = d.address
-        pairP.command = ["sh", "-c", "busctl call --timeout=60 org.bluez $2 org.bluez.Device1 Pair; timeout 20 bluetoothctl connect $1 | grep -q 'Connection successful'", "sh", d.address, d.dbusPath || ("/org/bluez/hci0/dev_" + d.address.replace(/:/g, "_"))]
-        pairP.running = true
-    }
+    // new device → svc.btPairAsk: dialog asks Pair only / Pair & trust, then pairs + connects
     function removeDev(d) { rmP.command = ["sh", "-c", "bluetoothctl disconnect $1 >/dev/null; bluetoothctl remove $1", "sh", d.address]; rmP.running = true }
     Process { id: rmP }
-    Process { id: pairP; onExited: code => { if (code !== 0) b.failAddr = b.pairAddr; b.pairAddr = "" } }
     onVisibleChanged: if (!visible && ad && ad.discovering) ad.discovering = false
 
     function iconFor(d) {
@@ -77,17 +68,17 @@ Item {
                 glyph: b.iconFor(modelData)
                 title: modelData.name || modelData.address
                 active: modelData.connected
-                busy: b.pairAddr === modelData.address || modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
-                busyText: b.pairAddr === modelData.address ? "Pairing…" : "Working…"
-                subColor: b.failAddr === modelData.address ? Theme.berry : Theme.textSoft
-                sub: b.failAddr === modelData.address && !modelData.connected ? "Couldn't connect · hold its pairing button, then tap again"
+                busy: b.svc.btPairAddr === modelData.address || modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
+                busyText: b.svc.btPairAddr === modelData.address ? "Pairing…" : "Working…"
+                subColor: b.svc.btFailAddr === modelData.address ? Theme.berry : Theme.textSoft
+                sub: b.svc.btFailAddr === modelData.address && !modelData.connected ? "Couldn't connect · hold its pairing button, then tap again"
                      : (modelData.connected ? "Connected" : modelData.paired ? "Paired" : "New device")
                        + (modelData.paired ? (modelData.trusted ? " · Trusted" : " · Not trusted") : "")
                      + (modelData.batteryAvailable ? " · 🔋 " + Math.round(modelData.battery * 100) + "%" : "")
                 onClicked: {
                     if (modelData.connected) modelData.disconnect();
                     else if (modelData.paired && modelData.bonded) modelData.connect();
-                    else b.pairNew(modelData)
+                    else b.svc.btPairAsk(modelData)
                 }
                 UiCandy { visible: modelData.connected; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: modelData.disconnect()

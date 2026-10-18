@@ -3,12 +3,13 @@ import QtQuick
 // Bluetooth pair request (from tools/bt-agent.py via Services.btAsk): shows the code a phone/PC
 // also shows, with Pair / Cancel. "display" = type this code on the other device (just OK).
 // "authorize" = a paired but not trusted device wants to connect: Deny / Allow once / Trust.
+// "newdev" = you tapped a new device in the panel: Cancel / Pair only / Pair & trust.
 Item {
     id: d
     property var svc
     readonly property var ask: svc.btAsk
     readonly property string kind: ask ? ask.kind : ""
-    width: 340
+    width: 370
     height: card.height + 18
 
     UiCandy {
@@ -37,6 +38,7 @@ Item {
             UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 11.5; w: 800; color: Theme.textSoft
                 text: d.kind === "confirm" ? "Make sure the same code shows on the other device."
                     : d.kind === "display" ? "Then press Pair / OK there."
+                    : d.kind === "newdev" ? "Trust = it may connect by itself later. Pair only = it asks first."
                     : "It's paired but not trusted. Trust = it may always connect by itself." }
             Row {
                 anchors.right: parent.right; spacing: 8
@@ -47,15 +49,15 @@ Item {
                     UiText { id: noT; anchors.centerIn: parent; text: d.kind === "authorize" ? "Deny" : "Cancel"; px: 14; w: 700 }
                 }
                 UiCandy {
-                    visible: d.kind === "authorize"
+                    visible: d.kind === "authorize" || d.kind === "newdev"
                     width: onceT.implicitWidth + 28; height: 36; radius: 13; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; pressable: true
                     onClicked: d.svc.btAnswer("yes")
-                    UiText { id: onceT; anchors.centerIn: parent; text: "Allow once"; px: 14; w: 700 }
+                    UiText { id: onceT; anchors.centerIn: parent; text: d.kind === "newdev" ? "Pair only" : "Allow once"; px: 14; w: 700 }
                 }
                 UiCandy {
                     width: yesT.implicitWidth + 32; height: 36; radius: 13; bw: 2.5; drop: 3; hi: 0; fill: Theme.gOn; pressable: true
-                    onClicked: d.svc.btAnswer(d.kind === "authorize" ? "trust" : "yes")
-                    UiText { id: yesT; anchors.centerIn: parent; text: d.kind === "display" ? "OK" : d.kind === "authorize" ? "Trust" : "Pair"; px: 14; w: 700 }
+                    onClicked: d.svc.btAnswer(d.kind === "authorize" || d.kind === "newdev" ? "trust" : "yes")
+                    UiText { id: yesT; anchors.centerIn: parent; text: d.kind === "display" ? "OK" : d.kind === "authorize" ? "Trust" : d.kind === "newdev" ? "Pair & trust" : "Pair"; px: 14; w: 700 }
                 }
             }
         }
