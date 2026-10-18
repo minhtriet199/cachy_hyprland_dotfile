@@ -309,6 +309,18 @@ Singleton {
         onExited: code => { const cancelled = s._wifiCancelled; s._wifiCancelled = false; s.wifiBusy = false
             s.wifiError = code === 0 || cancelled ? "" : (wifiErr.text || wifiOut.text).trim().replace(/^Error: /, "").slice(0, 120)
             s.wifiErrFor = code === 0 || cancelled ? "" : s.wifiTarget; s.wifiTarget = ""; s.wifiScan(); statusSoon.restart() } }
+    // Bluetooth pairing agent (tools/bt-agent.py): a phone/PC asking to pair shows its code in the pair dialog.
+    // btAsk = {id, kind: confirm|authorize|display, name, addr, key} or null
+    property var btAsk: null
+    Process { id: btAgent; running: true; stdinEnabled: true
+        command: ["python3", Quickshell.shellDir + "/tools/bt-agent.py"]
+        stdout: SplitParser { onRead: line => { try { const m = JSON.parse(line); s.btAsk = m.kind === "cancel" ? null : m } catch (e) {} } }
+        onExited: btAgentRestart.start() }
+    Timer { id: btAgentRestart; interval: 3000; onTriggered: btAgent.running = true }
+    Timer { id: btDisplayHide; interval: 30000; running: !!s.btAsk && s.btAsk.kind === "display"; onTriggered: s.btAsk = null }
+    // ans: "yes" | "no" | "trust" (= allow and trust from now on)
+    function btAnswer(ans) { if (btAsk && btAsk.kind !== "display") btAgent.write(btAsk.id + " " + ans + "\n"); btAsk = null }
+
     // ✕ on the "Connecting…" row: stop waiting, and stop NetworkManager trying (a new network's half-made profile is removed)
     property bool _wifiCancelled: false
     property bool _wifiTargetKnown: false

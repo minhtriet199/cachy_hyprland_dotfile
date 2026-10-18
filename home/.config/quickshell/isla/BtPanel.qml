@@ -12,14 +12,13 @@ Item {
     readonly property var ad: Bluetooth.defaultAdapter
     readonly property var devs: ad ? ad.devices.values.slice().sort((x, y) => (y.connected - x.connected) || (y.paired - x.paired) || (x.name || "").localeCompare(y.name || "")) : []
     implicitHeight: col.implicitHeight
-    // Quickshell has no pairing agent, so pair() alone waits forever. bluetoothctl brings its own
-    // (no PIN prompt), then connects. Trust is left to the shield button. Fails → the row says so.
+    // Pairs through Isla's agent (tools/bt-agent.py): a code shows in the pair dialog, then connects. Trust is left to the shield button. Fails → the row says so.
     property string pairAddr: ""
     property string failAddr: ""
     function pairNew(d) {
         if (pairP.running) return
         failAddr = ""; pairAddr = d.address
-        pairP.command = ["sh", "-c", "a=$1; timeout 30 bluetoothctl --agent NoInputNoOutput pair $a; timeout 20 bluetoothctl connect $a | grep -q 'Connection successful'", "sh", d.address]
+        pairP.command = ["sh", "-c", "busctl call --timeout=60 org.bluez $2 org.bluez.Device1 Pair; timeout 20 bluetoothctl connect $1 | grep -q 'Connection successful'", "sh", d.address, d.dbusPath || ("/org/bluez/hci0/dev_" + d.address.replace(/:/g, "_"))]
         pairP.running = true
     }
     function removeDev(d) { rmP.command = ["sh", "-c", "bluetoothctl disconnect $1 >/dev/null; bluetoothctl remove $1", "sh", d.address]; rmP.running = true }

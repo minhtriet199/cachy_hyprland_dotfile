@@ -405,6 +405,23 @@ ShellRoot {
                     }
                 }
 
+                // ── Bluetooth pair / connect request (main monitor, top middle): only exists while asking ──
+                LazyLoader {
+                    active: scr.isMain && !!Services.btAsk
+                    PanelWindow {
+                        screen: scr.modelData
+                        anchors.top: true
+                        margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
+                        implicitWidth: Math.ceil(360 * scr.sc)
+                        implicitHeight: Math.ceil((pairBox.height + 16) * scr.sc)
+                        exclusionMode: ExclusionMode.Ignore
+                        color: "transparent"
+                        WlrLayershell.layer: WlrLayer.Overlay
+                        WlrLayershell.namespace: "isla-bluetooth"
+                        BtPairDialog { id: pairBox; x: 10; svc: Services; scale: scr.sc; transformOrigin: Item.TopLeft }
+                    }
+                }
+
                 // ── the phone ──
                 PanelWindow {
                     id: phoneWin
