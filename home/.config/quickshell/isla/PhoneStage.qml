@@ -15,10 +15,14 @@ Item {
     property bool shown: false
     readonly property bool big: !!svc && svc.phoneBig
     property real flat: big && (wantLand || hand > 0.001) ? 1 : 0     // 1 = no tilt (big landscape); held while it fades out
-    Behavior on flat { NumberAnimation { duration: 380; easing.type: Easing.OutCubic } }
+    Behavior on flat { NumberAnimation { duration: 380 * stage.dur; easing.type: Easing.OutCubic } }
     property real flatP: big && (!wantLand || hand < 0.999) ? 1 : 0   // big portrait: centred, larger, upright; held while it fades out
-    Behavior on flatP { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
-    property real texScale: big ? 4 : 2.2          // phone face is drawn flat at this sharpness, then tilted
+    Behavior on flatP { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
+    // light mode (side button ⚡, or on by itself while a game has focus): the phone face is drawn at a lower
+    // sharpness, animations are about half as long and the wobble is skipped — less GPU work next to the game
+    readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.gaming)
+    readonly property real dur: lite ? 0.45 : 1
+    property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
     // A fresh phone opens upright.
@@ -82,7 +86,7 @@ Item {
         else if (screen !== "home") open("home")
         else close();
     }
-    function riseUp() { riseAnim.from = rise; riseAnim.to = 1; riseAnim.easing.type = Easing.OutBack; riseAnim.restart(); wobT = 0; wobAnim.restart() }
+    function riseUp() { riseAnim.from = rise; riseAnim.to = 1; riseAnim.easing.type = Easing.OutBack; riseAnim.restart(); if (lite) wobT = 1; else { wobT = 0; wobAnim.restart() } }
     function close() {
         if (!shown) return;
         history = [];
@@ -92,11 +96,11 @@ Item {
     }
     function setScreen(s) { if (s === screen) return; prevScreen = screen; screen = s; swapT = 0; swapAnim.restart() }
     property real swapT: 1
-    NumberAnimation { id: swapAnim; target: stage; property: "swapT"; from: 0; to: 1; duration: 340; easing.type: Easing.OutCubic }
+    NumberAnimation { id: swapAnim; target: stage; property: "swapT"; from: 0; to: 1; duration: 340 * stage.dur; easing.type: Easing.OutCubic }
 
-    NumberAnimation { id: riseAnim; target: stage; property: "rise"; duration: 650; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
-    NumberAnimation { id: wobAnim; target: stage; property: "wobT"; from: 0; to: 1; duration: 1100 }
-    NumberAnimation { id: slideAnim; target: stage; property: "slideIn"; duration: 700; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
+    NumberAnimation { id: riseAnim; target: stage; property: "rise"; duration: 650 * stage.dur; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+    NumberAnimation { id: wobAnim; target: stage; property: "wobT"; from: 0; to: 1; duration: 1100 * stage.dur }
+    NumberAnimation { id: slideAnim; target: stage; property: "slideIn"; duration: 700 * stage.dur; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
     // one continuous phone: the screen goes blank while it turns, the two phone shapes swap on a blank screen
     // (same place, same size → invisible), then the new screen fades in
     property real landContent: 1                 // sideways screen content (0 = blank paper)
@@ -104,25 +108,25 @@ Item {
     SequentialAnimation {
         id: toLand
         ScriptAction { script: stage.landContent = 0 }
-        NumberAnimation { target: stage; property: "turn"; to: 1; duration: 720; easing.type: Easing.InOutCubic }
-        NumberAnimation { target: stage; property: "hand"; to: 1; duration: 40 }
-        NumberAnimation { target: stage; property: "landContent"; to: 1; duration: 280; easing.type: Easing.OutCubic }
+        NumberAnimation { target: stage; property: "turn"; to: 1; duration: 720 * stage.dur; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: stage; property: "hand"; to: 1; duration: 40 * stage.dur }
+        NumberAnimation { target: stage; property: "landContent"; to: 1; duration: 280 * stage.dur; easing.type: Easing.OutCubic }
     }
     SequentialAnimation {
         id: toPort
-        NumberAnimation { target: stage; property: "landContent"; to: 0; duration: 170; easing.type: Easing.InCubic }
-        NumberAnimation { target: stage; property: "hand"; to: 0; duration: 40 }
-        NumberAnimation { target: stage; property: "turn"; to: 0; duration: 720; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: stage; property: "landContent"; to: 0; duration: 170 * stage.dur; easing.type: Easing.InCubic }
+        NumberAnimation { target: stage; property: "hand"; to: 0; duration: 40 * stage.dur }
+        NumberAnimation { target: stage; property: "turn"; to: 0; duration: 720 * stage.dur; easing.type: Easing.InOutCubic }
         ScriptAction { script: stage.landContent = 1 }
     }
     // big mode: the big upright and big sideways phones cross-fade (no turn, so no jump in size)
-    NumberAnimation { id: fadeAnim; target: stage; property: "hand"; duration: 380; easing.type: Easing.InOutCubic }
+    NumberAnimation { id: fadeAnim; target: stage; property: "hand"; duration: 380 * stage.dur; easing.type: Easing.InOutCubic }
     SequentialAnimation {
         id: dropAnim
         ParallelAnimation {
-            NumberAnimation { target: stage; property: "rise"; to: 0; duration: 400; easing.type: Easing.InBack }
-            NumberAnimation { target: stage; property: "slideIn"; to: 0; duration: 380; easing.type: Easing.InBack }
-            NumberAnimation { target: stage; property: "hand"; to: 0; duration: 260 }
+            NumberAnimation { target: stage; property: "rise"; to: 0; duration: 400 * stage.dur; easing.type: Easing.InBack }
+            NumberAnimation { target: stage; property: "slideIn"; to: 0; duration: 380 * stage.dur; easing.type: Easing.InBack }
+            NumberAnimation { target: stage; property: "hand"; to: 0; duration: 260 * stage.dur }
         }
         ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "portrait"; stage.screen = "home"; stage.closed() } }
     }
@@ -166,7 +170,7 @@ Item {
         PhoneBody {
             id: pBody
             showKeys: false
-            layer.enabled: true; layer.smooth: true; layer.mipmap: true
+            layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
             Repeater {
@@ -194,7 +198,7 @@ Item {
                 readonly property bool isNavZone: true
                 readonly property bool on: stage.big && !stage.wantLand && stage.shown
                 property real navT: on ? 1 : 0
-                Behavior on navT { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                Behavior on navT { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
                 visible: navT > 0.01
                 opacity: navT
                 anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10 - (1 - navT) * 20
@@ -203,17 +207,17 @@ Item {
                     id: navRow
                     anchors.centerIn: parent; spacing: 4
                     Repeater {
-                        model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["clipboard", "clipboard"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
+                        model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
                         delegate: UiCandy {
                             id: nb
                             required property var modelData
                             required property int index
-                            readonly property bool cur: modelData[0] === "big" ? stage.big : stage.screen === modelData[0]
+                            readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
                             property real t: 0
                             SequentialAnimation {
                                 id: pop
-                                PauseAnimation { duration: navBar.on ? 120 + nb.index * 40 : 0 }
-                                NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: navBar.on ? 300 : 150; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
+                                PauseAnimation { duration: (navBar.on ? 120 + nb.index * 40 : 0) * stage.dur }
+                                NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: (navBar.on ? 300 : 150) * stage.dur; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
                             }
                             Connections { target: navBar; function onOnChanged() { pop.restart() } }
                             Component.onCompleted: if (navBar.on) pop.restart()
@@ -222,6 +226,7 @@ Item {
                             width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
                             fill: cur ? Theme.gOn : "transparent"; pressable: true
                             onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                                     : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
                                      : modelData[0] === "back" ? stage.back()
                                      : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
                             Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
@@ -251,18 +256,18 @@ Item {
             spacing: 8
             Repeater {
                 model: [["back", "back", "Back"], ["home", "home", "Home"], ["quick", "sliders", "Quick"], ["islands", "map", "Islands"],
-                        ["clipboard", "clipboard", "Clipboard"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]]
+                        ["lite", "bolt", "Light mode"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]]
                 delegate: UiCandy {
                     id: rb
                     required property var modelData
                     required property int index
-                    readonly property bool cur: modelData[0] === "big" ? stage.big : stage.screen === modelData[0]
+                    readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
                     // 0 = tucked behind the phone, 1 = out; staggered top → bottom coming out, bottom → top going in
                     property real t: 0
                     SequentialAnimation {
                         id: slide
-                        PauseAnimation { duration: rail.on ? rb.index * 45 : Math.max(0, 7 - rb.index) * 35 }
-                        NumberAnimation { target: rb; property: "t"; to: rail.on ? 1 : 0; duration: rail.on ? 320 : 200; easing.type: rail.on ? Easing.OutBack : Easing.InCubic }
+                        PauseAnimation { duration: (rail.on ? rb.index * 45 : Math.max(0, 7 - rb.index) * 35) * stage.dur }
+                        NumberAnimation { target: rb; property: "t"; to: rail.on ? 1 : 0; duration: (rail.on ? 320 : 200) * stage.dur; easing.type: rail.on ? Easing.OutBack : Easing.InCubic }
                     }
                     Connections { target: rail; function onOnChanged() { slide.restart() } }
                     Component.onCompleted: if (rail.on) slide.restart()
@@ -273,12 +278,15 @@ Item {
                     width: 46; height: 46; bw: 2.5; ink: Theme.inkPhone; drop: cur ? 2 : 4; hi: 3
                     fill: cur ? Theme.gOn : modelData[0] === "back" ? Theme.gSun : Theme.paper; pressable: true
                     onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                                     : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
                              : modelData[0] === "back" ? stage.back()
                              : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
                     Glyph { anchors.centerIn: parent; name: rb.modelData[1]; size: 19; stroke: rb.modelData[0] === "back" ? 3 : 2.5 }
                     UiCandy { visible: rb.hovered; x: rb.width + 8; y: (rb.height - height) / 2; width: tipT.implicitWidth + 18; height: 26; radius: 9
                         bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0; fill: Theme.paper
-                        UiText { id: tipT; anchors.centerIn: parent; text: rb.modelData[2]; px: 12; w: 700 } }
+                        UiText { id: tipT; anchors.centerIn: parent; px: 12; w: 700
+                            text: rb.modelData[0] !== "lite" ? rb.modelData[2]
+                                : stage.prefs.phoneLite ? "Light mode: on" : stage.svc.gaming ? "Light mode: on while gaming" : "Light mode: off" } }
                 }
             }
         }
@@ -311,7 +319,7 @@ Item {
         PhoneBody {
             id: lBody
             landscape: true; showKeys: false
-            layer.enabled: true; layer.smooth: true; layer.mipmap: true
+            layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
             Repeater {
