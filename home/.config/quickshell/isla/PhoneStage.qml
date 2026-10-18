@@ -20,9 +20,10 @@ Item {
     Behavior on flatP { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
     property real texScale: big ? 4 : 2.2          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
-    // orientation: "auto" = each screen's own (settings sideways, the rest upright); the ↻ button forces one until the phone closes
-    property string orient: "auto"
-    function landFor(scr) { return orient === "landscape" || (orient === "auto" && landScreens.indexOf(scr) >= 0) }
+    // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
+    // A fresh phone opens upright.
+    property string orient: "portrait"
+    function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
     readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "settings", "settingsQuick", "wallpapers",
                                        "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem"]
@@ -77,8 +78,8 @@ Item {
     function back() {
         navDir = -1;
         if (history.length) { const h = history.slice(); const p = h.pop(); history = h; open(p) }
-        else if (wantLand && screen !== "settings") open("settings")
-        else if (wantLand || screen !== "home") open("home")
+        else if (screen.startsWith("settings") && screen !== "settings" || screen === "wallpapers") open("settings")
+        else if (screen !== "home") open("home")
         else close();
     }
     function riseUp() { riseAnim.from = rise; riseAnim.to = 1; riseAnim.easing.type = Easing.OutBack; riseAnim.restart(); wobT = 0; wobAnim.restart() }
@@ -123,7 +124,7 @@ Item {
             NumberAnimation { target: stage; property: "slideIn"; to: 0; duration: 380; easing.type: Easing.InBack }
             NumberAnimation { target: stage; property: "hand"; to: 0; duration: 260 }
         }
-        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "auto"; stage.screen = "home"; stage.closed() } }
+        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "portrait"; stage.screen = "home"; stage.closed() } }
     }
 
     // ── scrim (click outside = close) ──
@@ -250,7 +251,7 @@ Item {
             spacing: 8
             Repeater {
                 model: [["back", "back", "Back"], ["home", "home", "Home"], ["quick", "sliders", "Quick"], ["islands", "map", "Islands"],
-                        ["clipboard", "clipboard", "Clipboard"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn sideways"], ["big", "full", "Big phone"]]
+                        ["clipboard", "clipboard", "Clipboard"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]]
                 delegate: UiCandy {
                     id: rb
                     required property var modelData
@@ -288,7 +289,8 @@ Item {
         id: lHolder
         x: stage.width / 2 - 460; y: stage.height / 2 - 190
         width: 920; height: 440
-        scale: 1 + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - 1)
+        readonly property real baseScale: 1.12                     // small mode: a little larger than the design
+        scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
         visible: stage.hand > 0.001 || stage.slideIn > 0.001
         opacity: Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
         readonly property var inner: M.about(460, 220, stage.hand > 0.001
@@ -338,8 +340,7 @@ Item {
                   settingsQuick: cSettingsQuick, wallpapers: cWallpapers })[n] || cSetPage;
     }
     // upright layouts inside a scroller for the short sideways phone
-    Component { id: cQuickTall; Flickable { clip: true; contentHeight: 844; boundsBehavior: Flickable.StopAtBounds
-        ScrQuick { width: parent.width; height: 844; focus: true; svc: stage.svc; onGo: s => s === "quickedit" ? stage.soon("Edit buttons") : stage.go(s) } } }
+    Component { id: cQuickTall; ScrQuickWide { svc: stage.svc; onGo: s => stage.go(s); onBack: stage.back(); onClose: stage.close() } }
     Component { id: cClipTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
         ScrClipboard { width: parent.width; height: 760; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
     Component { id: cProfileTall; Flickable { clip: true; contentHeight: 820; boundsBehavior: Flickable.StopAtBounds
