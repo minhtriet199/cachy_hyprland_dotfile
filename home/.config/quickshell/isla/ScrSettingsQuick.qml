@@ -15,7 +15,7 @@ Item {
     readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     Flickable {
         id: page
-        anchors.fill: parent; anchors.topMargin: sq.topPad; anchors.bottomMargin: (sq.svc && sq.svc.phoneBig && sq.narrow ? 64 : 0);   // starts below the punch hole contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
+        anchors.fill: parent; anchors.topMargin: sq.topPad; anchors.bottomMargin: 22 + (sq.svc && sq.svc.phoneBig && sq.narrow ? 64 : 0);   // below the punch hole, above the frame (12) + shadow (10) contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
         WheelHandler { onWheel: e => page.contentY = Math.max(0, Math.min(Math.max(0, page.contentHeight - page.height), page.contentY - e.angleDelta.y / 2)) }
     Column {
         id: pageCol
