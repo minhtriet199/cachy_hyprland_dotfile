@@ -53,7 +53,7 @@ Item {
             sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem })[pg.kind] || cWifi
         }
     }
-    Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 100 } }
+    Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
     Component { id: cBt; BtPanel { svc: pg.svc; listH: fl.height - 50 } }
     Component { id: cSound; SoundPanel { svc: pg.svc; wide: true } }
     Component { id: cPower; PowerPanel { svc: pg.svc } }

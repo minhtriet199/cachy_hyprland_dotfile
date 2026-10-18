@@ -5,10 +5,12 @@
   "size": 0.75,
   "barStyle": "Transparent",
   "barPos": "Top",
-  "wallpaper": "/home/gamer/Pictures/Wallpapers/isla-default.png",
+  "wallpaper": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
   "wallDir": "/home/gamer/Pictures/Wallpapers",
   "displayName": "",
   "avatar": "pulse",
   "phoneBg": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
-  "lockWallpaper": ""
+  "lockWallpaper": "",
+  "wipeBg": "cream",
+  "wipeIcon": "leaf"
 }

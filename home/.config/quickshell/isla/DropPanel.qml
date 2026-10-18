@@ -30,7 +30,7 @@ DropCard {
         height: item ? item.implicitHeight : 0
         sourceComponent: d.kind === "wifi" ? cWifi : d.kind === "bt" ? cBt : cSound
     }
-    Component { id: cWifi; WifiPanel { svc: d.svc; listH: 300 } }
+    Component { id: cWifi; WifiPanel { svc: d.svc; listH: 460 } }
     Component { id: cBt; BtPanel { svc: d.svc; listH: 300 } }
     Component { id: cSound; SoundPanel { svc: d.svc } }
 }

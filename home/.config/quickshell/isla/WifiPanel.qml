@@ -7,20 +7,27 @@ Item {
     property var svc
     property real listH: 260
     property string askFor: ""            // ssid waiting for a password
-    implicitHeight: col.implicitHeight
+    property string detail: ""            // ssid whose settings page is open ("" = the list)
+    onVisibleChanged: if (!visible) detail = ""
+    implicitHeight: detail ? det.implicitHeight : col.implicitHeight
+    WifiDetail { id: det; visible: w.detail !== ""; width: w.width; svc: w.svc; ssid: w.detail; onBack: w.detail = "" }
     Component.onCompleted: svc.wifiScan()
     Timer { interval: 8000; running: w.visible; repeat: true; onTriggered: w.svc.wifiScan() }
 
     Column {
         id: col
+        visible: w.detail === ""
         width: w.width; spacing: 10
         Item {
             width: parent.width; height: 30
             UiText { anchors.verticalCenter: parent.verticalCenter; text: "WI-FI"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
             Row {
                 anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 8
-                UiCandy { width: 28; height: 28; bw: 2; drop: 2; hi: 0; fill: Theme.paper; pressable: true; onClicked: w.svc.wifiScan()
-                    Glyph { anchors.centerIn: parent; name: "reload"; size: 14; stroke: 2.6 } }
+                UiText { visible: w.svc.wifiScanning; anchors.verticalCenter: parent.verticalCenter; text: "Searching…"; fam: "n"; px: 11; w: 800; color: Theme.seaDeep }
+                UiCandy { width: 28; height: 28; bw: 2; drop: 2; hi: 0; fill: w.svc.wifiScanning ? Theme.gOn : Theme.paper; pressable: !w.svc.wifiScanning; onClicked: w.svc.wifiRescanNow()
+                    Glyph { id: spin; anchors.centerIn: parent; name: "reload"; size: 14; stroke: 2.6
+                        RotationAnimation on rotation { running: w.svc.wifiScanning; loops: Animation.Infinite; from: 0; to: 360; duration: 900 }
+                        Connections { target: w.svc; function onWifiScanningChanged() { if (!w.svc.wifiScanning) spin.rotation = 0 } } } }
                 UiSwitch { on: w.svc.wifi.on; onToggled: w.svc.toggle("wifi") }
             }
         }
@@ -47,6 +54,16 @@ Item {
                 UiText { anchors.centerIn: parent; text: "Join"; px: 14; w: 700; color: "#FFFFFF" }
             }
         }
+        // loading bar on top of the list while scanning
+        Item {
+            visible: w.svc.wifiScanning && w.svc.wifi.on
+            width: parent.width; height: 6
+            Rectangle { anchors.fill: parent; radius: 3; color: Theme.sand }
+            Rectangle { id: lb; width: parent.width * 0.3; height: 6; radius: 3; color: Theme.sea
+                SequentialAnimation on x { running: w.svc.wifiScanning; loops: Animation.Infinite
+                    NumberAnimation { from: 0; to: col.width * 0.7; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: col.width * 0.7; to: 0; duration: 700; easing.type: Easing.InOutSine } } }
+        }
         ListView {
             id: list
             visible: w.svc.wifi.on
@@ -62,13 +79,17 @@ Item {
                 active: modelData.active
                 sub: (modelData.active ? "Connected · " : modelData.known ? "Saved · " : "") + modelData.signal + "%" + (modelData.secure ? " · 🔒" : "")
                 onClicked: {
-                    if (modelData.active) return;
+                    if (modelData.active) { w.detail = modelData.ssid; return }
                     if (modelData.secure && !modelData.known) { w.askFor = modelData.ssid; pw.forceActiveFocus() }
                     else w.svc.wifiConnect(modelData, "");
                 }
+                // settings page for saved networks
                 UiCandy { visible: modelData.active || modelData.known; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
-                    onClicked: modelData.active ? w.svc.wifiDisconnect(modelData) : w.svc.wifiForget(modelData)
-                    Glyph { anchors.centerIn: parent; name: modelData.active ? "close" : "trash"; size: 12; stroke: 2.6 } }
+                    onClicked: w.detail = modelData.ssid
+                    Glyph { anchors.centerIn: parent; name: "gear"; size: 13; stroke: 2.2 } }
+                UiCandy { visible: modelData.active; width: 26; height: 26; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: w.svc.wifiDisconnect(modelData)
+                    Glyph { anchors.centerIn: parent; name: "close"; size: 12; stroke: 2.6 } }
             }
         }
         UiText { visible: w.svc.wifi.on && w.svc.wifiNets.length === 0; width: parent.width; horizontalAlignment: Text.AlignHCenter; height: 40

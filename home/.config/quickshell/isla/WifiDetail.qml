@@ -1,0 +1,159 @@
+import QtQuick
+
+// One Wi-Fi network's settings (opened from the Wi-Fi list): status + IP info, DNS presets, IPv4 auto/manual,
+// IPv6 on/off, auto-connect, private address (MAC), metered, forget. Changes go through nmcli (svc.wifiModify).
+Item {
+    id: wd
+    property var svc
+    property string ssid: ""
+    signal back()
+    readonly property var i: svc.wifiInfo && svc.wifiInfo.ssid === ssid ? svc.wifiInfo : null
+    implicitHeight: col.implicitHeight
+    Component.onCompleted: if (svc && ssid) svc.loadWifiInfo(ssid)
+    onSsidChanged: if (svc && ssid) svc.loadWifiInfo(ssid)
+    Timer { interval: 5000; running: wd.visible && wd.ssid !== ""; repeat: true; onTriggered: wd.svc.loadWifiInfo(wd.ssid) }
+
+    // DNS presets: [label, ipv4, ipv6]  ("" = automatic, i.e. the system's encrypted DNS / router)
+    readonly property var presets: [["Auto", "", ""], ["Cloudflare", "1.1.1.1,1.0.0.1", "2606:4700:4700::1111,2606:4700:4700::1001"],
+                                    ["Google", "8.8.8.8,8.8.4.4", "2001:4860:4860::8888,2001:4860:4860::8844"], ["Quad9", "9.9.9.9,149.112.112.112", "2620:fe::fe,2620:fe::9"],
+                                    ["AdGuard", "94.140.14.14,94.140.15.15", "2a10:50c0::ad1:ff,2a10:50c0::ad2:ff"]]
+    readonly property string dnsNow: i ? (i["ipv4.dns"] || "") : ""
+    readonly property string presetNow: { const p = presets.find(x => x[1] === dnsNow); return p ? p[0] : (dnsNow ? "Custom" : "Auto") }
+    function setDns(p) {
+        if (!p[1]) svc.wifiModify(i, ["ipv4.dns", "", "ipv4.ignore-auto-dns", "no", "ipv6.dns", "", "ipv6.ignore-auto-dns", "no"]);
+        else svc.wifiModify(i, ["ipv4.dns", p[1], "ipv4.ignore-auto-dns", "yes", "ipv6.dns", p[2], "ipv6.ignore-auto-dns", "yes"]);
+    }
+    property bool manual: i ? i["ipv4.method"] === "manual" : false
+    onIChanged: if (i) { manual = i["ipv4.method"] === "manual"; if (!ipIn.activeFocus) ipIn.text = (i["ipv4.addresses"] || (i.ip || "")).split(",")[0]; if (!gwIn.activeFocus) gwIn.text = i["ipv4.gateway"] || i.gw || "" }
+
+    Column {
+        id: col
+        width: wd.width; spacing: 10
+        // header: back + name + status
+        Item {
+            width: parent.width; height: 44
+            UiCandy { width: 36; height: 36; anchors.verticalCenter: parent.verticalCenter; bw: 2.5; drop: 2; hi: 0; fill: Theme.paper; pressable: true; onClicked: wd.back()
+                Glyph { anchors.centerIn: parent; name: "back"; size: 15; stroke: 3 } }
+            Column { x: 48; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 48 - msg.width - 10
+                UiText { width: parent.width; text: wd.ssid; px: 18; w: 700; color: Theme.textDeep; height: 21 }
+                UiText { width: parent.width; fam: "n"; px: 11; w: 800; color: wd.i && wd.i.active ? Theme.leafDeep : Theme.textSoft
+                    text: !wd.i ? "Loading…" : (wd.i.active ? "Connected" : wd.i.saved ? "Saved" : "Not saved") + (wd.i.signal ? " · " + wd.i.signal + "%" : "") + (wd.i.freq ? " · " + (parseInt(wd.i.freq) > 4000 ? "5 GHz" : "2.4 GHz") : "") + (wd.i.security ? " · " + wd.i.security : "") }
+            }
+            UiText { id: msg; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: wd.svc.wifiSaveMsg; fam: "n"; px: 11; w: 900
+                color: wd.svc.wifiSaveMsg.startsWith("Not") ? Theme.berry : Theme.leafDeep }
+        }
+        // live info
+        UiCandy {
+            visible: !!wd.i && wd.i.active
+            width: parent.width; height: infoGrid.implicitHeight + 20; radius: 14; bw: 2; drop: 0; hi: 0; fill: Theme.cream
+            Grid {
+                id: infoGrid; x: 12; y: 10; columns: 2; columnSpacing: 16; rowSpacing: 4
+                Repeater {
+                    model: wd.i ? [["IP address", wd.i.ip || "—"], ["Router", wd.i.gw || "—"], ["DNS in use", wd.i.dnsNow || "system (encrypted)"], ["IPv6", wd.i.ip6 || "—"]] : []
+                    delegate: Row { required property var modelData; spacing: 8
+                        UiText { width: 84; text: modelData[0]; fam: "n"; px: 11; w: 900; color: Theme.textSoft; height: 16 }
+                        UiText { width: (col.width - 24 - 16) / 2 - 92; text: modelData[1]; px: 12; w: 700; height: 16 } }
+                }
+            }
+        }
+        UiText { visible: !!wd.i && !wd.i.saved; width: parent.width; wrapMode: Text.Wrap; text: "Connect to this network once to change its settings."; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
+
+        // DNS
+        Column {
+            visible: !!wd.i && wd.i.saved
+            width: parent.width; spacing: 6
+            UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18; text: "DNS · " + wd.presetNow.toUpperCase() }
+            Flow {
+                width: parent.width; spacing: 6
+                Repeater {
+                    model: wd.presets
+                    delegate: UiCandy {
+                        required property var modelData
+                        readonly property bool picked: wd.presetNow === modelData[0]
+                        width: dl.implicitWidth + 22; height: 30; radius: 10; bw: 2; drop: picked ? 2 : 0; hi: 0
+                        fill: picked ? Theme.gOn : Theme.cream; pressable: true
+                        onClicked: wd.setDns(modelData)
+                        UiText { id: dl; anchors.centerIn: parent; text: modelData[0]; px: 12; w: 700 }
+                    }
+                }
+            }
+            UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+                text: "Auto uses the system DNS: encrypted Cloudflare + Google for every network (gets around ISP blocking)." }
+        }
+
+        // IPv4
+        Column {
+            visible: !!wd.i && wd.i.saved
+            width: parent.width; spacing: 6
+            UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18; text: "IPV4 ADDRESS" }
+            Row {
+                spacing: 6
+                Repeater {
+                    model: [["auto", "Automatic (DHCP)"], ["manual", "Manual"]]
+                    delegate: UiCandy {
+                        required property var modelData
+                        readonly property bool picked: (modelData[0] === "manual") === wd.manual
+                        width: ml.implicitWidth + 22; height: 30; radius: 10; bw: 2; drop: picked ? 2 : 0; hi: 0
+                        fill: picked ? Theme.gOn : Theme.cream; pressable: true
+                        onClicked: { if (modelData[0] === "auto") { wd.manual = false; wd.svc.wifiModify(wd.i, ["ipv4.method", "auto", "ipv4.addresses", "", "ipv4.gateway", ""]) } else wd.manual = true }
+                        UiText { id: ml; anchors.centerIn: parent; text: modelData[1]; px: 12; w: 700 }
+                    }
+                }
+            }
+            Row {
+                visible: wd.manual
+                spacing: 6
+                UiCandy {
+                    width: 210; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                    TextInput { id: ipIn; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
+                        font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
+                        UiText { visible: !ipIn.text; text: "Address, e.g. 192.168.1.50/24"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
+                }
+                UiCandy {
+                    width: 150; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                    TextInput { id: gwIn; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
+                        font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
+                        UiText { visible: !gwIn.text; text: "Router, e.g. 192.168.1.1"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
+                }
+                UiCandy { width: 70; height: 32; radius: 10; bw: 2.5; drop: 2; hi: 3; fill: Theme.gGo; pressable: true
+                    onClicked: { const a = ipIn.text.trim(); if (!a) return; wd.svc.wifiModify(wd.i, ["ipv4.method", "manual", "ipv4.addresses", a.includes("/") ? a : a + "/24", "ipv4.gateway", gwIn.text.trim()]) }
+                    UiText { anchors.centerIn: parent; text: "Save"; px: 13; w: 700; color: "#FFFFFF" } }
+            }
+        }
+
+        // switches
+        Column {
+            visible: !!wd.i && wd.i.saved
+            width: parent.width; spacing: 6
+            UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18; text: "OPTIONS" }
+            Repeater {
+                model: wd.i ? [
+                    ["IPv6", "Turn off if some sites are slow or don't load", wd.i["ipv6.method"] !== "disabled", ["ipv6.method", wd.i["ipv6.method"] === "disabled" ? "auto" : "disabled"]],
+                    ["Connect automatically", "Join this network when it's in range", wd.i["connection.autoconnect"] === "yes", ["connection.autoconnect", wd.i["connection.autoconnect"] === "yes" ? "no" : "yes"]],
+                    ["Private address", "Use a random MAC address on this network", wd.i["802-11-wireless.cloned-mac-address"] === "random" || wd.i["802-11-wireless.cloned-mac-address"] === "stable",
+                        ["802-11-wireless.cloned-mac-address", (wd.i["802-11-wireless.cloned-mac-address"] === "random" || wd.i["802-11-wireless.cloned-mac-address"] === "stable") ? "permanent" : "stable"]],
+                    ["Metered", "Tell apps to save data (phone hotspots)", wd.i["connection.metered"] === "yes", ["connection.metered", wd.i["connection.metered"] === "yes" ? "no" : "yes"]]
+                ] : []
+                delegate: UiRow {
+                    required property var modelData
+                    width: col.width; height: 48; glyph: ["globe", "reload", "shield", "chart"][index]; title: modelData[0]; sub: modelData[1]; active: modelData[2]
+                    required property int index
+                    onClicked: wd.svc.wifiModify(wd.i, modelData[3])
+                    UiSwitch { on: modelData[2]; onToggled: wd.svc.wifiModify(wd.i, modelData[3]) }
+                }
+            }
+        }
+
+        // forget / disconnect
+        Row {
+            visible: !!wd.i && wd.i.saved
+            spacing: 8
+            UiCandy { visible: !!wd.i && wd.i.active; width: 120; height: 34; radius: 11; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; pressable: true
+                onClicked: wd.svc.wifiDisconnect({ ssid: wd.i.name })
+                UiText { anchors.centerIn: parent; text: "Disconnect"; px: 13; w: 700 } }
+            UiCandy { width: 140; height: 34; radius: 11; bw: 2.5; drop: 3; hi: 3; fill: Theme.gBerry; pressable: true
+                onClicked: { wd.svc.wifiForget({ ssid: wd.i.name }); wd.back() }
+                UiText { anchors.centerIn: parent; text: "Forget network"; px: 13; w: 700 } }
+        }
+    }
+}

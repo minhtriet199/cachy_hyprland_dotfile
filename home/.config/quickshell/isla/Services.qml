@@ -277,7 +277,30 @@ Singleton {
             }
             s.wifiNets = Object.values(seen).sort((a, b) => (b.active - a.active) || (b.signal - a.signal));
         } } }
+    readonly property bool wifiScanning: wifiScanP.running || wifiRescan.running
+    // "reload": ask the card to really rescan first (takes a few seconds), then read the list
+    Process { id: wifiRescan; command: ["nmcli", "dev", "wifi", "rescan"]; onExited: s.wifiScan() }
+    function wifiRescanNow() { if (!wifiRescan.running) wifiRescan.running = true }
     function wifiScan() { if (!wifiScanP.running) wifiScanP.running = true }
+    // one network's settings + live info (tools/wifi-info.py)
+    property var wifiInfo: null
+    Process { id: wifiInfoP
+        stdout: StdioCollector { onStreamFinished: { try { s.wifiInfo = JSON.parse(this.text) } catch (e) { s.wifiInfo = null } } } }
+    function loadWifiInfo(ssid) { wifiInfoP.running = false; wifiInfoP.command = ["python3", Quickshell.shellDir + "/tools/wifi-info.py", ssid]; wifiInfoP.running = true }
+    // change settings of a saved network, then re-activate it if it's the one in use so they apply now
+    property string wifiSaveMsg: ""
+    Process { id: wifiMod
+        property string ssid: ""
+        stderr: StdioCollector { id: wifiModErr }
+        onExited: code => { s.wifiSaveMsg = code === 0 ? "Saved ✓" : "Not saved — " + wifiModErr.text.trim().slice(0, 100); s.loadWifiInfo(ssid); statusSoon.restart(); wifiSaveClear.restart() } }
+    Timer { id: wifiSaveClear; interval: 3000; onTriggered: s.wifiSaveMsg = "" }
+    function wifiModify(info, args) {
+        if (!info || !info.name || wifiMod.running) return;
+        wifiSaveMsg = "Saving…"; wifiMod.ssid = info.ssid;
+        const reup = info.active ? " && nmcli con up id \"$0\" >/dev/null" : "";
+        wifiMod.command = ["sh", "-c", "nmcli con mod id \"$0\" \"$@\"" + reup, info.name].concat(args);
+        wifiMod.running = true;
+    }
     Process { id: wifiAct
         stdout: StdioCollector { id: wifiOut }
         stderr: StdioCollector { id: wifiErr }
