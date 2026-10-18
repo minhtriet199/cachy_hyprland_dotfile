@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Bluetooth pairing agent for Isla. BlueZ asks it "is this code right?" when a phone/PC pairs;
 # it asks Isla (stdout) and waits for the answer (stdin), so the code shows in a dialog.
-#   out: {"id": n, "kind": "confirm"|"authorize"|"display"|"cancel", "name": ..., "addr": ..., "key": "123456"}
+#   out: {"id": n, "kind": "confirm"|"pairreq"|"authorize"|"display"|"cancel", "name": ..., "addr": ..., "key": "123456"}
 #   in:  "<id> yes" / "<id> no" / "<id> trust" (yes + mark the device trusted)
 # Only trusted devices connect by themselves; an untrusted one asks first. One answer covers all the
 # profiles (audio, controls, calls…) the device opens right after, for a short while.
@@ -50,8 +50,8 @@ class Agent(dbus.service.Object):
 
     @dbus.service.method("org.bluez.Agent1", in_signature="o", out_signature="",
                          async_callbacks=("ok", "err"))
-    def RequestAuthorization(self, dev, ok, err):
-        say("authorize", dev, None, ok, err)
+    def RequestAuthorization(self, dev, ok, err):      # a device with no screen asks to pair
+        say("pairreq", dev, None, ok, err)
 
     @dbus.service.method("org.bluez.Agent1", in_signature="os", out_signature="",
                          async_callbacks=("ok", "err"))
