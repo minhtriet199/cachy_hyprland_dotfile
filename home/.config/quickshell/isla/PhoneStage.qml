@@ -19,9 +19,9 @@ Item {
     property bool prevLand: false                // … and `prevScreen`
     property bool shown: false
     readonly property bool big: !!svc && svc.phoneBig
-    property real flat: big && (wantLand || hand > 0.001) ? 1 : 0     // 1 = no tilt (big landscape); held while it fades out
+    property real flat: big && (wantLand || hand > 0.001 || turning) ? 1 : 0     // 1 = no tilt (big landscape); held while it turns away
     Behavior on flat { NumberAnimation { duration: 380 * stage.dur; easing.type: Easing.OutCubic } }
-    property real flatP: big && (!wantLand || hand < 0.999) ? 1 : 0   // big portrait: centred, larger, upright; held while it fades out
+    property real flatP: big ? 1 : 0                                   // big portrait: centred, larger, upright (kept while sideways, so a turn lands on it)
     Behavior on flatP { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
     // light mode (side button ⚡, or on by itself while a game has focus): the phone face is drawn at a lower
     // sharpness, animations are about half as long and the wobble is skipped — less GPU work next to the game
@@ -68,13 +68,11 @@ Item {
     // was = the sideways phone is the one showing now; land = it should be after this
     function transition(scr, land, was) {
         if (land) {
-            if (rise > 0.5 && !was && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
-            else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toLand) }
+            if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toLand) }
             else if (was && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
             else { viaTurn = false; setScreen(scr); slideAnim.from = slideIn; slideAnim.to = 1; slideAnim.restart() }
         } else {
-            if (was && !viaTurn && hand > 0.5 && turn < 0.01 && rise > 0.5) { setScreen(scr); fadeAnim.to = 0; fadeAnim.restart() }   // big cross-fade back
-            else if (was && viaTurn && hand > 0.5) { setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toPort) }
+            if (was && viaTurn && hand > 0.5) { setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toPort) }
             else if (was && slideIn > 0.5) { slideAnim.from = slideIn; slideAnim.to = 0; slideAnim.restart(); setScreen(scr); riseUp() }
             else { setScreen(scr); if (rise < 0.99 || !shown) riseUp() }
         }
@@ -154,8 +152,6 @@ Item {
         NumberAnimation { target: stage; property: "turn"; to: 0; duration: 720 * stage.dur; easing.type: Easing.BezierSpline; easing.bezierCurve: stage.turnCurve }
         ScriptAction { script: stage.turning = false }
     }
-    // big mode: the big upright and big sideways phones cross-fade (no turn, so no jump in size)
-    NumberAnimation { id: fadeAnim; target: stage; property: "hand"; duration: 380 * stage.dur; easing.type: Easing.InOutCubic }
     SequentialAnimation {
         id: dropAnim
         ParallelAnimation {

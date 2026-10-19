@@ -66,14 +66,8 @@ hl.window_rule({
     },
 })
 
--- Opacity Overrides
-local terminals = "^(kitty|ghostty|[Kk]onsole|Alacritty|gnome-terminal|xfce[0-9]?-terminal)$"
-
-hl.window_rule({ match = { class = "^(firefox|zen)$" }, opacity = "1.0 override" })
-hl.window_rule({ match = { class = terminals }, opacity = "1.0 override" }) -- Override opacity in favor of terminal settings for opacity. If your terminal doesn't support transparency, you can remove this rule.
-hl.window_rule({ match = { class = "^(mpv|org.kde.haruna|.*plex.*|org\\.kde\\.gwenview|.*vlc.*)$" }, opacity = "1.0 override" })
--- password prompts and small dialogs stay solid (see-through text behind a password box is hard to read)
-hl.window_rule({ match = { class = "^(gcr-prompter|zenity|org\\.gnome\\.Zenity|xdg-desktop-portal-gtk|polkit-gnome-authentication-agent-1|org\\.kde\\.polkit-kde-authentication-agent-1)$" }, opacity = "1.0 override" })
+-- Opacity: every window follows Isla Settings → Windows (focused / not focused, Dark / Light backdrop).
+-- No per-app "always solid" rules; SUPER+E makes one window solid, full-screen is always solid.
 
 -- Float Utility Windows
 local floatApps = {
