@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Windows page: how app windows look in Hyprland — see-through when focused / not focused,
+// Windows page: how app windows look in Hyprland — see-through when focused / not focused, dark or light backdrop,
 // border colours and thickness, corner radius, gaps. Changes show at once and are saved
 // (~/.local/state/hypr/look via hypr/scripts/lookctl.py, read back by hypr/config/look.lua).
 Item {
@@ -12,7 +12,7 @@ Item {
     implicitHeight: col.implicitHeight
     readonly property string tool: Quickshell.env("HOME") + "/.config/hypr/scripts/lookctl.py"
     property var v: ({ active_opacity: 0.95, inactive_opacity: 0.9, border_size: 2, rounding: 10, gaps_in: 3, gaps_out: 8,
-                       active1: "82dccc", active2: "007d6f", inactive: "798bb2" })
+                       active1: "82dccc", active2: "007d6f", inactive: "798bb2", backdrop: "dark" })
     property bool loaded: false
     function num(k) { return parseFloat(v[k]) }
 
@@ -93,6 +93,10 @@ Item {
         Slide { key: "inactive_opacity"; title: "OTHER WINDOWS"; lo: 0.3; hi: 1; pct: true; tint: Theme.lilac }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
             text: "100% = solid. Terminals, Firefox, video players and full-screen games always stay solid." }
+        SetSeg { width: parent.width; label: "Behind"; options: ["Dark", "Light"]; current: wp.v.backdrop === "light" ? "Light" : "Dark"
+            onPicked: x => wp.put("backdrop", x.toLowerCase()) }
+        UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+            text: "What shows through see-through windows: Dark dims the blur so dark apps stay easy to read, Light frosts it for light apps." }
 
         Item { width: 1; height: 2 }
         Label { text: "SHAPE" }
@@ -158,9 +162,9 @@ Item {
 
         Item { width: 1; height: 2 }
         UiRow {
-            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "95% / 90%, 2 px border, 10 px corners, gaps 3 / 8"
+            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "95% / 90%, dark backdrop, 2 px border, 10 px corners, gaps 3 / 8"
             onClicked: { wp.put("active_opacity", 0.95); wp.put("inactive_opacity", 0.9); wp.put("border_size", 2); wp.put("rounding", 10)
-                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2"); wheel.load() }
+                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2"); wp.put("backdrop", "dark"); wheel.load() }
         }
     }
 }
