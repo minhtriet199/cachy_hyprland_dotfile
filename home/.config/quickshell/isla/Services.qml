@@ -189,8 +189,8 @@ Singleton {
     property bool imeVi: false
     property bool dnd: false
     property bool airplane: false
-    // dark / light mode also switches Qt, KDE and GTK apps (tools/appearance.py)
-    Connections { target: Prefs; function onDarkChanged() { if (Prefs.ready) s.run(["python3", Quickshell.shellDir + "/tools/appearance.py", Prefs.dark ? "dark" : "light"]) } }
+    // apps' light / dark (Prefs.appsDark, separate from Isla's own Prefs.dark) switches Qt, KDE and GTK apps (tools/appearance.py)
+    Connections { target: Prefs; function onAppsDarkChanged() { if (Prefs.ready) s.run(["python3", Quickshell.shellDir + "/tools/appearance.py", Prefs.appsDark ? "dark" : "light"]) } }
     property string wallPreview: ""               // wallpaper picker "Preview": shown on the desktop until Set / Back                  // every radio (Wi-Fi + Bluetooth) blocked (rfkill)
     // Do not disturb: by hand, for a while (dndFor), or by itself while a game is focused (Prefs.dndGaming)
     readonly property bool dndOn: dnd || (Prefs.dndGaming && gaming)

@@ -135,8 +135,10 @@ Item {
                         function pick(mx) { sq.prefs.themeHue = Math.round(Math.max(0, Math.min(1, mx / width)) * 200) / 200 }
                         onPressed: m => pick(m.x); onPositionChanged: m => pick(m.x); onReleased: sq.prefs.save() }
                 }
-                SetSeg { width: sq.cw - 40; label: "Mode"; options: ["Light", "Dark"]; current: sq.prefs.dark ? "Dark" : "Light"
+                SetSeg { width: sq.cw - 40; label: "Shell"; options: ["Light", "Dark"]; current: sq.prefs.dark ? "Dark" : "Light"
                     onPicked: v => sq.prefs.set("dark", v === "Dark") }
+                SetSeg { width: sq.cw - 40; label: "Apps"; options: ["Light", "Dark"]; current: sq.prefs.appsDark ? "Dark" : "Light"
+                    onPicked: v => sq.prefs.set("appsDark", v === "Dark") }
                 SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring", "Pop", "Soft", "Flat", "Glass"]
                     current: (sq.prefs.boxStyle || "candy").charAt(0).toUpperCase() + (sq.prefs.boxStyle || "candy").slice(1)
                     onPicked: v => sq.prefs.set("boxStyle", v.toLowerCase()) }

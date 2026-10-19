@@ -39,5 +39,6 @@
   "theme": "isla",
   "boxStyle": "candy",
   "themeHue": 0.85,
-  "dark": true
+  "dark": false,
+  "appsDark": true
 }
