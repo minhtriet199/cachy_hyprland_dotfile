@@ -156,10 +156,19 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 
 ## 8. Open items / known problems
 
-1. **Baseus Bass BP1 Pro mic doesn't work in Discord.** Headset (HFP) mode: both mSBC and CVSD give 0 audio frames,
-   "Failure in Bluetooth audio transport". Not the headset — MT7922 driver. `btusb enable_autosuspend=n` is applied
-   (`/etc/modprobe.d/btusb.conf`), didn't help. **Next: reboot into 7.2.11, then try the LTS kernel.** Workaround:
-   laptop mic in Discord. Isla's Bluetooth row shows Headphones/Headset and tapping the icon switches mode.
+1. **Baseus Bass BP1 Pro mic doesn't work in Discord (works fine on Windows).**
+   - Music (A2DP, "Headphones") works. The mic needs **Headset mode** (HFP, `headset-head-unit`); PipeWire switches to it
+     by itself when an app records. Tested both voice codecs (mSBC and CVSD): **0 audio frames**, user log says
+     "Failure in Bluetooth audio transport".
+   - Root cause on kernel 7.2.9: kernel log `Bluetooth: hci0: SCO packet for unknown connection handle 3584` —
+     the MT7922 sends the mic audio, but Linux's `btusb`/`btmtk` driver doesn't recognise the voice channel number
+     and drops every packet. Windows uses MediaTek's own driver, which handles it. Not a headset fault.
+   - Tried: `btusb enable_autosuspend=n` (`/etc/modprobe.d/btusb.conf`, applied, no help).
+   - **2026-10-19 on kernel 7.2.11:** the "unknown connection handle" message is gone, but the transport failure
+     still appears (3× this boot) → not fixed yet, needs a real Discord test.
+   - **Next steps:** test on 7.2.11 → boot `linux-cachyos-lts` (6.18, installed) and test → if both fail, the fix is a
+     USB Bluetooth dongle (Intel/Realtek) for the headset. Workaround now: laptop mic in Discord, Baseus as speaker.
+   - Isla's Bluetooth row shows 🎧 Headphones / 🎙 Headset (headset icon with mic) and tapping the icon switches mode.
 2. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch
    to Turbo/Performance + disable blur/animations while gaming — no answer yet.
 3. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
