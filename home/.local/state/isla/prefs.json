@@ -40,5 +40,6 @@
   "boxStyle": "ring",
   "themeHue": 0.85,
   "dark": false,
-  "appsDark": true
+  "appsDark": true,
+  "gameMode": false
 }

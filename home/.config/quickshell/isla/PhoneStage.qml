@@ -24,7 +24,7 @@ Item {
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
     property real pv: previewing ? 1 : 0
     Behavior on pv { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
-    readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.gaming)
+    readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.calm)
     readonly property real dur: lite ? 0.45 : 1
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap"]
@@ -292,7 +292,7 @@ Item {
                         bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0; fill: Theme.paper
                         UiText { id: tipT; anchors.centerIn: parent; px: 12; w: 700
                             text: rb.modelData[0] !== "lite" ? rb.modelData[2]
-                                : stage.prefs.phoneLite ? "Light mode: on" : stage.svc.gaming ? "Light mode: on while gaming" : "Light mode: off" } }
+                                : stage.prefs.phoneLite ? "Light mode: on" : stage.svc.gameMode ? "Light mode: on (Game mode)" : stage.svc.gaming ? "Light mode: on while gaming" : "Light mode: off" } }
                 }
             }
         }

@@ -79,7 +79,7 @@ Item {
                     id: disc
                     anchors.centerIn: parent; width: 28; height: 28
                     // slow spin in small steps (20 fps, not 120) so the bar doesn't redraw every frame; stops while gaming
-                    Timer { interval: 50; repeat: true; running: musicPill.playing && !bar.svc.gaming; onTriggered: disc.rotation = (disc.rotation + 2) % 360 }
+                    Timer { interval: 50; repeat: true; running: musicPill.playing && !bar.svc.calm; onTriggered: disc.rotation = (disc.rotation + 2) % 360 }
                     Rectangle { anchors.fill: parent; radius: width / 2; color: Theme.inkPhone }
                     ClippingRectangle {
                         anchors.fill: parent; anchors.margins: 1.5; radius: width / 2; color: Theme.lilacSoft

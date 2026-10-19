@@ -139,6 +139,7 @@ ShellRoot {
         function locktest(): void { lockCtl.lockTest() }
         function big(): void { Services.phoneBig = !Services.phoneBig }
         function preview(): void { Services.previewWipe() }
+        function gamemode(): void { Services.toggle("game") }      // qs -c isla ipc call isla gamemode
     }
 
     Variants {

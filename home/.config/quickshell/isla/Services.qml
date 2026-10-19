@@ -201,7 +201,18 @@ Singleton {
     Timer { id: dndTimer; onTriggered: s.dnd = false }
     property bool nightLight: false
     property bool keepAwake: false
-    property bool gameMode: false
+    // Game mode (Settings → Quick): fewer animations — Hyprland animations off (state file read by animations.lua,
+    // applied live with hyprctl eval), phone light mode, bar visualizer + spinning record paused. Blur and the
+    // power profile are not touched. `calm` = game mode or a game focused (the animation-only part of gaming).
+    readonly property bool gameMode: Prefs.gameMode
+    readonly property bool calm: gameMode || gaming
+    function applyGameMode() {
+        const f = "$HOME/.local/state/hypr/gamemode";
+        run(["sh", "-c", gameMode ? "mkdir -p \"$HOME/.local/state/hypr\" && touch " + f + " && hyprctl eval 'hl.config({ animations = { enabled = false } })'"
+                                  : "rm -f " + f + " && hyprctl eval 'hl.config({ animations = { enabled = true } })'"]);
+    }
+    onGameModeChanged: if (Prefs.ready) applyGameMode()
+    Connections { target: Prefs; function onReadyChanged() { if (Prefs.ready) s.applyGameMode() } }
     property bool easyEffects: false
     property bool recording: false
     property real volume: 0.5
@@ -658,7 +669,7 @@ Singleton {
         else if (what === "airplane") { airplane = !airplane; run(["rfkill", airplane ? "block" : "unblock", "all"]) }
         else if (what === "night") { nightLight = !nightLight; run(nightLight ? ["sh", "-c", "pgrep -x hyprsunset || hyprsunset -t " + nightTemp + " >/dev/null 2>&1 &"] : ["pkill", "-x", "hyprsunset"]) }
         else if (what === "awake") keepAwake = !keepAwake;
-        else if (what === "game") gameMode = !gameMode;
+        else if (what === "game") Prefs.flip("gameMode");
         else if (what === "fx") run(easyEffects ? ["pkill", "-x", "easyeffects"] : ["sh", "-c", "easyeffects --gapplication-service >/dev/null 2>&1 &"]);
         else if (what === "mute") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
         else if (what === "mic") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]);
@@ -686,7 +697,7 @@ Singleton {
     Process {
         id: cava
         command: ["cava", "-p", Quickshell.shellDir + "/cava.conf"]
-        running: !!s.media && s.media.playing && !s.gaming
+        running: !!s.media && s.media.playing && !s.calm
         onRunningChanged: if (!running) s.viz = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         stdout: SplitParser { onRead: line => { const v = line.split(";").filter(x => x !== "").map(Number); if (v.length) s.viz = v } }
     }

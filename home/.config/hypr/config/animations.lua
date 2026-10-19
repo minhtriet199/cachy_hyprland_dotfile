@@ -18,3 +18,8 @@ hl.animation({ leaf = "windows",             enabled = true, speed = 3, spring =
 hl.animation({ leaf = "workspaces",          enabled = true, speed = 5, bezier = "quick", style = "slide" })
 hl.animation({ leaf = "specialWorkspaceIn",  enabled = true, speed = 2, bezier = "quick", style = "slide top"})
 hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 2, bezier = "quick", style = "slide bottom"})
+
+-- Isla Game mode (Settings → Quick): animations stay off while ~/.local/state/hypr/gamemode exists,
+-- also after a config reload. Isla switches it live with hyprctl eval.
+local gm = io.open(os.getenv("HOME") .. "/.local/state/hypr/gamemode")
+if gm then gm:close(); hl.config({ animations = { enabled = false } }) end

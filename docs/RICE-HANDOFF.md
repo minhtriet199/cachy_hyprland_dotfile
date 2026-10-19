@@ -164,7 +164,7 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
   messages tagged `ch: key|bt`, answers `key …`/`bt …`. Both scripts still run alone (`__main__`).
 - Keyring: `~/.local/share/dbus-1/services/org.freedesktop.secrets.service` (SystemdService=gnome-keyring-daemon.service)
   stops a second, unused gnome-keyring-daemon from starting at login (verify after reboot: only ONE should run).
-- WARP on demand: `tools/warp.sh on|off` (Isla's WARP toggle) starts/stops `warp-svc` (≈ 110 MB). Needs the one-time
+- WARP on demand: `tools/warp.sh on|off` (Isla's WARP toggle) starts/stops `warp-svc` (≈ 110 MB). Set up 2026-10-19 (tested: on → Connected in 1 s, off → service stopped) with the one-time
   `sudo ~/.config/quickshell/isla/tools/warp-ondemand-setup.sh` (polkit rule `/etc/polkit-1/rules.d/50-isla-warp.rules`
   + `systemctl disable --now warp-svc`; `… undo` reverts). While warp-svc is still enabled, warp.sh never stops it.
 - While a game is focused: visualizer + spinning record paused, phone light mode, no pop-ups, dock trigger off, mouse focus click-only.
@@ -206,7 +206,7 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
      to a UCM "HiFi" profile where WirePlumber picks the dead DMIC as default — don't install it.
    - WirePlumber `bluetooth.autoswitch-to-headset-profile` set to **false** (saved) so apps don't flip the Baseus into
      the broken headset mode or make its mic the default.
-2. **Isla login screen (isla-greeter) — installed 2026-10-19, not rebooted into yet.** Owner asked for a real login screen
+2. **Isla login screen (isla-greeter) — installed + updated 2026-10-19 (check.sh all good), not rebooted into yet.** Owner asked for a real login screen
    instead of auto-login + Isla locking itself (less safe: the session is open before the password).
    - Code: `~/.config/quickshell/isla-greeter/` (README there). It is Isla's `LockScreen.qml` with `greeter: true`
      ("Welcome back", "Log in", no "Locked since"), run by `qs -p` in a tiny Hyprland (`greeter.lua`) as the `greeter`
@@ -225,8 +225,10 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
      "started without start-hyprland" banner (plain Hyprland on purpose so a crash falls back to agreety).
    - Tested in a nested Hyprland window (look OK, Hyprland exits when qs quits). Next: owner tests password in the
      window → `sudo ~/.config/quickshell/isla-greeter/install.sh` → reboot → confirm login works.
-3. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch
-   to Turbo/Performance + disable blur/animations while gaming — no answer yet.
+3. **Game mode** (done 2026-10-19, owner's choice): Settings → Quick toggle or `qs -c isla ipc call isla gamemode`.
+   Saved in prefs (`gameMode`). ON = Hyprland animations off (state file `~/.local/state/hypr/gamemode`, read at the end
+   of `animations.lua` so it survives reloads; applied live with `hyprctl eval`), phone light mode, bar visualizer (cava)
+   + spinning record paused (`Services.calm` = gameMode || gaming). Blur and power profile untouched (owner sets those).
 4. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
    from wallpaper) / C (desktop widgets) — no answer yet.
 5. Not verified on screen yet: power-menu countdown, wallpaper Preview, lock-screen eye button, clipboard copy times after reboot.
