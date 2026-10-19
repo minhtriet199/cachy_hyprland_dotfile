@@ -5,7 +5,7 @@
   "size": 0.7,
   "barStyle": "Transparent",
   "barPos": "Top",
-  "wallpaper": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
+  "wallpaper": "/home/gamer/Pictures/Wallpapers/wallpaperflare.com_wallpaper(5).jpg",
   "wallDir": "/home/gamer/Pictures/Wallpapers",
   "displayName": "",
   "avatar": "pulse",
@@ -49,9 +49,9 @@
     ]
   ],
   "clipPins": [],
-  "phoneSpot": "Low",
+  "phoneSpot": "Middle",
   "wipeAuto": [
-    "#ebd6d6",
-    "#dcb7b7"
+    "#ebebd6",
+    "#dcdcb7"
   ]
 }

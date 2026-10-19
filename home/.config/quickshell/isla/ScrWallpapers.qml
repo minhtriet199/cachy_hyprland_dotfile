@@ -1,7 +1,7 @@
 import QtQuick
 import Qt.labs.folderlistmodel
 
-// Wallpaper picker on a string (landscape, canvas "Wallpapers"). ←/→ spin · Enter sets it.
+// Wallpaper picker on a string (landscape, canvas "Wallpapers"). ←/→ spin · R random · Enter sets it.
 Item {
     id: wp
     property var svc
@@ -52,6 +52,10 @@ Item {
     function settle(t) { viewTarget = t; view = t }
     function step(d) { if (n) settle(Math.round(viewTarget) + d) }
     function jump(k) { snap = true; settle(k); snap = false }
+    // Surprise me: roll to a random other picture — snap to 6 before it, then spin the last stretch so it lands centred
+    function surprise() { if (n < 2) return
+        const d = 1 + Math.floor(Math.random() * (n - 1)), b = Math.round(viewTarget)
+        if (d > 6) jump(b + d - 6); settle(b + d) }
     // swing: photos lag behind when the string moves and wobble back, like clothes on a line
     property real vel: 0                          // pictures / second
     property real _last: 0
@@ -301,6 +305,7 @@ Item {
             WpButton { readonly property bool done: !!wp.cur && wp.prefs.phoneBg === wp.cur.path
                 text: (done ? "✓ " : "📱 ") + "Phone"; h: 28; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo("phoneBg") }
             WpButton { text: "👁 Preview"; h: 28; onClicked: wp.preview() }
+            WpButton { text: wp.narrow ? "🎲" : "🎲 Surprise me"; h: 28; onClicked: wp.surprise() }
             WpButton { text: "🗑"; h: 28; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
             WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 28; onClicked: wp.svc.pasteWallpaper() }
         }
@@ -330,7 +335,8 @@ Item {
     }
     focus: true
     // Ctrl+V: paste a picture (or image link) from the clipboard; jump to it once it's saved
-    Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_V) { wp.svc.pasteWallpaper(); e.accepted = true } }
+    Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_V) { wp.svc.pasteWallpaper(); e.accepted = true }
+        else if (e.key === Qt.Key_R && !e.modifiers) { wp.surprise(); e.accepted = true } }      // R = surprise me
     Connections { target: wp.svc; function onPastedWallpaper(path) { wp.sortMode = "newest"; wp.filter = ""; jumpTo.path = path; jumpTo.restart() } }
     Timer { id: jumpTo; property string path: ""; interval: 600; onTriggered: { const k = wp.list.findIndex(x => x.path === path); if (k >= 0) wp.jump(k) } }
     Keys.onLeftPressed: step(-1)

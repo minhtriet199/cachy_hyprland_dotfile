@@ -357,9 +357,8 @@ ShellRoot {
                     }
                 }
 
-                // ── big sticker clock (main monitor) ──
+                // ── big sticker clock (every monitor) ──
                 PanelWindow {
-                    visible: scr.isMain
                     screen: scr.modelData
                     anchors { top: true; right: true }
                     margins.top: Math.round((370 - 30) * scr.sc)

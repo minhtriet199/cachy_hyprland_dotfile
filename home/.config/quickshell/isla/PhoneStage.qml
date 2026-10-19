@@ -205,79 +205,81 @@ Item {
                 M.T(0, -piv)))
             readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
             // back plate
-            Plate3D { m: M.chain(pHolder.view, M.T(0, 0, -26)); plate.width: 390; plate.height: 834; plate.radius: 54; plate.color: Theme.phoneBack }
+            Flat3D { m: M.chain(pHolder.view, M.T(0, 0, -26)); Rectangle { width: 390; height: 834; radius: 54; color: Theme.phoneBack } }
             // right side wall with the Pixel keys
-            Plate3D {
+            Flat3D {
                 m: M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90))); tex: 2
-                plate.width: 26; plate.height: 734; plate.radius: 10; plate.border.width: 3; plate.border.color: Theme.inkPhone
-                plate.gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-                Rectangle { x: 5; y: 124; width: 12; height: 58; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
-                Rectangle { x: 5; y: 210; width: 12; height: 118; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
-            }
-            PhoneBody {
-                id: pBody
-                showKeys: false
-                layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
-                layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
-                transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
-                Repeater {
-                    id: pScreens
-                    model: stage.allScreens
-                    delegate: Loader {
-                        id: ld
-                        required property string modelData
-                        readonly property bool cur: stage.portShown === modelData
-                        readonly property bool prev: stage.prevScreen === modelData && !stage.prevLand && !stage.wantLand
-                        anchors.fill: parent
-                        active: cur || prev || item !== null
-                        opacity: cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
-                        visible: opacity > 0
-                        enabled: cur && !stage.wantLand
-                        x: stage.screen === modelData && stage.swapT < 1 ? (1 - stage.swapT) * 28 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 28 * stage.navDir : 0)
-                        focus: cur && !stage.wantLand
-                        sourceComponent: stage.compFor(modelData, false)
-                        onCurChanged: if (cur && item && item.focusField) item.focusField()
-                        onLoaded: if (cur && item.focusField) item.focusField()
-                    }
+                Rectangle {
+                    width: 26; height: 734; radius: 10; border.width: 3; border.color: Theme.inkPhone
+                    gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
+                    Rectangle { x: 5; y: 124; width: 12; height: 58; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
+                    Rectangle { x: 5; y: 210; width: 12; height: 118; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
                 }
-                // big mode: nav bar at the bottom of the phone (the side rail is hidden then)
-                UiCandy {
-                    id: navBar
-                    readonly property bool isNavZone: true
-                    readonly property bool on: stage.big && !stage.wantLand && stage.shown
-                    property real navT: on ? 1 : 0
-                    Behavior on navT { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
-                    visible: navT > 0.01
-                    opacity: navT
-                    anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10 - (1 - navT) * 20
-                    width: navRow.implicitWidth + 14; height: 40; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper
-                    Row {
-                        id: navRow
-                        anchors.centerIn: parent; spacing: 4
-                        Repeater {
-                            model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
-                            delegate: UiCandy {
-                                id: nb
-                                required property var modelData
-                                required property int index
-                                readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
-                                property real t: 0
-                                SequentialAnimation {
-                                    id: pop
-                                    PauseAnimation { duration: (navBar.on ? 120 + nb.index * 40 : 0) * stage.dur }
-                                    NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: (navBar.on ? 300 : 150) * stage.dur; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
+            }
+            Flat3D {
+                m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
+                PhoneBody {
+                    id: pBody
+                    showKeys: false
+                    Repeater {
+                        id: pScreens
+                        model: stage.allScreens
+                        delegate: Loader {
+                            id: ld
+                            required property string modelData
+                            readonly property bool cur: stage.portShown === modelData
+                            readonly property bool prev: stage.prevScreen === modelData && !stage.prevLand && !stage.wantLand
+                            anchors.fill: parent
+                            active: cur || prev || item !== null
+                            opacity: cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
+                            visible: opacity > 0
+                            enabled: cur && !stage.wantLand
+                            x: stage.screen === modelData && stage.swapT < 1 ? (1 - stage.swapT) * 28 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 28 * stage.navDir : 0)
+                            focus: cur && !stage.wantLand
+                            sourceComponent: stage.compFor(modelData, false)
+                            onCurChanged: if (cur && item && item.focusField) item.focusField()
+                            onLoaded: if (cur && item.focusField) item.focusField()
+                        }
+                    }
+                    // big mode: nav bar at the bottom of the phone (the side rail is hidden then)
+                    UiCandy {
+                        id: navBar
+                        readonly property bool isNavZone: true
+                        readonly property bool on: stage.big && !stage.wantLand && stage.shown
+                        property real navT: on ? 1 : 0
+                        Behavior on navT { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
+                        visible: navT > 0.01
+                        opacity: navT
+                        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10 - (1 - navT) * 20
+                        width: navRow.implicitWidth + 14; height: 40; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper
+                        Row {
+                            id: navRow
+                            anchors.centerIn: parent; spacing: 4
+                            Repeater {
+                                model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
+                                delegate: UiCandy {
+                                    id: nb
+                                    required property var modelData
+                                    required property int index
+                                    readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
+                                    property real t: 0
+                                    SequentialAnimation {
+                                        id: pop
+                                        PauseAnimation { duration: (navBar.on ? 120 + nb.index * 40 : 0) * stage.dur }
+                                        NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: (navBar.on ? 300 : 150) * stage.dur; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
+                                    }
+                                    Connections { target: navBar; function onOnChanged() { pop.restart() } }
+                                    Component.onCompleted: if (navBar.on) pop.restart()
+                                    transform: Translate { y: (1 - nb.t) * 14 }
+                                    opacity: nb.t
+                                    width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
+                                    fill: cur ? Theme.gOn : "transparent"; pressable: true
+                                    onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                                             : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
+                                             : modelData[0] === "back" ? stage.back()
+                                             : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
+                                    Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
                                 }
-                                Connections { target: navBar; function onOnChanged() { pop.restart() } }
-                                Component.onCompleted: if (navBar.on) pop.restart()
-                                transform: Translate { y: (1 - nb.t) * 14 }
-                                opacity: nb.t
-                                width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
-                                fill: cur ? Theme.gOn : "transparent"; pressable: true
-                                onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
-                                         : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
-                                         : modelData[0] === "back" ? stage.back()
-                                         : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
-                                Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
                             }
                         }
                     }
@@ -368,37 +370,39 @@ Item {
                 const a = M.norm(M.chain(M.about(460, 220, M.S(1 / scale)), M.T(-x, -y), pHolder.place, pHolder.view, landOnPort)), b = M.norm(rest), s = M.smooth(0.55, 1, stage.turn);
                 return a.map((v, i) => v + (b[i] - v) * s);
             }
-            Plate3D { m: M.chain(lHolder.view, M.T(0, 0, -22)); plate.width: 920; plate.height: 430; plate.radius: 54; plate.color: Theme.phoneBack }
-            Plate3D { m: M.chain(lHolder.view, M.T(0, 0, -11)); plate.width: 920; plate.height: 430; plate.radius: 54; plate.color: "#2A4B55" }
-            Plate3D {
+            Flat3D { m: M.chain(lHolder.view, M.T(0, 0, -22)); Rectangle { width: 920; height: 430; radius: 54; color: Theme.phoneBack } }
+            Flat3D { m: M.chain(lHolder.view, M.T(0, 0, -11)); Rectangle { width: 920; height: 430; radius: 54; color: "#2A4B55" } }
+            Flat3D {
                 m: M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90))); tex: 2
-                plate.width: 820; plate.height: 22; plate.radius: 10; plate.border.width: 3; plate.border.color: Theme.inkPhone
-                plate.gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-                Rectangle { x: 120; y: 4; width: 58; height: 10; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
-                Rectangle { x: 200; y: 4; width: 118; height: 10; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
+                Rectangle {
+                    width: 820; height: 22; radius: 10; border.width: 3; border.color: Theme.inkPhone
+                    gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
+                    Rectangle { x: 120; y: 4; width: 58; height: 10; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
+                    Rectangle { x: 200; y: 4; width: 118; height: 10; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
+                }
             }
-            PhoneBody {
-                id: lBody
-                landscape: true; showKeys: false
-                layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
-                layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
-                transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
-                Repeater {
-                    id: lScreens
-                    model: stage.allScreens
-                    delegate: Loader {
-                        required property string modelData
-                        readonly property bool cur: stage.landShown === modelData
-                        readonly property bool prev: stage.prevScreen === modelData && stage.prevLand && stage.wantLand
-                        width: parent.width; height: parent.height
-                        // slide in from the side you're going to (like the upright phone), old screen slides out
-                        x: cur && stage.wantLand && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
-                        active: cur || prev || item !== null
-                        opacity: cur && stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
-                        visible: opacity > 0
-                        enabled: cur && stage.wantLand
-                        focus: cur && stage.wantLand
-                        sourceComponent: stage.compFor(modelData, true)
+            Flat3D {
+                m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
+                PhoneBody {
+                    id: lBody
+                    landscape: true; showKeys: false
+                    Repeater {
+                        id: lScreens
+                        model: stage.allScreens
+                        delegate: Loader {
+                            required property string modelData
+                            readonly property bool cur: stage.landShown === modelData
+                            readonly property bool prev: stage.prevScreen === modelData && stage.prevLand && stage.wantLand
+                            width: parent.width; height: parent.height
+                            // slide in from the side you're going to (like the upright phone), old screen slides out
+                            x: cur && stage.wantLand && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
+                            active: cur || prev || item !== null
+                            opacity: cur && stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
+                            visible: opacity > 0
+                            enabled: cur && stage.wantLand
+                            focus: cur && stage.wantLand
+                            sourceComponent: stage.compFor(modelData, true)
+                        }
                     }
                 }
             }
