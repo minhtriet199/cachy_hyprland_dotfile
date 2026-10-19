@@ -424,6 +424,24 @@ ShellRoot {
                     }
                 }
 
+                // ── keyring password pop-up (main monitor, top middle, only while asking) ──
+                LazyLoader {
+                    active: scr.isMain && !!Services.keyAsk
+                    PanelWindow {
+                        screen: scr.modelData
+                        anchors.top: true
+                        margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
+                        implicitWidth: Math.ceil(420 * scr.sc)
+                        implicitHeight: Math.ceil((keyBox.height + 16) * scr.sc)
+                        exclusionMode: ExclusionMode.Ignore
+                        color: "transparent"
+                        WlrLayershell.layer: WlrLayer.Overlay
+                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+                        WlrLayershell.namespace: "isla-keyring"
+                        KeyringDialog { id: keyBox; x: 10; svc: Services; scale: scr.sc; transformOrigin: Item.TopLeft }
+                    }
+                }
+
                 // ── Bluetooth pair / connect request (main monitor, top middle): only exists while asking ──
                 LazyLoader {
                     active: scr.isMain && !!Services.btAsk

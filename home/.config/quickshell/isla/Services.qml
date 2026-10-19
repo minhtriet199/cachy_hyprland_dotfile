@@ -342,6 +342,20 @@ Singleton {
              Quickshell.shellDir + "/tools/timelang.py"]);
     }
 
+    // keyring password pop-ups drawn by Isla (tools/keyring-prompter.py takes over gcr-prompter's service)
+    // keyAsk = {id, kind: password|confirm, title, message, description, warning, new} or null
+    property var keyAsk: null
+    Process { id: keyPrompter; running: true; stdinEnabled: true
+        command: ["python3", Quickshell.shellDir + "/tools/keyring-prompter.py"]
+        stdout: SplitParser { onRead: line => { try { const m = JSON.parse(line); s.keyAsk = m.kind === "close" ? null : m } catch (e) {} } }
+        onExited: { s.keyAsk = null; keyPrompterRestart.start() } }
+    Timer { id: keyPrompterRestart; interval: 3000; onTriggered: keyPrompter.running = true }
+    function keyAnswer(ok, password) {
+        if (!keyAsk) return;
+        keyPrompter.write(keyAsk.id + (ok ? " ok" + (keyAsk.kind === "password" ? " " + password : "") : " cancel") + "\n");
+        keyAsk = null;
+    }
+
     // Isla is the polkit agent: system changes (time zone, auto time, region…) ask for the password in PolkitDialog
     PolkitAgent { id: polkitAgent }
     readonly property var authFlow: polkitAgent.isActive ? polkitAgent.flow : null
