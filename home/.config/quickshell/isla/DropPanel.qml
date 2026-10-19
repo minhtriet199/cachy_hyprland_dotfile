@@ -16,11 +16,11 @@ DropCard {
         return c.length ? c.join(", ") : "No device connected";
     }
     width: 360; height: headerH + 14 + loader.height + 16
-    headerColor: info[3]; headerH: 72
+    headerH: 76
 
-    UiCandy { x: 16; y: 14; width: 44; height: 44; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper
+    UiCandy { x: 22; y: 19; width: 40; height: 40; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper
         Glyph { anchors.centerIn: parent; name: d.info[0]; size: 21; stroke: 2.4 } }
-    Column { x: 72; y: 16; width: d.width - 72 - 16
+    Column { x: 74; y: 19; width: d.width - 74 - 22
         UiText { text: d.info[1]; px: 21; w: 700; height: 24 }
         UiText { width: parent.width; text: d.info[2]; fam: "n"; px: 11; w: 800; color: Theme.textMuted } }
 

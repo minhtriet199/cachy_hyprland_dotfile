@@ -132,6 +132,23 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 
 ---
 
+### Card design (2026-10-19, owner loves SekaiPop — github.com/Blapples/SekaiPop, refs in ~/Pictures/screenshot/sekaipop-reference/)
+- **Every bar dropdown is a `DropCard`** with ONE header style: an inset box (own ink outline, soft gradient, halftone
+  dots) in the theme accent `Theme.gActive[0]` (music card: cover colour). Keep header contents ≥ 22 px from the card edge.
+- **Philosophy (owner's words: ours was "too safe, too clean, too much empty space")**: dense, a bit cramped, nothing flat —
+  small tilts via `Theme.tilt(index)` (fixed "random" angles), solid sticker shadows (`drop: 3`), dark ink tiles/buttons
+  mixed with light ones (selected rows in `UiRow`, chosen power mode, Apply, Clear all, profile side tiles), pills that
+  hang over the header edge (weather place + refresh). Calendar days on small tiles, weekends pink, today pink + outline.
+- Weather card shows only: condition, temp (°C raised), high/low, place, humidity · wind (direction arrow) · UV,
+  8-point hourly line (`WeatherLine.qml`, diamond markers). Owner said the old one showed too much.
+- `ProfileCard.qml` (phone Profile page): wallpaper banner (MultiEffect mask), GOOD … tag, dark/pink/dark tiles.
+- `PaletteCard.qml` + `SvcPalette.qml` + `tools/palette.sh`: built and working (IPC `qs -c isla ipc call isla palette
+  get|wallpaper|music|random|shuffle|apply|undo`) but **not placed anywhere yet** — the desktop-widget column was
+  removed on the owner's request ("update the current widgets, don't stick them on the desktop"). Ask where it should live.
+- **Design check without touching the real shell:** copy Isla to scratch, patch out isla-agents/idle/screen-time in the copy,
+  replace shell.qml with a FloatingWindow + Flow of all cards, `grabToImage` → PNG, run in a nested
+  `dbus-run-session Hyprland` (see memory isla-memory-tuning for the patch list).
+
 ## 6. QML lessons learned the hard way
 
 - **Never put a `//` comment mid-line before more code** — everything after it is silently ignored (once killed a page's scroll/clip).

@@ -13,7 +13,7 @@ DropCard {
 
     // big cover, half over the header
     UiCandy {
-        x: 18; y: 18; width: 132; height: 132; radius: 22; bw: 3; drop: 5; hi: 0; fill: Theme.lilacSoft
+        x: 18; y: 18; width: 132; height: 132; radius: 22; bw: 3; drop: 5; hi: 0; fill: Theme.lilacSoft; rotation: -3
         ClippingRectangle {
             anchors.fill: parent; anchors.margins: 3; radius: 19; color: Theme.lilacSoft
             Glyph { anchors.centerIn: parent; visible: big.status !== Image.Ready; name: "music"; size: 48; stroke: 2.2; color: "#FFFFFF" }
@@ -21,7 +21,7 @@ DropCard {
                 source: d.m ? d.m.art : ""; sourceSize: Qt.size(264, 264) }
         }
     }
-    UiTag { visible: !!d.m && d.m.app !== ""; x: d.width - width - 16; y: 16; text: d.m ? d.m.app : ""; fill: d.accent; ink: Theme.ink; px: 11; padX: 10; tilt: 4 }
+    UiTag { visible: !!d.m && d.m.app !== ""; x: d.width - width - 24; y: 20; text: d.m ? d.m.app : ""; fill: d.accent; ink: Theme.ink; px: 15; padX: 13; tilt: 4 }
     Column {
         x: 166; y: 92; width: d.width - 166 - 16; spacing: 2
         UiMarquee { width: parent.width; height: 22; text: d.m ? d.m.title : ""; px: 18; w: 700 }

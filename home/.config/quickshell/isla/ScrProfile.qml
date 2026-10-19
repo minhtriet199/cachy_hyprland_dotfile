@@ -25,57 +25,7 @@ Item {
         x: 18; y: 16; width: pf.cw; spacing: 12
         PhoneStatus { svc: pf.svc; timePx: 16 }
 
-        // ── card ──
-        UiCandy {
-            width: parent.width; height: 300; radius: 28; bw: 3; ink: Theme.inkPhone; drop: 6; hi: 0; fill: Theme.paper
-            // header
-            Item {
-                x: 3; y: 3; width: parent.width - 6; height: 110
-                Rectangle { anchors.fill: parent; radius: 25; color: Theme.adapt("#F8D3C4") }
-                Rectangle { y: parent.height - 25; width: parent.width; height: 25; color: Theme.adapt("#F8D3C4") }
-                UiDots { anchors.fill: parent; radius: 25; dot: Qt.rgba(1, 1, 1, 0.6); step: 16; r: 2 }
-            }
-            Rectangle { x: 3; y: 113; width: parent.width - 6; height: 3; color: Theme.inkPhone }
-            UiCandy { x: parent.width - width - 16; y: 16; width: gt.implicitWidth + 24; height: 30; rotation: 4; bw: 2.5; ink: Theme.inkPhone; drop: 2; hi: 0; fill: Theme.paper
-                UiText { id: gt; anchors.centerIn: parent; text: pf.svc.greeting; px: 12; w: 700 } }
-            // avatar
-            UiCandy {
-                x: 18; y: 50; width: 92; height: 92; radius: 24; bw: 3; ink: Theme.inkPhone; drop: 5; hi: 6; hiColor: Qt.rgba(1, 1, 1, 0.5); fill: Theme.sun
-                Glyph { anchors.centerIn: parent; name: Prefs.avatar || "smile"; size: 46; stroke: 2.2; color: Theme.inkPhone }
-            }
-            Column {
-                x: 124; y: 120; width: parent.width - 124 - 16
-                UiText { width: parent.width; height: 32; text: pf.shownName; px: 26; w: 700; color: Theme.textDeep }
-                UiText { width: parent.width; text: "@" + pf.p.user; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
-            }
-            // stats
-            Row {
-                x: 16; y: 182; spacing: 8
-                Repeater {
-                    model: [["UPTIME", pf.svc.uptimeText(pf.p.uptime), "#D8F1F4"], ["SHELL", pf.p.shell || "—", "#F6C9D6"], ["DESKTOP", pf.svc.desktopName, "#E6DEFB"]]
-                    delegate: UiCandy {
-                        required property var modelData
-                        width: (pf.cw - 32 - 16) / 3; height: 58; radius: 14; bw: 2.5; ink: Theme.inkPhone; drop: 0; hi: 0; fill: modelData[2]
-                        UiText { anchors.horizontalCenter: parent.horizontalCenter; y: 9; text: modelData[0]; fam: "n"; px: 9.5; w: 900; track: 1.2; color: Theme.textMuted }
-                        UiText { anchors.horizontalCenter: parent.horizontalCenter; y: 26; width: parent.width - 10; horizontalAlignment: Text.AlignHCenter; text: modelData[1]; px: 15; w: 700 }
-                    }
-                }
-            }
-            // today
-            Item {
-                x: 16; y: 254; width: parent.width - 32; height: 26
-                UiText { anchors.verticalCenter: parent.verticalCenter; text: "TODAY"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
-                Item {
-                    x: 58; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 58 - tag.width - 10; height: 12
-                    Rectangle { anchors.fill: parent; radius: 6; color: Theme.sand; border.width: 2; border.color: Theme.inkPhone }
-                    Rectangle { x: 2; y: 2; height: 8; radius: 4; width: (parent.width - 4) * Math.min(1, (pf.today ? pf.today.total : 0) / (12 * 3600))
-                        gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.sunDeep } GradientStop { position: 1; color: Theme.berry } } }
-                }
-                UiCandy { id: tag; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: tt.implicitWidth + 16; height: 24; radius: 8
-                    bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0; fill: Theme.sun
-                    UiText { id: tt; anchors.centerIn: parent; text: pf.today ? pf.hm(pf.today.total) : "—"; px: 12; w: 700 } }
-            }
-        }
+        ProfileCard { width: parent.width; svc: pf.svc }
 
         // ── avatar picker ──
         UiText { text: "AVATAR"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 16 }

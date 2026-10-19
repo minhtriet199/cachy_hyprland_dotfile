@@ -8,7 +8,7 @@ DropCard {
     readonly property real rowH: 74
     readonly property real listH: items.length === 0 ? 110 : Math.min(items.length, 5) * (rowH + 8) - 8 + 5   // +5: last row's border + shadow
     width: 360; height: 84 + 14 + listH + 14 + 40 + 16
-    headerColor: Theme.gLilac[1]; headerH: 84
+    headerH: 84
 
     function ago(t) {
         if (!t) return "";
@@ -18,7 +18,7 @@ DropCard {
 
     // header
     UiCandy {
-        x: 16; y: 16; width: 50; height: 50; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper
+        x: 22; y: 19; width: 46; height: 46; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper
         Glyph { anchors.centerIn: parent; name: d.svc.dnd ? "bellOff" : "bell"; size: 24; stroke: 2.4 }
         UiCandy { visible: d.items.length > 0; x: parent.width - 16; y: -6; width: Math.max(22, cnt.implicitWidth + 10); height: 22
             bw: 2; drop: 0; hi: 0; fill: Theme.berry
@@ -79,10 +79,10 @@ DropCard {
     // footer
     UiText { x: 18; y: d.height - 16 - 40; height: 40; text: "Right-click a bubble to dismiss"; fam: "n"; px: 10; w: 800; color: Theme.textSoft }
     UiCandy {
-        x: d.width - width - 16; y: d.height - 16 - 38; width: 110; height: 36; radius: 12; bw: 2.5; drop: 3
-        hi: d.items.length ? 3 : 0; fill: d.items.length ? Theme.gBerry : Theme.paper; pressable: d.items.length > 0
+        x: d.width - width - 16; y: d.height - 16 - 38; width: 110; height: 36; radius: 12; bw: 2.5; drop: 3; rotation: Theme.tilt(1)
+        hi: 0; fill: Theme.inkPhone; pressable: d.items.length > 0
         opacity: d.items.length ? 1 : 0.5
         onClicked: d.svc.clearNotifications()
-        UiText { anchors.centerIn: parent; text: "Clear all"; px: 13; w: 700 }
+        UiText { anchors.centerIn: parent; text: "Clear all"; px: 13; w: 700; color: "#FFFFFF" }
     }
 }

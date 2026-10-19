@@ -684,14 +684,18 @@ Singleton {
         else if (tools[name]) run(tools[name]);
     }
 
+    // ── palette card: colours from the wallpaper / song cover / random → Custom theme (SvcPalette.qml) ──
+    SvcPalette { id: palettePart; wallpaper: Prefs.wallpaper; art: s.media ? s.media.art : "" }
+    readonly property alias palette: palettePart
+
     // ── weather (SvcWeather.qml) ──
     SvcWeather { id: weatherPart; city: s.city }
     property alias weather: weatherPart.weather
     function refreshWeather() { weatherPart.refreshWeather() }
 
     // you're in a game (Steam / Proton / gamescope window focused) → the bar stops its moving bits so the GPU stays with the game
-    readonly property bool gaming: { const t = Hyprland.activeToplevel
-        return !!t && /^(steam_app.*|gamescope)$/.test((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "") }
+    readonly property bool gaming: { try { const t = Hyprland.activeToplevel
+        return !!t && /^(steam_app.*|gamescope)$/.test(String((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "")) } catch (e) { return false } }
     // ── music visualizer (cava, only while something is playing, not while gaming) ──
     property var viz: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Process {

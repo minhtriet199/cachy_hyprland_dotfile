@@ -37,11 +37,11 @@ FocusScope {
 
     DropCard {
         anchors.fill: parent
-        headerColor: Theme.gPeach[1]; headerH: 70
-        UiText { x: 24; y: 14; text: "Leaving the island?"; px: 24; w: 700 }
-        UiText { x: 24; y: 44; text: pm.svc.userHost || ""; fam: "n"; px: 11; w: 800; color: Theme.textMuted }
+        headerH: 70
+        UiText { x: 24; y: 16; text: "Leaving the island?"; px: 24; w: 700 }
+        UiText { x: 24; y: 45; text: pm.svc.userHost || ""; fam: "n"; px: 11; w: 800; color: Theme.textMuted }
         UiCandy {
-            x: parent.width - 54; y: 17; width: 36; height: 36; bw: 2.5; drop: 2; hi: 0; fill: Theme.paper; pressable: true
+            x: parent.width - 56; y: 19; width: 34; height: 34; bw: 2.5; drop: 2; hi: 0; fill: Theme.paper; pressable: true
             onClicked: pm.closed()
             Glyph { anchors.centerIn: parent; name: "close"; size: 15; stroke: 2.8 }
         }
@@ -56,7 +56,7 @@ FocusScope {
                     readonly property bool cur: pm.sel === index
                     readonly property bool arm: pm.armed === modelData.id
                     width: (pm.width - 48 - 4 * 14) / 5; height: 124; radius: 20; bw: cur ? 3 : 2.5; drop: cur ? 5 : 3
-                    hi: 3; fill: arm ? Theme.gBerry : (cur ? modelData.tint : Theme.paper)
+                    hi: 3; fill: arm ? Theme.gBerry : (cur ? modelData.tint : Theme.paper); rotation: Theme.tilt(index)
                     opacity: modelData.ok ? 1 : 0.45
                     pressable: true
                     y: cur ? -4 : 0

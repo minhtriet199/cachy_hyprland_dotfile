@@ -93,6 +93,9 @@ Singleton {
     readonly property string boxStyle: Prefs.boxStyle || "candy"
     readonly property bool ring: boxStyle === "ring"
 
+    // SekaiPop look: small "random" tilts so cards don't look flat — same angle for the same position every time
+    function tilt(i) { return [-1.6, 1.2, -0.7, 1.8, -1.2, 0.8][((i % 6) + 6) % 6] }
+
     // ── Ink (outlines + solid drop shadows) ──
     readonly property color ink: v("ink", "#3D5A66")          // bar, dock, desktop widgets
     readonly property color inkPhone: v("inkPhone", "#213F48")     // phone + settings

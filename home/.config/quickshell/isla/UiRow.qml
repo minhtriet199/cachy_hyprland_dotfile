@@ -13,16 +13,17 @@ UiCandy {
     property string busyText: "Working…"
     property color subColor: Theme.textSoft
     default property alias trailing: slot.data
-    height: 50; radius: 15; bw: 2.5; drop: active ? 3 : 0; hi: 0
-    fill: active ? Theme.gOn : Theme.cream; pressable: true
+    height: 50; radius: 15; bw: 2.5; drop: 3; hi: 0
+    fill: active ? Theme.inkPhone : Theme.cream; pressable: true
     UiCandy { x: 9; y: (r.height - 32) / 2; width: 32; height: 32; bw: 2; drop: 0; hi: 0
-        fill: r.active ? Theme.ink : Theme.paper
+        fill: r.active ? Theme.gActive : Theme.paper
         pressable: r.glyphTap; onClicked: r.glyphClicked()
-        Glyph { anchors.centerIn: parent; name: r.glyph; size: 16; stroke: 2.4; color: r.active ? "#FFF3C4" : Theme.text } }
+        Glyph { anchors.centerIn: parent; name: r.glyph; size: 16; stroke: 2.4; color: Theme.textDeep } }
     Column {
         x: 50; y: (r.height - implicitHeight) / 2; width: r.width - 50 - slot.width - (spin.visible ? spin.width + 6 : 0) - 14
-        UiText { width: parent.width; text: r.title; px: 14; w: 700; height: 17 }
-        UiText { visible: text !== ""; width: parent.width; text: r.busy ? r.busyText : r.sub; fam: "n"; px: 10.5; w: 800; color: r.busy ? Theme.seaDeep : r.subColor; height: 14 }
+        UiText { width: parent.width; text: r.title; px: 14; w: 700; height: 17; color: r.active ? "#FFFFFF" : Theme.text }
+        UiText { visible: text !== ""; width: parent.width; text: r.busy ? r.busyText : r.sub; fam: "n"; px: 10.5; w: 800; height: 14
+            color: r.active ? Qt.rgba(1, 1, 1, 0.75) : r.busy ? Theme.seaDeep : r.subColor }
     }
     Row { id: slot; x: r.width - width - 10; y: (r.height - height) / 2; spacing: 6 }
     // spinner while busy (connecting, pairing…), just left of the buttons

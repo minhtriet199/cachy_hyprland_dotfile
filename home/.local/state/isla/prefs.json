@@ -9,7 +9,7 @@
   "wallDir": "/home/gamer/Pictures/Wallpapers",
   "displayName": "",
   "avatar": "pulse",
-  "phoneBg": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
+  "phoneBg": "/home/gamer/Pictures/Wallpapers/wallhaven-kx6xl1_1920x1080.png",
   "lockWallpaper": "",
   "wipeBg": "cream",
   "wipeIcon": "leaf",
@@ -36,10 +36,11 @@
   "city": "Ho Chi Minh City",
   "autoTz": false,
   "dndGaming": false,
-  "theme": "sakura",
+  "theme": "custom",
   "boxStyle": "ring",
-  "themeHue": 0.85,
+  "themeHue": 0.78,
   "dark": false,
   "appsDark": true,
-  "gameMode": false
+  "gameMode": false,
+  "deskWidgets": true
 }

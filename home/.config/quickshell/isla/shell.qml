@@ -140,6 +140,13 @@ ShellRoot {
         function big(): void { Services.phoneBig = !Services.phoneBig }
         function preview(): void { Services.previewWipe() }
         function gamemode(): void { Services.toggle("game") }      // qs -c isla ipc call isla gamemode
+        // palette card: wallpaper · music · random · shuffle · apply · undo · get (prints source, colours, picked, applied)
+        function palette(cmd: string): string {
+            const p = Services.palette;
+            if (["wallpaper", "music", "random"].includes(cmd)) p.load(cmd);
+            else if (cmd === "shuffle") p.shuffle(); else if (cmd === "apply") p.apply(); else if (cmd === "undo") p.revert();
+            return JSON.stringify({ source: p.source, colors: p.colors, sel: p.sel, applied: p.applied, theme: Prefs.theme, hue: Prefs.themeHue, canUndo: !!p.undo });
+        }
     }
 
     Variants {
