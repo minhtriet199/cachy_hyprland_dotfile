@@ -1,0 +1,7 @@
+[Unit]
+Description=Copy Isla look / name / screens to /var/lib/isla-greeter
+ConditionPathIsDirectory=/var/lib/isla-greeter
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/quickshell/isla-greeter/isla-greeter-sync

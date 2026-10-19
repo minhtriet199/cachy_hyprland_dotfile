@@ -68,12 +68,13 @@ ShellRoot {
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
             ScriptAction { script: lockCtl.deskWipe = "none" }
         }
-        // first start: if the Hyprland session is brand new (< 90 s, i.e. greetd just auto-logged in) Isla starts LOCKED —
-        // the Isla lock screen is the login screen. A later restart of Isla only plays the reveal on the desktop.
+        // first start: if greetd auto-logs in (initial_session) and the Hyprland session is brand new (< 90 s), Isla starts
+        // LOCKED — the lock screen acts as the login screen. With the real Isla login screen (isla-greeter, no auto-login)
+        // you already typed your password, so it only plays the reveal, same as a later restart of Isla.
         PersistentProperties { id: lockPersist; reloadableId: "islaLockPersist"; property bool started: false }
         Process {
             id: sessionAge
-            command: ["sh", "-c", "ps -o etimes= -p $(pgrep -xo Hyprland || echo 1) | tr -d ' '"]
+            command: ["sh", "-c", "grep -q '^\\[initial_session\\]' /etc/greetd/config.toml 2>/dev/null || { echo 99999; exit; }; ps -o etimes= -p $(pgrep -xo Hyprland || echo 1) | tr -d ' '"]
             stdout: StdioCollector { onStreamFinished: {
                 const age = parseInt(this.text) || 99999;
                 if (age < 90) { lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "full"; sessionLock.locked = true; bootReveal.start() }

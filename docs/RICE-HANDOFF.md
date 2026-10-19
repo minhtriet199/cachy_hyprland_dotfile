@@ -32,7 +32,7 @@ owner wants followed, and what is still open.
 | GPU | RX 6700S (card1, drives both screens — MUX "Ultimate") + Radeon 680M iGPU (card0) |
 | Screens | ASUS VG27AQ5A **HDMI-A-1** (left, 2560×1440@120, **HDR on**) · laptop **eDP-1** (right, 2560×1600@120, scale 1.25) |
 | OS | CachyOS, kernels `linux-cachyos` 7.2.11 and `linux-cachyos-lts` 6.18 (backup) |
-| Desktop | **Hyprland 0.56 with the Lua config** (not hyprlang) · login greetd (auto-login) |
+| Desktop | **Hyprland 0.56 with the Lua config** (not hyprlang) · login greetd (auto-login → being replaced by the Isla login screen, see §8) |
 | Shell | **Isla** — own Quickshell config (replaced Noctalia, which is no longer started) |
 | Input | fcitx5 + bamboo (EN/VI, Ctrl+Shift, `ShareInputState=All`) |
 | Bluetooth | MediaTek MT7922 (USB 13d3:3568) — **headset-mode mic is broken** (see §8) |
@@ -187,13 +187,27 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
      to a UCM "HiFi" profile where WirePlumber picks the dead DMIC as default — don't install it.
    - WirePlumber `bluetooth.autoswitch-to-headset-profile` set to **false** (saved) so apps don't flip the Baseus into
      the broken headset mode or make its mic the default.
-2. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch
+2. **Isla login screen (isla-greeter) — built 2026-10-19, NOT installed yet.** Owner asked for a real login screen
+   instead of auto-login + Isla locking itself (less safe: the session is open before the password).
+   - Code: `~/.config/quickshell/isla-greeter/` (README there). It is Isla's `LockScreen.qml` with `greeter: true`
+     ("Welcome back", "Log in", no "Locked since"), run by `qs -p` in a tiny Hyprland (`greeter.lua`) as the `greeter`
+     user, talking to greetd via `Quickshell.Services.Greetd`. Session started: `uwsm start -e -D Hyprland hyprland.desktop`.
+   - Installed copy: `/usr/local/share/isla-greeter` (root) · data the greeter can read: `/var/lib/isla-greeter`
+     (owner's: prefs.json, lock-wallpaper, screens, user.json; kept fresh by user unit `isla-greeter-sync.path`).
+   - Safety: `isla-greeter-session` falls back to `agreety` (text login) if the greeter dies without logging in.
+     Undo: `sudo ~/.config/quickshell/isla-greeter/uninstall.sh` (restores `/etc/greetd/config.toml.before-isla`).
+   - Isla `shell.qml` boot self-lock and `boot-lock-guard.sh` now only act when `/etc/greetd/config.toml` has
+     `[initial_session]` (auto-login). Without it Isla just plays the reveal.
+   - Changing LockScreen.qml (or other copied files: see `build.sh`) → `sudo …/install.sh` again to update the greeter.
+   - Tested in a nested Hyprland window (look OK, Hyprland exits when qs quits). Next: owner tests password in the
+     window → `sudo ~/.config/quickshell/isla-greeter/install.sh` → reboot → confirm login works.
+3. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch
    to Turbo/Performance + disable blur/animations while gaming — no answer yet.
-3. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
+4. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
    from wallpaper) / C (desktop widgets) — no answer yet.
-4. Not verified on screen yet: power-menu countdown, wallpaper Preview, lock-screen eye button, clipboard copy times after reboot.
-5. Leftover `.pacnew` files in /etc (pacman.conf, resolv.conf, mirrorlists) are old/plain-Arch — **keep the current files**.
-6. Owner declined keyring auto-unlock — don't add it.
+5. Not verified on screen yet: power-menu countdown, wallpaper Preview, lock-screen eye button, clipboard copy times after reboot.
+6. Leftover `.pacnew` files in /etc (pacman.conf, resolv.conf, mirrorlists) are old/plain-Arch — **keep the current files**.
+7. Owner declined keyring auto-unlock — don't add it.
 
 ---
 

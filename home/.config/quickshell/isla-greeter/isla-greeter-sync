@@ -1,0 +1,14 @@
+#!/bin/sh
+# Copy what the login screen shows (Isla look, lock wallpaper, your name, screen layout) into the
+# greeter's data folder — the greeter user can't read your home. Run by isla-greeter-sync.path on changes.
+data="${ISLA_GREETER_DATA:-/var/lib/isla-greeter}"
+[ -w "$data" ] || { echo "isla-greeter-sync: $data is not writable (run the installer first)" >&2; exit 1; }
+prefs="$HOME/.local/state/isla/prefs.json"
+[ -f "$prefs" ] && cp "$prefs" "$data/prefs.json"
+[ -f "$HOME/.local/state/hypr/screens" ] && cp "$HOME/.local/state/hypr/screens" "$data/screens"
+wall=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("lockWallpaper",""))' "$prefs" 2>/dev/null)
+if [ -n "$wall" ] && [ -f "$wall" ]; then cp "$wall" "$data/lock-wallpaper"; else rm -f "$data/lock-wallpaper"; fi
+full=$(getent passwd "$USER" | cut -d: -f5 | cut -d, -f1)
+python3 -I -c 'import json,sys; print(json.dumps({"user": sys.argv[1], "full": sys.argv[2]}))' "$USER" "$full" > "$data/user.json"
+chmod 644 "$data"/prefs.json "$data"/screens "$data"/user.json "$data"/lock-wallpaper 2>/dev/null
+exit 0

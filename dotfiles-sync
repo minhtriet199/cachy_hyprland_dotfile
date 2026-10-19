@@ -17,6 +17,9 @@ mkdir -p home/.config/quickshell home/.local/state/isla
 rsync -a --delete --exclude='*.bak*' --exclude='__pycache__/' "$HOME/.config/quickshell/isla/" "home/.config/quickshell/isla/"
 cp -a "$HOME/.local/state/isla/prefs.json" "home/.local/state/isla/" 2>/dev/null
 
+# --- Isla login screen (greeter) sources; install with: sudo ~/.config/quickshell/isla-greeter/install.sh ---
+rsync -a --delete "$HOME/.config/quickshell/isla-greeter/" "home/.config/quickshell/isla-greeter/"
+
 # --- Isla look for Qt/KDE apps: Kvantum theme, candy icons, colour scheme, qt6ct, fonts, default wallpaper ---
 mkdir -p home/.config/Kvantum home/.local/share/icons home/.local/share/color-schemes home/.config/qt6ct/colors home/.local/share/fonts home/Pictures/Wallpapers
 rsync -a --delete --exclude='*.bak*' "$HOME/.config/Kvantum/" "home/.config/Kvantum/"
@@ -40,7 +43,7 @@ mkdir -p home/.config/pipewire/pipewire.conf.d
 rsync -a --delete "$HOME/.config/pipewire/pipewire.conf.d/" "home/.config/pipewire/pipewire.conf.d/"
 
 # --- custom systemd user units ---
-for u in screentime-archive.service screentime-archive.timer \
+for u in screentime-archive.service screentime-archive.timer isla-greeter-sync.path isla-greeter-sync.service \
          godot-vulkan-fix.service godot-vulkan-fix.timer godot-vulkan-fix.path; do
     [ -f "$HOME/.config/systemd/user/$u" ] && cp -a "$HOME/.config/systemd/user/$u" "home/.config/systemd/user/"
 done

@@ -9,6 +9,7 @@ Item {
     property var svc
     property var lock                       // shell's lock controller: password, busy, failed, lockedAt, tryUnlock()
     property bool main: true                // password box only on the main screen
+    property bool greeter: false            // login screen (isla-greeter): "Log in" wording, no "Locked since"
     property bool reveal: false             // eye button: show the password as text instead of dots
     Connections { target: ls.lock; function onPasswordChanged() { if (ls.lock.password === "") ls.reveal = false } }
     readonly property real sc: height / 1080
@@ -46,7 +47,7 @@ Item {
                 UiDots { anchors.fill: parent; anchors.margins: 3; radius: 11; dot: Qt.rgba(1, 1, 1, 0.55); step: 12; r: 1.6 }
                 Column { x: 16; y: 14
                     UiText { text: Prefs.displayName || ls.svc.profile.full || ls.svc.profile.user; px: 21; w: 700; color: Theme.textDeep; height: 24 }
-                    UiText { text: "Screen locked"; fam: "n"; px: 11; w: 800; color: Theme.textDeep } }
+                    UiText { text: ls.greeter ? "Welcome back" : "Screen locked"; fam: "n"; px: 11; w: 800; color: Theme.textDeep } }
                 Rectangle { x: parent.width - 50; y: 15; width: 38; height: 38; radius: 19; color: Theme.sun; border.width: 2.5; border.color: Theme.inkPhone }
             }
             Row {
@@ -70,7 +71,7 @@ Item {
 
         // locked since
         UiCandy {
-            visible: ls.main
+            visible: ls.main && !ls.greeter
             x: 330; y: 962; width: lst.implicitWidth + 46; height: 44; bw: 2.5; ink: Theme.inkPhone; drop: 0; hi: 0; fill: "#2C4A54"
             Row { anchors.centerIn: parent; spacing: 8
                 Glyph { name: "lock"; size: 15; stroke: 2.6; color: "#FFFFFF"; anchors.verticalCenter: parent.verticalCenter }
@@ -134,13 +135,13 @@ Item {
                                 NumberAnimation { to: 0; duration: 500; easing.type: Easing.InQuad } NumberAnimation { to: 1; duration: 500; easing.type: Easing.OutQuad } }
                         }
                     }
-                    UiText { visible: ls.lock.password.length === 0; anchors.centerIn: parent; anchors.horizontalCenterOffset: 16; text: "type to unlock"; fam: "n"; px: 13; w: 800; color: "#88A5AD" }
+                    UiText { visible: ls.lock.password.length === 0; anchors.centerIn: parent; anchors.horizontalCenterOffset: 16; text: ls.greeter ? "type to log in" : "type to unlock"; fam: "n"; px: 13; w: 800; color: "#88A5AD" }
                 }
             }
             UiCandy {
                 x: 550; width: 258; height: 120; radius: 28; bw: 3.5; ink: Theme.inkPhone; drop: 6; hi: 4; fill: Theme.gActive; pressable: !ls.lock.busy
                 onClicked: ls.lock.tryUnlock()
-                UiText { anchors.horizontalCenter: parent.horizontalCenter; y: 16; text: "Unlock"; px: 24; w: 700; color: Theme.textDeep }
+                UiText { anchors.horizontalCenter: parent.horizontalCenter; y: 16; text: ls.greeter ? "Log in" : "Unlock"; px: 24; w: 700; color: Theme.textDeep }
                 Rectangle { x: 34; y: 58; width: parent.width - 68; height: 40; radius: 20; color: "#2C4A54"
                     Glyph { anchors.centerIn: parent; name: "arrowRight"; size: 18; stroke: 2.8; color: "#FFFFFF" } }
             }
