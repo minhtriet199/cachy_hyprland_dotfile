@@ -69,8 +69,9 @@ FocusScope {
                         fill: tile.cur ? Theme.paper : tile.modelData.tint[1]
                         Glyph { anchors.centerIn: parent; name: tile.modelData.glyph; size: 24; stroke: 2.5 }
                     }
-                    UiText { y: 78; width: parent.width; horizontalAlignment: Text.AlignHCenter
-                        text: tile.arm ? tile.modelData.label + " in " + pm.secsLeft : tile.modelData.label; px: 15; w: 700 }
+                    // counting down: the big number replaces the name, so it fits the narrow tile
+                    UiText { y: tile.arm ? 74 : 78; width: parent.width - 8; x: 4; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                        text: tile.arm ? pm.secsLeft : tile.modelData.label; px: tile.arm ? 22 : 15; w: 700 }
                     UiText { y: 98; width: parent.width; horizontalAlignment: Text.AlignHCenter
                         text: !tile.modelData.ok ? "needs hyprlock" : tile.arm ? "tap = now" : (tile.index + 1); fam: "n"; px: 10; w: 800; color: Theme.textSoft }
                     // countdown ring: shrinks over the 4 seconds

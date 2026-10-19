@@ -148,6 +148,38 @@ Item {
         }
     }
 
+    // power corner (main screen): Restart / Shut down, each counts down 4 s (tap again = now, Cancel stops)
+    property string pwArmed: ""
+    property int pwLeft: 0
+    Timer { id: pwTimer; interval: 1000; repeat: true; onTriggered: { ls.pwLeft--; if (ls.pwLeft <= 0) ls.pwGo() } }
+    function pwPick(id) { if (pwArmed === id) { pwGo(); return } pwArmed = id; pwLeft = 4; pwTimer.restart() }
+    function pwCancel() { pwArmed = ""; pwTimer.stop() }
+    function pwGo() { const id = pwArmed; pwCancel(); if (id) svc.power(id) }
+    Row {
+        visible: ls.main
+        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 36 * ls.sc     // top-right, clear of the cards
+        spacing: 12; scale: ls.sc; transformOrigin: Item.TopRight
+        UiCandy {
+            visible: ls.pwArmed !== ""
+            width: cnT.implicitWidth + 30; height: 52; radius: 18; bw: 3; ink: Theme.inkPhone; drop: 4; hi: 0; fill: Theme.paper; pressable: true
+            onClicked: ls.pwCancel()
+            UiText { id: cnT; anchors.centerIn: parent; text: "Cancel"; px: 16; w: 700 }
+        }
+        Repeater {
+            model: [["reboot", "reload", "Restart", Theme.gLeaf], ["shutdown", "power", "Shut down", Theme.gBerry]]
+            delegate: UiCandy {
+                required property var modelData
+                readonly property bool arm: ls.pwArmed === modelData[0]
+                width: pwT.implicitWidth + 64; height: 52; radius: 18; bw: 3; ink: Theme.inkPhone; drop: arm ? 2 : 4; hi: 3
+                fill: arm ? modelData[3] : Theme.paper; pressable: true
+                onClicked: ls.pwPick(modelData[0])
+                Glyph { x: 16; anchors.verticalCenter: parent.verticalCenter; name: modelData[1]; size: 20; stroke: 2.6 }
+                UiText { id: pwT; x: 46; anchors.verticalCenter: parent.verticalCenter
+                    text: parent.arm ? modelData[2] + " in " + ls.pwLeft : modelData[2]; px: 16; w: 700 }
+            }
+        }
+    }
+
     // stripe wipe on top of everything (from shell's lock controller)
     IrisWipe { anchors.fill: parent; z: 100; mode: ls.lock.lockWipe || "none"; t: ls.lock.lockT || 0 }
 
@@ -156,7 +188,7 @@ Item {
         if (ls.lock.busy) { e.accepted = true; return }
         if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) ls.lock.tryUnlock();
         else if (e.key === Qt.Key_Backspace) ls.lock.password = (e.modifiers & Qt.ControlModifier) ? "" : ls.lock.password.slice(0, -1);
-        else if (e.key === Qt.Key_Escape) ls.lock.password = "";
+        else if (e.key === Qt.Key_Escape) { if (ls.pwArmed) ls.pwCancel(); else ls.lock.password = "" }
         else if (e.text && e.text.length === 1 && e.text.charCodeAt(0) >= 32) { ls.lock.password += e.text; ls.lock.failed = false }
         e.accepted = true;
     }
