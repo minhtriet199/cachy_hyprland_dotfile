@@ -68,8 +68,10 @@ Item {
                 // hover / focus / press: the card's colour slides in from the left (empty by default)
                 readonly property bool lit: hovered || down || activeFocus
                 Rectangle {
-                    x: card.bw; y: card.bw; height: card.height - 2 * card.bw; radius: card.ir
-                    width: (card.width - 2 * card.bw) * slide
+                    // follows the box style: inside the outline, and inside the light gap for Ring
+                    readonly property real inset: card.eb + card.gap
+                    x: inset; y: inset; height: card.height - 2 * inset; radius: Math.max(0, card.ir - card.gap)
+                    width: (card.width - 2 * inset) * slide
                     property real slide: card.lit ? 1 : 0
                     Behavior on slide { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                     visible: slide > 0.005
