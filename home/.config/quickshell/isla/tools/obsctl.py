@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # OBS remote for Isla's record button (obs-websocket v5 on localhost; Python standard library only).
-#   obsctl.py toggle   recording → stop it · not recording → open OBS (tray) if needed, ask which screen/app
+#   obsctl.py toggle   recording → stop it · not recording → (re)open OBS in the tray so it asks which screen/app
 #                      (Isla's picker, through the screen-share portal), then start
 #   obsctl.py status   {"rec": true/false, "ms": elapsed}
 # The picker answers in $XDG_RUNTIME_DIR/isla-share/result (tools/share-pick.sh writes "pick" or "cancel").
@@ -104,6 +104,32 @@ def notify(title, body=""):
     subprocess.Popen(["notify-send", "-a", "OBS", "-i", "com.obsproject.Studio", title, body])
 
 
+def collection():
+    """Path of OBS's current scene collection (basic/scenes/<name>.json)."""
+    name = "Untitled.json"
+    try:
+        for line in open(os.path.expanduser("~/.config/obs-studio/user.ini")):
+            if line.startswith("SceneCollectionFile="):
+                name = line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return os.path.expanduser("~/.config/obs-studio/basic/scenes/" + name)
+
+
+def quit_obs():
+    subprocess.run(["pkill", "-TERM", "-x", "obs"])
+    for _ in range(40):
+        if not obs_running():
+            return
+        time.sleep(0.25)
+
+
+def launch():
+    subprocess.Popen(["obs", "--minimize-to-tray", "--disable-shutdown-check"], stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+    return connect(wait=25)
+
+
 def start():
     c = conf()
     if not c.get("server_enabled"):
@@ -112,40 +138,48 @@ def start():
             return
         c["server_enabled"] = True
         json.dump(c, open(CONF, "w"), indent=2)
-    if not obs_running():
-        subprocess.Popen(["obs", "--minimize-to-tray", "--disable-shutdown-check"], stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, start_new_session=True)
-    o = connect(wait=25)
-    if not o:
-        notify("OBS didn't answer", "Try again in a moment")
-        return
+    # OBS only asks "which screen?" for a capture source it loads at start-up (one made or reloaded through the
+    # remote control waits forever). So: make sure the current scene has one, close OBS, forget the old choice,
+    # open OBS again — it asks the portal → Isla's picker (tools/share-pick.sh) → we start recording.
+    subprocess.Popen(["notify-send", "-a", "OBS", "-i", "com.obsproject.Studio", "-t", "3000", "Getting OBS ready…", "The picker opens in a moment"])
+    f = collection()
+    try:
+        saved = next((x["name"] for x in json.load(open(f)).get("sources", []) if x.get("id") == KIND), None)
+    except (OSError, ValueError):
+        saved = None
+    if obs_running() or not saved:                  # (OBS closed with a capture source saved: skip straight to the restart)
+        o = connect() if obs_running() else launch()
+        if not o:
+            notify("OBS didn't answer", "Try again in a moment")
+            return
+        scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
+        src = next((i["inputName"] for i in o.req("GetInputList", {"inputKind": KIND}).get("inputs", [])), None)
+        if not src:
+            src = NAME
+            o.req("CreateInput", {"sceneName": scene, "inputName": src, "inputKind": KIND, "inputSettings": {"ShowCursor": True}})
+        elif not any(i.get("sourceName") == src for i in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", [])):
+            o.req("CreateSceneItem", {"sceneName": scene, "sourceName": src})
+        quit_obs()
+    else:
+        src = saved
+    try:
+        d = json.load(open(f))
+        for x in d.get("sources", []):
+            if x.get("id") == KIND:
+                x.setdefault("settings", {})["RestoreToken"] = ""
+        json.dump(d, open(f, "w"))
+    except (OSError, ValueError):
+        pass
     os.makedirs(os.path.dirname(RESULT), exist_ok=True)
     try:
         os.remove(RESULT)
     except FileNotFoundError:
         pass
-    # a fresh screen-capture source each time: making it is what asks the portal → Isla's picker
-    # (pressing an old source's "Reload" opens a session that never asks)
-    scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
-    for i in o.req("GetInputList", {"inputKind": KIND}).get("inputs", []):
-        o.req("RemoveInput", {"inputName": i["inputName"]})
-    time.sleep(0.3)
-    src = NAME
-    asked = os.path.join(os.path.dirname(RESULT), "windows")             # share-pick.sh writes it when the portal asks
-    for tryno in (1, 2):
-        t0 = time.time()
-        o.req("CreateInput", {"sceneName": scene, "inputName": src, "inputKind": KIND, "inputSettings": {"ShowCursor": True}})
-        while time.time() - t0 < 10 and not (os.path.exists(asked) and os.path.getmtime(asked) >= t0 - 0.5):
-            time.sleep(0.2)
-        if os.path.exists(asked) and os.path.getmtime(asked) >= t0 - 0.5:
-            break
-        # xdg-desktop-portal-hyprland sometimes hangs after sharing a window: restart it and ask again
-        o.req("RemoveInput", {"inputName": src})
-        subprocess.run(["systemctl", "--user", "restart", "xdg-desktop-portal-hyprland"])
-        time.sleep(1.5)
-    else:
-        notify("Screen picker didn't open", "Try the record button again")
+    o = launch()
+    if not o:
+        notify("OBS didn't answer", "Try again in a moment")
         return
+    scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
     end = time.time() + 120
     while not os.path.exists(RESULT) and time.time() < end:
         time.sleep(0.2)
