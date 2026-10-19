@@ -9,6 +9,7 @@ hl.config({
         disable_hyprland_logo = true,
         disable_splash_rendering = true,
         background_color = 0xFFF4E0,   -- Isla cream, same as the scene-change cover
+        disable_watchdog_warning = true, -- plain Hyprland on purpose: a crash must end it so isla-greeter-session falls back to the text login
     },
     input = { accel_profile = "flat" },
 })

@@ -187,7 +187,7 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
      to a UCM "HiFi" profile where WirePlumber picks the dead DMIC as default — don't install it.
    - WirePlumber `bluetooth.autoswitch-to-headset-profile` set to **false** (saved) so apps don't flip the Baseus into
      the broken headset mode or make its mic the default.
-2. **Isla login screen (isla-greeter) — built 2026-10-19, NOT installed yet.** Owner asked for a real login screen
+2. **Isla login screen (isla-greeter) — installed 2026-10-19, not rebooted into yet.** Owner asked for a real login screen
    instead of auto-login + Isla locking itself (less safe: the session is open before the password).
    - Code: `~/.config/quickshell/isla-greeter/` (README there). It is Isla's `LockScreen.qml` with `greeter: true`
      ("Welcome back", "Log in", no "Locked since"), run by `qs -p` in a tiny Hyprland (`greeter.lua`) as the `greeter`
@@ -199,6 +199,11 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
    - Isla `shell.qml` boot self-lock and `boot-lock-guard.sh` now only act when `/etc/greetd/config.toml` has
      `[initial_session]` (auto-login). Without it Isla just plays the reveal.
    - Changing LockScreen.qml (or other copied files: see `build.sh`) → `sudo …/install.sh` again to update the greeter.
+   - **Test: `~/.config/quickshell/isla-greeter/check.sh`** — run after every `pacman -Syu` that updates Hyprland or
+     quickshell, and after Isla lock-screen changes, BEFORE rebooting. Fake greetd + auto-typed passwords, perms,
+     stale-copy, greeter.lua, text-login fallback. Known harmless log: Quickshell 0.3 "unexpected greetd response success"
+     after a wrong password (it cancels the old session itself). `misc.disable_watchdog_warning` hides the
+     "started without start-hyprland" banner (plain Hyprland on purpose so a crash falls back to agreety).
    - Tested in a nested Hyprland window (look OK, Hyprland exits when qs quits). Next: owner tests password in the
      window → `sudo ~/.config/quickshell/isla-greeter/install.sh` → reboot → confirm login works.
 3. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch

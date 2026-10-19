@@ -29,12 +29,14 @@ ShellRoot {
             else if (!pam.start()) fail();
         }
         function fail() { busy = false; failed = true; password = "" }
+        function reset() { if (Greetd.state !== GreetdState.Inactive) Greetd.cancelSession(); fail() }
 
         Connections {
             target: Greetd
             function onAuthMessage(message, error, responseRequired, echoResponse) { if (responseRequired) Greetd.respond(lockCtl.password) }
-            function onAuthFailure(message) { Greetd.cancelSession(); lockCtl.fail() }
-            function onError(error) { console.warn("greetd:", error); Greetd.cancelSession(); lockCtl.fail() }
+            // greetd already ends the session after a wrong password (an extra cancel confuses Quickshell)
+            function onAuthFailure(message) { lockCtl.fail() }
+            function onError(error) { console.warn("greetd:", error); lockCtl.reset() }
             function onReadyToLaunch() { closeAnim.restart() }
         }
         PamContext {
@@ -59,6 +61,12 @@ ShellRoot {
             ScriptAction { script: root.finish() }
         }
     }
+    // check.sh only (fake greetd): types a wrong password, then the right one, with no keyboard needed
+    readonly property bool autotest: Quickshell.env("ISLA_GREETER_TEST") === "1"
+    Timer { running: root.autotest; interval: 2500; onTriggered: { lockCtl.password = "wrong-pass"; lockCtl.tryUnlock() } }
+    Connections { target: lockCtl; enabled: root.autotest; function onFailedChanged() { if (lockCtl.failed) retry.start() } }
+    Timer { id: retry; interval: 1200; onTriggered: { lockCtl.password = "isla-test"; lockCtl.tryUnlock() } }
+
     function finish() {
         if (real) Greetd.launch(session, [], false);
         else { sessionLock.locked = false; Qt.quit() }
