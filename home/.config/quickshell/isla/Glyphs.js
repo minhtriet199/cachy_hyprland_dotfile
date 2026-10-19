@@ -1,6 +1,42 @@
 .pragma library
 // Isla glyphs (24x24 grid). s = stroke paths, f = filled paths. Generated from the canvas design.
 var data = {
+"arrowTool": {
+"s": "M5 19L19 5 M10 5h9v9",
+"f": ""
+},
+"rectTool": {
+"s": "M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z",
+"f": ""
+},
+"ovalTool": {
+"s": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
+"f": ""
+},
+"textTool": {
+"s": "M5 7V4h14v3 M12 4v16 M9 20h6",
+"f": ""
+},
+"numTool": {
+"s": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z M10.5 9.5L12.5 8v8",
+"f": ""
+},
+"pixelTool": {
+"s": "",
+"f": "M4 4h5v5H4z M15 4h5v5h-5z M9.5 9.5h5v5h-5z M4 15h5v5H4z M15 15h5v5h-5z"
+},
+"marker": {
+"s": "M15 4l5 5-9 9H6v-5z M4 21h10",
+"f": ""
+},
+"undo": {
+"s": "M9 14L4 9l5-5 M4 9h10a6 6 0 0 1 0 12h-3",
+"f": ""
+},
+"redo": {
+"s": "M15 14l5-5-5-5 M20 9H10a6 6 0 0 0 0 12h3",
+"f": ""
+},
 "home": {
 "s": "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
 "f": ""

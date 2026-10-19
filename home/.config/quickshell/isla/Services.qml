@@ -145,7 +145,7 @@ Singleton {
     readonly property var _hyprEvents: ["openwindow", "closewindow", "movewindow", "movewindowv2", "workspace", "workspacev2", "createworkspace", "createworkspacev2",
         "destroyworkspace", "destroyworkspacev2", "moveworkspace", "moveworkspacev2", "renameworkspace", "focusedmon", "focusedmonv2", "monitoradded", "monitoraddedv2",
         "monitorremoved", "monitorremovedv2", "activespecial", "activespecialv2", "changefloatingmode", "fullscreen", "pin"]
-    Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
+    Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (ev.name.startsWith("monitoradded") || ev.name.startsWith("monitorremoved")) s.loadScreens(); if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
     Timer { interval: 60000; running: true; repeat: true; onTriggered: hyprQuery.running = true }   // safety net only
     readonly property var monitors: hMonitors.map(m => ({ name: m.name, label: (monitorNames[m.name] && monitorNames[m.name].label) || m.name }))
     function base(mon) { return (monitorNames[mon] && monitorNames[mon].base) || 0 }

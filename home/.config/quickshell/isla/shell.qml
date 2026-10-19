@@ -125,6 +125,18 @@ ShellRoot {
         }
     }
 
+    // ── snip editor: only built while a snip is open ──
+    property var snipReq: null
+    LazyLoader {
+        id: snipL
+        active: false
+        SnipEditor {
+            screen: Quickshell.screens.find(x => x.name === shell.snipReq.mon) || Quickshell.screens[0]
+            crop: shell.snipReq.crop; shot: shell.snipReq.shot; sel: shell.snipReq.sel; dpr: shell.snipReq.dpr
+            onDone: snipL.active = false
+        }
+    }
+
     // From a terminal:  qs -c isla ipc call isla phone search
     IpcHandler {
         target: "isla"
@@ -134,6 +146,9 @@ ShellRoot {
         function wallpaper(path: string): void { Prefs.set("wallpaper", path) }
         function bar(): void { Prefs.flip("bar") }
         function drop(which: string): void { shell.dropRequest(shell.focusedName(), which) }
+        // snip editor (hypr/scripts/snip.sh): "crop.png|screen.ppm|MONITOR|x|y|w|h|scale" (logical px on that screen)
+        function snip(req: string): void { const f = req.split("|"); shell.snipReq = { crop: f[0], shot: f[1], mon: f[2],
+            sel: Qt.rect(+f[3], +f[4], +f[5], +f[6]), dpr: +f[7] || 1 }; snipL.active = true }
         function power(): void { shell.powerRequest(shell.focusedName()) }
         function lock(): void { lockCtl.lockNow() }
         function locktest(): void { lockCtl.lockTest() }

@@ -16,8 +16,7 @@ end
 local function wsBase(monName)
     if not monName then return nil end
     if monName:match("^eDP") then return 10 end
-    if monName == "HDMI-A-1" then return 0 end
-    return nil
+    return 0 -- any external screen (HDMI, DisplayPort, USB-C), whatever the brand
 end
 
 local lastSteam = { mon = nil, t = 0 }

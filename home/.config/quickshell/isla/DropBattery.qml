@@ -1,6 +1,7 @@
 import QtQuick
 
-// Battery dropdown: big %, charge state, life gauge (10 cells), power mode (asusctl profiles), screen brightness.
+// Battery dropdown: big %, charge state, life gauge (10 cells), power mode (asusctl profiles), screen brightness
+// (laptop + one slider per plugged-in external screen, from screenctl.py — any brand, DDC/CI or HDR nits).
 // The Power settings page shows its own brightness slider, so it turns ours off (showBrightness).
 DropCard {
     id: d
@@ -8,7 +9,9 @@ DropCard {
     readonly property var bat: svc.battery
     readonly property int pct: bat.percent
     property bool showBrightness: true
-    width: 340; height: showBrightness ? 312 : 250
+    readonly property var externals: (svc.screens || []).filter(m => !m.internal && !m.off && !m.mirror && (m.ddc || m.hdr))
+    width: 340; height: showBrightness ? 312 + externals.length * 58 : 250
+    Component.onCompleted: if (showBrightness) svc.loadScreens()
     headerH: 92
 
     function timeText(m) { return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min" }
@@ -64,7 +67,19 @@ DropCard {
     }
 
     // screen brightness (laptop screen)
-    UiText { visible: d.showBrightness; x: 20; y: 244; text: "SCREEN BRIGHTNESS · " + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
+    UiText { visible: d.showBrightness; x: 20; y: 244; text: (d.externals.length ? "LAPTOP SCREEN · " : "SCREEN BRIGHTNESS · ") + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
     UiSlider { visible: d.showBrightness; x: 20; y: 266; width: d.width - 40; value: d.svc.brightness; color: Theme.sunDeep
         onPicked: v => d.svc.setBrightness(Math.max(0.05, v)) }
+    Repeater {
+        model: d.showBrightness ? d.externals : []
+        delegate: Item {
+            required property var modelData
+            required property int index
+            x: 20; y: 302 + index * 58; width: d.width - 40; height: 50
+            UiText { width: parent.width; elide: Text.ElideRight; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft
+                text: modelData.model.toUpperCase() + " · " + modelData.pct + "%" + (modelData.hdr ? " · " + modelData.nits + " NITS" : "") }
+            UiSlider { y: 22; width: parent.width; value: modelData.pct / 100; color: Theme.sunDeep
+                onPicked: v => d.svc.screenCmd(["set", modelData.output, String(Math.max(5, Math.round(v * 100)))]) }
+        }
+    }
 }
