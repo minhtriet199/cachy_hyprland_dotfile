@@ -65,6 +65,16 @@ Item {
                 width: st.narrow ? (st.cw - 12) / 2 : (st.cw - 48) / 5; height: st.narrow ? 132 : (st.height - 20 - 46 - 14 - 12 - 20) / 2
                 radius: 20; ink: Theme.inkPhone; drop: 4; hi: 4; hiColor: Qt.rgba(1, 1, 1, 0.9); pressable: true
                 onClicked: st.openCat(modelData)
+                // hover / focus / press: the card's colour slides in from the left (empty by default)
+                readonly property bool lit: hovered || down || activeFocus
+                Rectangle {
+                    x: card.bw; y: card.bw; height: card.height - 2 * card.bw; radius: card.ir
+                    width: (card.width - 2 * card.bw) * slide
+                    property real slide: card.lit ? 1 : 0
+                    Behavior on slide { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+                    visible: slide > 0.005
+                    color: Qt.rgba(Qt.color(card.modelData[3]).r, Qt.color(card.modelData[3]).g, Qt.color(card.modelData[3]).b, Prefs.dark ? 0.32 : 0.26)
+                }
                 Item { x: 14; y: 14; width: 32; height: 32
                     Rectangle { y: 3; anchors.horizontalCenter: parent.horizontalCenter; width: 32; height: 32; radius: 10; color: Theme.inkPhone; rotation: 45 }
                     Rectangle { anchors.fill: parent; radius: 10; color: Theme.inkPhone; rotation: 45
