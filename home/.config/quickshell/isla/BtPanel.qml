@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Bluetooth
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 
 // Bluetooth: on/off, scan, devices (connected first, then paired, then new ones found by scanning).
 // Click = connect / disconnect, new device = pair + connect, shield = trust (auto-reconnect),
@@ -17,6 +18,17 @@ Item {
     Process { id: rmP }
     onVisibleChanged: if (!visible && ad && ad.discovering) ad.discovering = false
 
+    // headset mode = its PipeWire output runs the headset profile (a mic-less "virtual" input always exists, so don't use that).
+    // Apps recording from it (Discord voice) switch it to headset by themselves.
+    function micOf(d) {
+        const out = Pipewire.nodes.values.find(n => n.name.startsWith("bluez_output." + d.address.replace(/:/g, "_")))
+        return !!out && String((out.properties || {})["api.bluez5.profile"] || "").startsWith("headset")
+    }
+    function setMode(d, headset) {
+        modeP.command = ["pactl", "set-card-profile", "bluez_card." + d.address.replace(/:/g, "_"), headset ? "headset-head-unit" : "a2dp-sink"]
+        modeP.running = true
+    }
+    Process { id: modeP }
     function iconFor(d) {
         const i = d.icon || "";
         return i.includes("headset") || i.includes("headphone") ? "headphones" : i.includes("audio") ? "speakerOn" : i.includes("phone") ? "phone"
@@ -65,7 +77,11 @@ Item {
             delegate: UiRow {
                 required property var modelData
                 width: list.width
-                glyph: b.iconFor(modelData)
+                readonly property bool audio: b.iconFor(modelData) === "headphones" && modelData.connected
+                readonly property bool micOn: audio && b.micOf(modelData)
+                glyph: micOn ? "headset" : b.iconFor(modelData)
+                glyphTap: audio                                   // tap the icon: headphones ↔ headset (mic)
+                onGlyphClicked: b.setMode(modelData, !micOn)
                 title: modelData.name || modelData.address
                 active: modelData.connected
                 busy: b.svc.btPairAddr === modelData.address || modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
@@ -74,6 +90,7 @@ Item {
                 sub: b.svc.btFailAddr === modelData.address && !modelData.connected ? "Couldn't connect · hold its pairing button, then tap again"
                      : (modelData.connected ? "Connected" : modelData.paired ? "Paired" : "New device")
                        + (modelData.paired ? (modelData.trusted ? " · Trusted" : " · Not trusted") : "")
+                     + (audio ? (micOn ? " · 🎙 Headset" : " · 🎧 Headphones") : "")
                      + (modelData.batteryAvailable ? " · 🔋 " + Math.round(modelData.battery * 100) + "%" : "")
                 onClicked: {
                     if (modelData.connected) modelData.disconnect();

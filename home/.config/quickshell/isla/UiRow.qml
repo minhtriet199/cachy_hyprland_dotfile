@@ -4,6 +4,8 @@ import QtQuick
 UiCandy {
     id: r
     property string glyph: "wifi"
+    property bool glyphTap: false           // the icon bubble is its own button (glyphClicked)
+    signal glyphClicked()
     property string title: ""
     property string sub: ""
     property bool active: false
@@ -15,6 +17,7 @@ UiCandy {
     fill: active ? Theme.gOn : Theme.cream; pressable: true
     UiCandy { x: 9; y: (r.height - 32) / 2; width: 32; height: 32; bw: 2; drop: 0; hi: 0
         fill: r.active ? Theme.ink : Theme.paper
+        pressable: r.glyphTap; onClicked: r.glyphClicked()
         Glyph { anchors.centerIn: parent; name: r.glyph; size: 16; stroke: 2.4; color: r.active ? "#FFF3C4" : Theme.text } }
     Column {
         x: 50; y: (r.height - implicitHeight) / 2; width: r.width - 50 - slot.width - (spin.visible ? spin.width + 6 : 0) - 14
