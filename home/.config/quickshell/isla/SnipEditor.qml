@@ -50,7 +50,7 @@ PanelWindow {
 
     // ── frozen screen, dimmed; the cut stays bright ──
     Image { anchors.fill: parent; source: sn.shot ? "file://" + sn.shot : ""; cache: false; asynchronous: false }
-    Rectangle { anchors.fill: parent; color: "#000000"; opacity: 0.45 }
+    Rectangle { anchors.fill: parent; color: Theme.phoneBack; opacity: 0.55 }
     // click outside the cut, or right-click anywhere = same as Esc (copy, close)
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: sn.wheelOn ? sn.openWheel(false) : sn.finish(false) }
 
@@ -59,7 +59,7 @@ PanelWindow {
         UiText { id: szT; anchors.centerIn: parent; text: Math.round(sn.sel.width * sn.dpr) + " × " + Math.round(sn.sel.height * sn.dpr); px: 12; w: 700 } }
 
     // the cut + drawing, kept in device px (scaled down to fit) so the saved picture stays sharp
-    Rectangle { x: sn.sel.x - 3; y: sn.sel.y - 3; width: sn.sel.width + 6; height: sn.sel.height + 6; color: "transparent"; border.width: 3; border.color: "#FFFFFF"; radius: 2 }
+    Rectangle { x: sn.sel.x - 3; y: sn.sel.y - 3; width: sn.sel.width + 6; height: sn.sel.height + 6; color: "transparent"; border.width: 3; border.color: Theme.paper; radius: 2 }
     Item {
         id: photo
         x: sn.sel.x; y: sn.sel.y; width: sn.sel.width * sn.dpr; height: sn.sel.height * sn.dpr
@@ -190,7 +190,7 @@ PanelWindow {
                     UiText { anchors.centerIn: parent; text: "Copy"; px: 14; w: 700; color: Theme.textDeep } }
             }
         }
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Enter  save + copy  ·  Esc  copy  ·  Ctrl+Z  undo"; fam: "n"; px: 11; w: 800; color: "#FFFFFF"; opacity: 0.85 }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Enter  save + copy  ·  Esc  copy  ·  Ctrl+Z  undo"; fam: "n"; px: 11; w: 800; color: Theme.paper; opacity: 0.9 }
     }
 
     // colour wheel pop-up (WinColorWheel talks to a "page": v[target], put(), hex())

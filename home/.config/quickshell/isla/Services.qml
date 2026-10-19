@@ -228,17 +228,11 @@ Singleton {
     onGameModeChanged: if (Prefs.ready) applyGameMode()
     Connections { target: Prefs; function onReadyChanged() { if (Prefs.ready) s.applyGameMode() } }
     property bool easyEffects: false
-    // OBS recording (tools/obsctl.py): asked every 2 s while OBS is open; recSince = when it started (ms since epoch)
+    // OBS recording for the bar timer (SvcRecord.qml)
     property bool obsUp: false
-    property bool recording: false
-    property real recSince: 0
-    property string recTime: "00:00"
-    Process { id: recP; command: ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "status"]
-        stdout: StdioCollector { onStreamFinished: { try { const r = JSON.parse(this.text); s.recording = r.rec; if (r.rec) s.recSince = Date.now() - r.ms } catch (e) {} } } }
-    Timer { interval: 2000; repeat: true; triggeredOnStart: true; running: s.obsUp || s.recording; onTriggered: if (!recP.running) recP.running = true }
-    Timer { interval: 1000; repeat: true; triggeredOnStart: true; running: s.recording
-        onTriggered: { const t = Math.max(0, Math.floor((Date.now() - s.recSince) / 1000)), h = Math.floor(t / 3600), p = n => String(n).padStart(2, "0")
-            s.recTime = (h ? h + ":" : "") + p(Math.floor(t / 60) % 60) + ":" + p(t % 60) } }
+    SvcRecord { id: recordPart; obsUp: s.obsUp }
+    readonly property bool recording: recordPart.recording
+    readonly property string recTime: recordPart.time
     property real volume: 0.5
     property bool muted: false
     property real micVolume: 1

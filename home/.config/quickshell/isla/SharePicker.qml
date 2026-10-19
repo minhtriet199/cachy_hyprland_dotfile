@@ -58,7 +58,7 @@ PanelWindow {
                     Row {
                         spacing: 12
                         UiCandy { width: 46; height: 46; radius: 15; bw: 2.5; drop: 3; hi: 3; ink: Theme.inkPhone; fill: Theme.gBerry
-                            Glyph { anchors.centerIn: parent; name: "record"; size: 22; stroke: 2.6; color: "#FFFFFF" } }
+                            Glyph { anchors.centerIn: parent; name: "record"; size: 22; stroke: 2.6; color: Theme.paper } }
                         Column { anchors.verticalCenter: parent.verticalCenter
                             UiText { text: "What should I record?"; px: 22; w: 700; color: Theme.textDeep }
                             UiText { text: "Pick a screen or a window · Esc cancels"; fam: "n"; px: 12; w: 800; color: Theme.textSoft } }

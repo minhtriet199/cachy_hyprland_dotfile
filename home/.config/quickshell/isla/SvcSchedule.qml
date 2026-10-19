@@ -18,6 +18,7 @@ Scope {
     function save() { file.setText(JSON.stringify(notes, null, 1) + "\n") }
     function add(date, hour, min, text, image) {
         if (!text.trim() && !image) return
+        seen = Math.max(seen, Date.now())                // a note added for an earlier hour stays quiet
         notes = notes.concat([{ id: Date.now().toString(36), date: date, hour: hour, min: min, text: text.trim(), image: image || "" }]); save()
     }
     function update(id, hour, min, text, image) {
@@ -55,9 +56,10 @@ Scope {
     // reminders: anything whose time came since the last look (first look = now, so nothing old pops up)
     property real seen: Date.now()
     property bool pruned: false
+    // sleeps until the next note (at most 60 s, so a suspend can't make it miss one)
+    readonly property real next: { let m = Infinity; for (const n of notes) { const t = when(n); if (t > seen && t < m) m = t } return m }
     Timer {
-        interval: 15000; repeat: true; running: sc.notes.length > 0
-        onRunningChanged: if (running) sc.seen = Date.now()          // a note added for an earlier hour stays quiet
+        running: sc.next < Infinity; repeat: true; interval: Math.max(1000, Math.min(60000, sc.next - Date.now() + 500))
         onTriggered: { const now = Date.now()
             for (const n of sc.notes) { const t = sc.when(n); if (t > sc.seen && t <= now) sc.due(n) }
             sc.seen = now }

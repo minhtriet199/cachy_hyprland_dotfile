@@ -10,6 +10,7 @@ CONF = os.path.expanduser("~/.config/obs-studio/plugin_config/obs-websocket/conf
 KIND = "pipewire-screen-capture-source"
 NAME = "Isla capture"
 RESULT = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "isla-share", "result")
+REC = os.path.join(os.path.dirname(RESULT), "rec")          # "<start ms>" while recording, "0" after: Isla's bar timer watches it
 VIDEOS = os.path.expanduser("~/Videos")
 
 
@@ -196,6 +197,7 @@ def start():
     os.makedirs(VIDEOS, exist_ok=True)
     o.req("SetRecordDirectory", {"recordDirectory": VIDEOS})
     o.req("StartRecord")
+    open(REC, "w").write(str(int(time.time() * 1000)))
 
 
 def main():
@@ -214,6 +216,7 @@ def main():
         o = connect() if obs_running() else None
         if o and o.req("GetRecordStatus").get("outputActive"):
             path = o.req("StopRecord").get("outputPath", "")
+            open(REC, "w").write("0")
             notify("Recording saved", path)
         else:
             start()
