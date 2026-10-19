@@ -12,6 +12,11 @@ Item {
     property string monitor: ""
     property string screen: "home"           // portrait: home search quick islands · landscape: settings settingsQuick wallpapers
     property string prevScreen: ""
+    // what each phone shows (the hidden one keeps its last page; nothing is built for the wrong shape)
+    property string portShown: "home"
+    property string landShown: ""
+    property bool shownLand: false               // was `screen` shown on the sideways phone
+    property bool prevLand: false                // … and `prevScreen`
     property bool shown: false
     readonly property bool big: !!svc && svc.phoneBig
     property real flat: big && (wantLand || hand > 0.001) ? 1 : 0     // 1 = no tilt (big landscape); held while it fades out
@@ -64,12 +69,12 @@ Item {
     function transition(scr, land, was) {
         if (land) {
             if (rise > 0.5 && !was && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
-            else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); toLand.restart() }
+            else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toLand) }
             else if (was && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
             else { viaTurn = false; setScreen(scr); slideAnim.from = slideIn; slideAnim.to = 1; slideAnim.restart() }
         } else {
             if (was && !viaTurn && hand > 0.5 && turn < 0.01 && rise > 0.5) { setScreen(scr); fadeAnim.to = 0; fadeAnim.restart() }   // big cross-fade back
-            else if (was && viaTurn && hand > 0.5) { setScreen(scr); toPort.restart() }
+            else if (was && viaTurn && hand > 0.5) { setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toPort) }
             else if (was && slideIn > 0.5) { slideAnim.from = slideIn; slideAnim.to = 0; slideAnim.restart(); setScreen(scr); riseUp() }
             else { setScreen(scr); if (rise < 0.99 || !shown) riseUp() }
         }
@@ -96,32 +101,58 @@ Item {
         history = [];
         if (svc) svc.phoneBig = false;           // next open (Ctrl+B / Super+Space) always starts small
         shown = false;
+        toLand.stop(); toPort.stop(); prepMax.stop(); prepFrames = 0; turning = false; ringW = 0;
         dropAnim.restart();
     }
-    function setScreen(s) { if (s === screen) return; prevScreen = screen; screen = s; swapT = 0; swapAnim.restart() }
+    function setScreen(s) {
+        const same = s === screen;
+        if (!same) { prevScreen = screen; prevLand = shownLand }
+        shownLand = wantLand; if (wantLand) landShown = s; else portShown = s;
+        if (!same) { screen = s; swapT = 0; swapAnim.restart() }
+    }
     property real swapT: 1
     NumberAnimation { id: swapAnim; target: stage; property: "swapT"; from: 0; to: 1; duration: 340 * stage.dur; easing.type: Easing.OutCubic }
 
     NumberAnimation { id: riseAnim; target: stage; property: "rise"; duration: 650 * stage.dur; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
     NumberAnimation { id: wobAnim; target: stage; property: "wobT"; from: 0; to: 1; duration: 1100 * stage.dur }
     NumberAnimation { id: slideAnim; target: stage; property: "slideIn"; duration: 700 * stage.dur; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
-    // one continuous phone: the screen goes blank while it turns, the two phone shapes swap on a blank screen
-    // (same place, same size → invisible), then the new screen fades in
-    property real landContent: 1                 // sideways screen content (0 = blank paper)
-    readonly property real blankP: Math.max(0, Math.min(1, (turn - 0.08) / 0.38))   // upright screen fades out early in the turn
+    // the turn (like SekaiPop): both phones turn together, the sideways one lying over the upright one, and their
+    // screens dissolve into each other (new page in early, old one out late, so it's never see-through)
+    property bool turning: false
+    readonly property real landAlpha: M.smooth(0.02, 0.55, turn)
+    readonly property real portAlpha: 1 - M.smooth(0.35, 0.92, turn)
+    readonly property real px: Window.window ? Window.window.width / Math.max(1, width) * Window.window.devicePixelRatio : 1   // device pixels per stage unit
+    readonly property var turnCurve: [0.30, 0.0, 0.20, 1.0, 1.0, 1.0]     // leaves gently, glides into place
+    // it waits until the new page has really been drawn (2 frames, at most 260 ms): the heavy first draw
+    // no longer eats the start of the turn
+    property int prepFrames: 0
+    property var prepNext: null
+    function prepTurn(anim) { toLand.stop(); toPort.stop(); turning = true; hand = 0; prepNext = anim; prepFrames = 2; prepMax.restart() }
+    function startTurn() { prepMax.stop(); prepFrames = 0; if (prepNext) prepNext.restart(); prepNext = null }
+    Connections { target: stage.Window.window; enabled: stage.prepFrames > 0
+        function onFrameSwapped() { stage.prepFrames = stage.prepFrames - 1; if (stage.prepFrames <= 0) stage.startTurn() } }
+    Timer { id: prepMax; interval: 260; onTriggered: stage.startTurn() }
+    // ring-out: carries a little past where it lands and swings back
+    property real ringW: 0
+    property real ringSign: 1
+    SequentialAnimation {
+        id: ringAnim
+        PauseAnimation { duration: 450 * stage.dur }
+        NumberAnimation { target: stage; property: "ringW"; to: stage.lite ? 0 : 2.5 * stage.ringSign; duration: 210; easing.type: Easing.InOutSine }
+        NumberAnimation { target: stage; property: "ringW"; to: stage.lite ? 0 : -0.25 * stage.ringSign; duration: 190; easing.type: Easing.InOutSine }
+        NumberAnimation { target: stage; property: "ringW"; to: 0; duration: 100; easing.type: Easing.InOutSine }
+    }
     SequentialAnimation {
         id: toLand
-        ScriptAction { script: stage.landContent = 0 }
-        NumberAnimation { target: stage; property: "turn"; to: 1; duration: 720 * stage.dur; easing.type: Easing.InOutCubic }
-        NumberAnimation { target: stage; property: "hand"; to: 1; duration: 40 * stage.dur }
-        NumberAnimation { target: stage; property: "landContent"; to: 1; duration: 280 * stage.dur; easing.type: Easing.OutCubic }
+        ScriptAction { script: { stage.ringSign = -1; ringAnim.restart() } }
+        NumberAnimation { target: stage; property: "turn"; to: 1; duration: 720 * stage.dur; easing.type: Easing.BezierSpline; easing.bezierCurve: stage.turnCurve }
+        ScriptAction { script: { stage.hand = 1; stage.turning = false } }
     }
     SequentialAnimation {
         id: toPort
-        NumberAnimation { target: stage; property: "landContent"; to: 0; duration: 170 * stage.dur; easing.type: Easing.InCubic }
-        NumberAnimation { target: stage; property: "hand"; to: 0; duration: 40 * stage.dur }
-        NumberAnimation { target: stage; property: "turn"; to: 0; duration: 720 * stage.dur; easing.type: Easing.InOutCubic }
-        ScriptAction { script: stage.landContent = 1 }
+        ScriptAction { script: { stage.ringSign = 1; ringAnim.restart() } }
+        NumberAnimation { target: stage; property: "turn"; to: 0; duration: 720 * stage.dur; easing.type: Easing.BezierSpline; easing.bezierCurve: stage.turnCurve }
+        ScriptAction { script: stage.turning = false }
     }
     // big mode: the big upright and big sideways phones cross-fade (no turn, so no jump in size)
     NumberAnimation { id: fadeAnim; target: stage; property: "hand"; duration: 380 * stage.dur; easing.type: Easing.InOutCubic }
@@ -132,7 +163,7 @@ Item {
             NumberAnimation { target: stage; property: "slideIn"; to: 0; duration: 380 * stage.dur; easing.type: Easing.InBack }
             NumberAnimation { target: stage; property: "hand"; to: 0; duration: 260 * stage.dur }
         }
-        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "portrait"; stage.screen = "home"; stage.closed() } }
+        ScriptAction { script: { stage.turn = 0; stage.viaTurn = false; stage.orient = "portrait"; stage.screen = "home"; stage.portShown = "home"; stage.shownLand = false; stage.closed() } }
     }
 
     // ── scrim (click outside = close) ──
@@ -142,104 +173,113 @@ Item {
     }
 
     // ── portrait phone ──
-    readonly property real lk: M.easeInOut(turn)
+    readonly property real lk: turn                  // the turn's curve is in its animation (turnCurve)
     readonly property real r: rise
+    // while turning, the phone fades as ONE flat picture (no back plate showing through its face)
     Item {
-        id: pHolder
-        x: stage.width / 2 - 240 + 45 * stage.flatP
-        // Settings → Look → Phone: lift the small upright phone (gone while big or sideways, so it still lands on those)
-        property real spot: ({ Middle: 140, High: 270 }[stage.prefs ? stage.prefs.phoneSpot : ""] || 0)
-        Behavior on spot { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
-        readonly property real baseY: stage.height + 250 - 844 - spot * (1 - stage.lk)     // as designed: bottom of the phone below the screen edge
-        y: baseY + stage.flatP * ((stage.height / 2 - 422) - baseY)
-        width: 390; height: 844
-        // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
-        readonly property real smallScale: 1.1
-        scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844)
-        visible: stage.r > 0.001 && stage.hand < 1
-        opacity: (1 - stage.hand) * (1 - stage.pv)
-        readonly property real piv: 422 * (1 - stage.lk)
-        readonly property var inner: M.about(195, 422, M.chain(
-            M.T(0, (1 - stage.r) * 1150), M.T(51 * stage.lk, (-343.5 - (stage.height - 1080) / 2) * stage.lk + piv)   /* lands exactly on the sideways phone at any shell size */, M.S(1 + 0.213 * stage.lk),
-            M.Ry(-32 * (1 - stage.flatP) + 46 * stage.lk), M.Rx(5 * (1 - stage.flatP) - 29 * stage.lk),
-            M.Rz(5 * (1 - stage.flatP) - (1 - stage.r) * 14 + stage.wob * (1 - stage.lk) - 98 * stage.lk),
-            M.T(0, -piv)))
-        readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
-        // back plate
-        Rectangle { width: 390; height: 834; radius: 54; color: Theme.phoneBack
-            transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(0, 0, -26))) } }
-        // right side wall with the Pixel keys
-        Rectangle {
-            width: 26; height: 734; radius: 10; border.width: 3; border.color: Theme.inkPhone
-            gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-            transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90)))) }
-            Rectangle { x: 5; y: 124; width: 12; height: 58; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
-            Rectangle { x: 5; y: 210; width: 12; height: 118; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
-        }
-        PhoneBody {
-            id: pBody
-            showKeys: false
-            layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
-            layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
-            transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
-            Repeater {
-                id: pScreens
-                model: stage.allScreens
-                delegate: Loader {
-                    id: ld
-                    required property string modelData
-                    readonly property bool cur: stage.screen === modelData || (stage.wantLand && stage.prevScreen === modelData)
-                    readonly property bool prev: stage.prevScreen === modelData && !stage.wantLand
-                    anchors.fill: parent
-                    active: cur || prev || item !== null
-                    opacity: (cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))) * (1 - stage.blankP)
-                    visible: opacity > 0
-                    enabled: stage.screen === modelData
-                    x: stage.screen === modelData && stage.swapT < 1 ? (1 - stage.swapT) * 28 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 28 * stage.navDir : 0)
-                    focus: stage.screen === modelData
-                    sourceComponent: stage.compFor(modelData, false)
-                    onCurChanged: if (cur && item && item.focusField) item.focusField()
-                    onLoaded: if (cur && item.focusField) item.focusField()
-                }
+        id: portWrap
+        anchors.fill: parent
+        layer.enabled: stage.turning
+        layer.textureSize: Qt.size(width * stage.px, height * stage.px)
+        opacity: stage.turning ? Math.max(0.004, stage.portAlpha) : 1     // 0.004: still drawn while the turn gets ready
+        Item {
+            id: pHolder
+            x: stage.width / 2 - 240 + 45 * stage.flatP
+            // Settings → Look → Phone: lift the small upright phone (gone while big or sideways, so it still lands on those)
+            property real spot: ({ Middle: 140, High: 270 }[stage.prefs ? stage.prefs.phoneSpot : ""] || 0)
+            Behavior on spot { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
+            readonly property real baseY: stage.height + 250 - 844 - spot * (1 - stage.lk)     // as designed: bottom of the phone below the screen edge
+            y: baseY + stage.flatP * ((stage.height / 2 - 422) - baseY)
+            width: 390; height: 844
+            // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
+            readonly property real smallScale: 1.1
+            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844)
+            visible: stage.r > 0.001 && (stage.hand < 1 || stage.turning)
+            opacity: (stage.turning ? 1 : 1 - stage.hand) * (1 - stage.pv)
+            readonly property var place: M.chain(M.T(x, y), M.about(195, 422, M.S(scale)))
+            readonly property real piv: 422 * (1 - stage.lk)
+            readonly property var inner: M.about(195, 422, M.chain(
+                M.T(0, (1 - stage.r) * 1150), M.T(51 * stage.lk, (-343.5 - (stage.height - 1080) / 2) * stage.lk + piv)   /* lands exactly on the sideways phone at any shell size */, M.S(1 + 0.213 * stage.lk),
+                M.Ry(-32 * (1 - stage.flatP) + 46 * stage.lk), M.Rx(5 * (1 - stage.flatP) - 29 * stage.lk),
+                M.Rz(5 * (1 - stage.flatP) - (1 - stage.r) * 14 + (stage.wob + stage.ringW) * (1 - stage.lk) - 98 * stage.lk),
+                M.T(0, -piv)))
+            readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
+            // back plate
+            Rectangle { width: 390; height: 834; radius: 54; color: Theme.phoneBack
+                transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(0, 0, -26))) } }
+            // right side wall with the Pixel keys
+            Rectangle {
+                width: 26; height: 734; radius: 10; border.width: 3; border.color: Theme.inkPhone
+                gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
+                transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90)))) }
+                Rectangle { x: 5; y: 124; width: 12; height: 58; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
+                Rectangle { x: 5; y: 210; width: 12; height: 118; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
             }
-            // big mode: nav bar at the bottom of the phone (the side rail is hidden then)
-            UiCandy {
-                id: navBar
-                readonly property bool isNavZone: true
-                readonly property bool on: stage.big && !stage.wantLand && stage.shown
-                property real navT: on ? 1 : 0
-                Behavior on navT { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
-                visible: navT > 0.01
-                opacity: navT
-                anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10 - (1 - navT) * 20
-                width: navRow.implicitWidth + 14; height: 40; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper
-                Row {
-                    id: navRow
-                    anchors.centerIn: parent; spacing: 4
-                    Repeater {
-                        model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
-                        delegate: UiCandy {
-                            id: nb
-                            required property var modelData
-                            required property int index
-                            readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
-                            property real t: 0
-                            SequentialAnimation {
-                                id: pop
-                                PauseAnimation { duration: (navBar.on ? 120 + nb.index * 40 : 0) * stage.dur }
-                                NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: (navBar.on ? 300 : 150) * stage.dur; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
+            PhoneBody {
+                id: pBody
+                showKeys: false
+                layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
+                layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
+                transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
+                Repeater {
+                    id: pScreens
+                    model: stage.allScreens
+                    delegate: Loader {
+                        id: ld
+                        required property string modelData
+                        readonly property bool cur: stage.portShown === modelData
+                        readonly property bool prev: stage.prevScreen === modelData && !stage.prevLand && !stage.wantLand
+                        anchors.fill: parent
+                        active: cur || prev || item !== null
+                        opacity: cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
+                        visible: opacity > 0
+                        enabled: cur && !stage.wantLand
+                        x: stage.screen === modelData && stage.swapT < 1 ? (1 - stage.swapT) * 28 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 28 * stage.navDir : 0)
+                        focus: cur && !stage.wantLand
+                        sourceComponent: stage.compFor(modelData, false)
+                        onCurChanged: if (cur && item && item.focusField) item.focusField()
+                        onLoaded: if (cur && item.focusField) item.focusField()
+                    }
+                }
+                // big mode: nav bar at the bottom of the phone (the side rail is hidden then)
+                UiCandy {
+                    id: navBar
+                    readonly property bool isNavZone: true
+                    readonly property bool on: stage.big && !stage.wantLand && stage.shown
+                    property real navT: on ? 1 : 0
+                    Behavior on navT { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
+                    visible: navT > 0.01
+                    opacity: navT
+                    anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10 - (1 - navT) * 20
+                    width: navRow.implicitWidth + 14; height: 40; radius: 20; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.paper
+                    Row {
+                        id: navRow
+                        anchors.centerIn: parent; spacing: 4
+                        Repeater {
+                            model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
+                            delegate: UiCandy {
+                                id: nb
+                                required property var modelData
+                                required property int index
+                                readonly property bool cur: modelData[0] === "big" ? stage.big : modelData[0] === "lite" ? stage.lite : stage.screen === modelData[0]
+                                property real t: 0
+                                SequentialAnimation {
+                                    id: pop
+                                    PauseAnimation { duration: (navBar.on ? 120 + nb.index * 40 : 0) * stage.dur }
+                                    NumberAnimation { target: nb; property: "t"; to: navBar.on ? 1 : 0; duration: (navBar.on ? 300 : 150) * stage.dur; easing.type: navBar.on ? Easing.OutBack : Easing.InCubic }
+                                }
+                                Connections { target: navBar; function onOnChanged() { pop.restart() } }
+                                Component.onCompleted: if (navBar.on) pop.restart()
+                                transform: Translate { y: (1 - nb.t) * 14 }
+                                opacity: nb.t
+                                width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
+                                fill: cur ? Theme.gOn : "transparent"; pressable: true
+                                onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
+                                         : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
+                                         : modelData[0] === "back" ? stage.back()
+                                         : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
+                                Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
                             }
-                            Connections { target: navBar; function onOnChanged() { pop.restart() } }
-                            Component.onCompleted: if (navBar.on) pop.restart()
-                            transform: Translate { y: (1 - nb.t) * 14 }
-                            opacity: nb.t
-                            width: modelData[0] === "back" ? 40 : 36; height: 30; radius: 15; bw: cur ? 2 : 0; ink: Theme.inkPhone; drop: 0; hi: 0
-                            fill: cur ? Theme.gOn : "transparent"; pressable: true
-                            onClicked: modelData[0] === "rotate" ? stage.rotate() : modelData[0] === "big" ? stage.svc.phoneBig = !stage.svc.phoneBig
-                                     : modelData[0] === "lite" ? stage.prefs.set("phoneLite", !stage.prefs.phoneLite)
-                                     : modelData[0] === "back" ? stage.back()
-                                     : modelData[0] === "home" ? (stage.history = [], stage.navDir = -1, stage.open("home")) : stage.go(modelData[0])
-                            Glyph { anchors.centerIn: parent; name: nb.modelData[1]; size: 15; stroke: nb.modelData[0] === "back" ? 3 : 2.5 }
                         }
                     }
                 }
@@ -303,51 +343,66 @@ Item {
     }
 
     // ── landscape phone ──
+    // while turning, the phone fades as ONE flat picture (no back plate showing through its face)
     Item {
-        id: lHolder
-        x: stage.width / 2 - 460; y: stage.height / 2 - 190
-        width: 920; height: 440
-        readonly property real baseScale: 1.12                     // small mode: a little larger than the design
-        scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
-        visible: stage.hand > 0.001 || stage.slideIn > 0.001
-        opacity: Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5)) * (1 - stage.pv)
-        readonly property var inner: M.about(460, 220, stage.hand > 0.001
-            ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.flat)), M.Rx(-24 * (1 - stage.flat)), M.Rz(-3 * (1 - stage.flat)))
-            : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
-        readonly property var view: M.chain(M.F(), M.persp(2200, 460, 220), inner)
-        Rectangle { y: 0; width: 920; height: 430; radius: 54; color: Theme.phoneBack
-            transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -22))) } }
-        Rectangle { y: 0; width: 920; height: 430; radius: 54; color: "#2A4B55"
-            transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -11))) } }
-        Rectangle {
-            width: 820; height: 22; radius: 10; border.width: 3; border.color: Theme.inkPhone
-            gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-            transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90)))) }
-            Rectangle { x: 120; y: 4; width: 58; height: 10; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
-            Rectangle { x: 200; y: 4; width: 118; height: 10; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
-        }
-        PhoneBody {
-            id: lBody
-            landscape: true; showKeys: false
-            layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
-            layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
-            transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
-            Repeater {
-                id: lScreens
-                model: stage.allScreens
-                delegate: Loader {
-                    required property string modelData
-                    readonly property bool cur: stage.screen === modelData
-                    readonly property bool prev: stage.prevScreen === modelData && stage.wantLand
-                    width: parent.width; height: parent.height
-                    // slide in from the side you're going to (like the upright phone), old screen slides out
-                    x: cur && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
-                    active: cur || prev || item !== null
-                    opacity: (cur ? stage.swapT : (prev ? 1 - stage.swapT : 0)) * stage.landContent
-                    visible: opacity > 0
-                    enabled: cur
-                    focus: cur
-                    sourceComponent: stage.compFor(modelData, true)
+        id: landWrap
+        anchors.fill: parent
+        layer.enabled: stage.turning
+        layer.textureSize: Qt.size(width * stage.px, height * stage.px)
+        opacity: stage.turning ? Math.max(0.004, stage.landAlpha) : 1     // 0.004: still drawn while the turn gets ready
+        Item {
+            id: lHolder
+            x: stage.width / 2 - 460; y: stage.height / 2 - 190
+            width: 920; height: 440
+            readonly property real baseScale: 1.12                     // small mode: a little larger than the design
+            scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
+            visible: stage.hand > 0.001 || stage.slideIn > 0.001 || stage.turning
+            opacity: (stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))) * (1 - stage.pv)
+            readonly property var inner: M.about(460, 220, stage.hand > 0.001 || stage.turning
+                ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.flat)), M.Rx(-24 * (1 - stage.flat)), M.Rz(-3 * (1 - stage.flat) + stage.ringW))
+                : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
+            readonly property var rest: M.chain(M.F(), M.persp(2200, 460, 220), inner)
+            // while turning: lie over the upright phone (a quarter turn round, same size), then ease into its own place
+            readonly property var landOnPort: M.chain(M.T(195, 422), M.Rz(90), M.S(844 / 920), M.T(-460, -220))
+            readonly property var view: {
+                if (!stage.turning) return rest;
+                const a = M.norm(M.chain(M.about(460, 220, M.S(1 / scale)), M.T(-x, -y), pHolder.place, pHolder.view, landOnPort)), b = M.norm(rest), s = M.smooth(0.55, 1, stage.turn);
+                return a.map((v, i) => v + (b[i] - v) * s);
+            }
+            Rectangle { y: 0; width: 920; height: 430; radius: 54; color: Theme.phoneBack
+                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -22))) } }
+            Rectangle { y: 0; width: 920; height: 430; radius: 54; color: "#2A4B55"
+                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -11))) } }
+            Rectangle {
+                width: 820; height: 22; radius: 10; border.width: 3; border.color: Theme.inkPhone
+                gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
+                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90)))) }
+                Rectangle { x: 120; y: 4; width: 58; height: 10; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
+                Rectangle { x: 200; y: 4; width: 118; height: 10; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
+            }
+            PhoneBody {
+                id: lBody
+                landscape: true; showKeys: false
+                layer.enabled: true; layer.smooth: true; layer.mipmap: !stage.lite
+                layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
+                transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
+                Repeater {
+                    id: lScreens
+                    model: stage.allScreens
+                    delegate: Loader {
+                        required property string modelData
+                        readonly property bool cur: stage.landShown === modelData
+                        readonly property bool prev: stage.prevScreen === modelData && stage.prevLand && stage.wantLand
+                        width: parent.width; height: parent.height
+                        // slide in from the side you're going to (like the upright phone), old screen slides out
+                        x: cur && stage.wantLand && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
+                        active: cur || prev || item !== null
+                        opacity: cur && stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
+                        visible: opacity > 0
+                        enabled: cur && stage.wantLand
+                        focus: cur && stage.wantLand
+                        sourceComponent: stage.compFor(modelData, true)
+                    }
                 }
             }
         }

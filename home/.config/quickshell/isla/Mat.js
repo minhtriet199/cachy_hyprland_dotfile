@@ -15,6 +15,8 @@ function F() { return [1,0,0,0, 0,1,0,0, 0,0,0,0, 0,0,0,1] }   // flatten z (kee
 function persp(d, ox, oy) { return chain(T(ox, oy), P(d), T(-ox, -oy)) }
 function about(ox, oy, m) { return chain(T(ox, oy), m, T(-ox, -oy)) }
 function toQt(m) { return Qt.matrix4x4(m[0],m[1],m[2],m[3], m[4],m[5],m[6],m[7], m[8],m[9],m[10],m[11], m[12],m[13],m[14],m[15]) }
+function smooth(a, b, x) { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+function norm(m) { return m.map(v => v / m[15]) }
 function clamp(v) { return Math.max(0, Math.min(1, v)) }
 function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2 }
 function easeBack(t, s) { s = s === undefined ? 1.7 : s; const c3 = s + 1; return 1 + c3 * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2) }

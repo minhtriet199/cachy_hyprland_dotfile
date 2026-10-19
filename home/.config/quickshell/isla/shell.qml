@@ -138,6 +138,7 @@ ShellRoot {
         function lock(): void { lockCtl.lockNow() }
         function locktest(): void { lockCtl.lockTest() }
         function big(): void { Services.phoneBig = !Services.phoneBig }
+        function rotate(): void { Services.rotatePhone() }       // turn the open phone upright ↔ sideways
         function preview(): void { Services.previewWipe() }
         function gamemode(): void { Services.toggle("game") }      // qs -c isla ipc call isla gamemode
         // palette card: wallpaper · music · random · shuffle · apply · undo · get (prints source, colours, picked, applied)

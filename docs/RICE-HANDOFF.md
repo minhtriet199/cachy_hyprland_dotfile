@@ -126,6 +126,12 @@ Titan One (sticker clock). Icons are vector paths in `Glyphs.js` (24×24, use `G
   (`Prefs.theme`: 5 hand-made + 12 hue-generated + Mono + Custom hue) and applies **dark mode** (`Prefs.dark`, `dk()`).
   `Theme.boxStyle` = candy / ring / pop / soft / flat / glass (drawn in `UiCandy.qml`).
 - `PhoneStage.qml` — the 3D "phone" (upright and sideways), screen routing (`allScreens`, `compFor`, kind map).
+  **Turn (upright ↔ sideways), 2026-10-19, SekaiPop-style:** both phones turn together — the sideways one lies over the
+  upright one (`lHolder.view` = upright pose × `landOnPort`, eased into its own pose over the last 45 %) and their pages
+  dissolve (`landAlpha` 0.02–0.55, `portAlpha` out 0.35–0.92); while turning each phone is ONE layer (`portWrap`/`landWrap`)
+  so nothing is see-through. The turn waits for 2 drawn frames (`prepTurn`, ≤ 260 ms), bezier curve + small ring-out swing.
+  `portShown`/`landShown` = what each phone shows (no pages built for the hidden shape). IPC `rotate` turns the open phone.
+  Measured: frames ≈ 8 ms (worst 19–36 ms) vs up to 124 ms before.
 - Screens: `Scr*.qml` (Home, Quick, Settings grid, Settings pages via `ScrSetPage.qml`, Wallpapers, Clipboard, …).
 - Settings pages: `*Panel.qml` loaded by `ScrSetPage.qml` (`kind` → component map). Grid entries in `ScrSettings.qml`,
   search entries in `Services.qml` (`settingsSearch` list).
