@@ -65,7 +65,7 @@ environment, inputs, **input_isla**, binds, **lid**, misc, monitors, windowrules
 
 | File | Notes |
 |---|---|
-| `autostart.lua` | starts `env MALLOC_ARENA_MAX=2 qs -c isla` (≈25 % less RAM), fcitx5, `wl-paste --watch …/isla/tools/clip-store.sh`, boot-lock-guard |
+| `autostart.lua` | starts `env MALLOC_ARENA_MAX=2 qs -c isla` (≈25 % less RAM), fcitx5, `wl-paste --watch …/isla/tools/clip-store.sh`, boot-lock-guard, `scripts/mic-level.sh` (laptop mic Capture 23 / Boost 0) |
 | `startup_isla.lua` | user startup apps from Isla Settings → Apps (`~/.local/state/hypr/startup`) |
 | `look.lua` | window opacity / borders / rounding / gaps from Isla Settings → Windows (`scripts/lookctl.py`) |
 | `input_isla.lua` | mouse / touchpad / keyboard layout / cursor size (`scripts/inputctl.py`) |
@@ -169,6 +169,24 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
    - **Next steps:** test on 7.2.11 → boot `linux-cachyos-lts` (6.18, installed) and test → if both fail, the fix is a
      USB Bluetooth dongle (Intel/Realtek) for the headset. Workaround now: laptop mic in Discord, Baseus as speaker.
    - Isla's Bluetooth row shows 🎧 Headphones / 🎙 Headset (headset icon with mic) and tapping the icon switches mode.
+   - **2026-10-19 later:** on 7.2.11 kernel now logs `Bluetooth: hci0: corrupted SCO packet` + transport failure → still broken.
+   - **LTS 6.18 tested too (2026-10-19):** mSBC and CVSD both record silence; kernel logs "SCO packet for unknown
+     connection handle 3584" + "corrupted SCO packet". Both kernels fail → USB Bluetooth dongle is the fix.
+   - **Laptop mic (corrected 2026-10-19):** the real mic is the Realtek ALC285 "Internal Mic" (HDA, hw:Generic_1).
+     It was just far too loud: Capture 63 (+30 dB) + Internal Mic Boost (+20/30 dB) → clipped noise. At Capture 23 (0 dB),
+     Boost 0 it records clean. **Confirmed:** Discord's Automatic Gain Control pushed it back to 63 + Boost 2 within
+     seconds → owner turned AGC off in Discord (app + web). `~/.config/hypr/scripts/mic-level.sh` (run at login from
+     autostart.lua) sets Capture 23 / Boost 0.
+   - **"Laptop Mic (clear)" (`mic_clean`) — DEFAULT mic since 2026-10-19:** PipeWire filter-chain in
+     `~/.config/pipewire/pipewire.conf.d/60-mic-clean.conf`: 2× high-pass 140 Hz (owner said bass/boom too strong),
+     −4 dB @ 300 Hz, +3 dB @ 3.5 kHz, mono. Passive → sleeps (0 CPU) unless an app records; ~0.1 % CPU, no gaming impact.
+     Apps' AGC on it only changes its software volume, not the hardware gain. Tune Freq/Gain there if the owner asks
+     (more bass cut → 180–200 Hz), then `systemctl --user restart pipewire pipewire-pulse wireplumber`.
+     The ACP digital mic (acp6x) is NOT wired on GA402RJ: a patched driver (`~/.local/src/acp6x-ga402r/`, test only,
+     never installed) made the card appear but it records only stuck samples. Loading it also switches the HDA card
+     to a UCM "HiFi" profile where WirePlumber picks the dead DMIC as default — don't install it.
+   - WirePlumber `bluetooth.autoswitch-to-headset-profile` set to **false** (saved) so apps don't flip the Baseus into
+     the broken headset mode or make its mic the default.
 2. **Game mode switch** in Shell settings does nothing (original Isla bug). Owner was asked whether it should switch
    to Turbo/Performance + disable blur/animations while gaming — no answer yet.
 3. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette

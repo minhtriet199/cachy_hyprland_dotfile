@@ -35,6 +35,10 @@ cp -a "$HOME/.config/kdeglobals" "home/.config/" 2>/dev/null
 rsync -a --delete "$HOME/.local/share/fonts/isla/" "home/.local/share/fonts/isla/"
 cp -a "$HOME/Pictures/Wallpapers/isla-default.png" "home/Pictures/Wallpapers/" 2>/dev/null
 
+# --- PipeWire: "Laptop Mic (clear)" voice filter ---
+mkdir -p home/.config/pipewire/pipewire.conf.d
+rsync -a --delete "$HOME/.config/pipewire/pipewire.conf.d/" "home/.config/pipewire/pipewire.conf.d/"
+
 # --- custom systemd user units ---
 for u in screentime-archive.service screentime-archive.timer \
          godot-vulkan-fix.service godot-vulkan-fix.timer godot-vulkan-fix.path; do
