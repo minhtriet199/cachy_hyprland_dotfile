@@ -35,7 +35,11 @@ def say(kind, dev, key=None, ok=None, err=None):
     _, name, addr = info(dev) if dev else ({}, "", "")
     if ok:
         waiting[counter] = {"dev": dev, "cbs": [(ok, err)]}
-    print(json.dumps({"id": counter, "kind": kind, "name": name, "addr": addr, "key": key}), flush=True)
+    emit({"id": counter, "kind": kind, "name": name, "addr": addr, "key": key})
+
+
+def emit(d):
+    print(json.dumps(d), flush=True)
 
 
 class Agent(dbus.service.Object):
@@ -92,11 +96,7 @@ class Agent(dbus.service.Object):
         say("cancel", None)
 
 
-def answer(src, cond):
-    line = sys.stdin.readline()
-    if not line:
-        loop.quit()
-        return False
+def handle(line):
     parts = line.split()
     if len(parts) == 2 and parts[0].isdigit() and int(parts[0]) in waiting:
         w = waiting.pop(int(parts[0]))
@@ -111,13 +111,25 @@ def answer(src, cond):
                 pass
         for ok, err in w["cbs"]:
             ok() if yes else err(Rejected("Rejected by user"))
-    return True
 
 
-Agent(bus, PATH)
-mgr = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.AgentManager1")
-mgr.RegisterAgent(PATH, "DisplayYesNo")
-mgr.RequestDefaultAgent(PATH)
-GLib.io_add_watch(sys.stdin, GLib.IO_IN | GLib.IO_HUP, answer)
-loop = GLib.MainLoop()
-loop.run()
+def start():
+    Agent(bus, PATH)
+    mgr = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.AgentManager1")
+    mgr.RegisterAgent(PATH, "DisplayYesNo")
+    mgr.RequestDefaultAgent(PATH)
+
+
+# normally run inside isla-agents.py (one Python for both Isla helpers); can still run on its own
+if __name__ == "__main__":
+    def answer(src, cond):
+        line = sys.stdin.readline()
+        if not line:
+            loop.quit()
+            return False
+        handle(line)
+        return True
+    start()
+    GLib.io_add_watch(sys.stdin, GLib.IO_IN | GLib.IO_HUP, answer)
+    loop = GLib.MainLoop()
+    loop.run()

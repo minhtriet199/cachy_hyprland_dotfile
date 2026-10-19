@@ -42,6 +42,10 @@ cp -a "$HOME/Pictures/Wallpapers/isla-default.png" "home/Pictures/Wallpapers/" 2
 mkdir -p home/.config/pipewire/pipewire.conf.d
 rsync -a --delete "$HOME/.config/pipewire/pipewire.conf.d/" "home/.config/pipewire/pipewire.conf.d/"
 
+# --- user D-Bus service override: keyring starts via systemd (no second gnome-keyring-daemon) ---
+mkdir -p home/.local/share/dbus-1/services
+cp -a "$HOME/.local/share/dbus-1/services/org.freedesktop.secrets.service" home/.local/share/dbus-1/services/ 2>/dev/null
+
 # --- custom systemd user units ---
 for u in screentime-archive.service screentime-archive.timer isla-greeter-sync.path isla-greeter-sync.service \
          godot-vulkan-fix.service godot-vulkan-fix.timer godot-vulkan-fix.path; do
@@ -60,6 +64,15 @@ pacman -Qqem > packages-aur.txt
 
 # --- also publish Isla to its own repo (github.com/minhtriet199/Cachy-OS-Hyprland-Island) ---
 [ -x "$HOME/isla-island/isla-sync" ] && "$HOME/isla-island/isla-sync" "$MSG"
+
+# --- Isla login screen: say so when its installed copy is older than your Isla files ---
+if [ -d /usr/local/share/isla-greeter ]; then
+    t=$(mktemp -d)
+    if sh "$HOME/.config/quickshell/isla-greeter/build.sh" "$t" >/dev/null 2>&1 && ! diff -rq "$t" /usr/local/share/isla-greeter >/dev/null 2>&1; then
+        echo "NOTE: the Isla login screen is out of date → sudo ~/.config/quickshell/isla-greeter/install.sh, then check.sh"
+    fi
+    rm -rf "$t"
+fi
 
 git add -A
 if git diff --cached --quiet; then

@@ -103,7 +103,7 @@ Singleton {
 
     // ── clock ──
     SystemClock { id: clock; precision: SystemClock.Minutes }
-    readonly property date now: clock.date
+    readonly property date now: clock.date ?? new Date()     // clock.date is undefined for the first moment after a reload
     readonly property string timeText: Qt.formatTime(now, h24 ? "HH:mm" : "h:mm AP")
     readonly property string clockH: { const h = now.getHours(); const v = h24 ? h : (h % 12 || 12); return (v < 10 ? "0" : "") + v }
     readonly property string clockM: Qt.formatTime(now, "mm")
@@ -217,23 +217,19 @@ Singleton {
     property string netUp: "0 B/s"
     property var _net: null
     function speed(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + " MB/s" : (b > 1024 ? Math.round(b / 1024) + " KB/s" : Math.round(b) + " B/s") }
-    Process { id: status; command: ["sh", "-c", [
-            // one nmcli for the general state, one for the network in use (SSID last: it may contain ":")
+    // one small bash per refresh: files are read with bash's own `read` (no cat/awk/brightnessctl processes);
+    // volume + mic come from PipeWire events below; warp-cli only runs while the WARP service is up
+    Process { id: status; command: ["bash", "-c", [
             "g=$(nmcli -t -f WIFI,STATE,CONNECTIVITY g 2>/dev/null); echo wifi=${g%%:*}; g=${g#*:}; echo nm=${g%:*}; echo conn=${g##*:}",
             "a=$(nmcli -t -f ACTIVE,SIGNAL,SSID dev wifi 2>/dev/null | grep -m1 '^yes'); a=${a#yes:}; echo sig=${a%%:*}; echo ssid=${a#*:}",
-            "echo warp=$(warp-cli --accept-tos status 2>/dev/null | grep -q 'Status update: Connected' && echo on || echo off)",
-            "echo vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)",
-            "echo mic=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null)",
-            "echo bri=$(brightnessctl -m 2>/dev/null | cut -d, -f4 | tr -d %)",
-            "echo bat=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)",
-            "echo batst=$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)",
-            "echo ac=$(cat /sys/class/power_supply/A*/online 2>/dev/null | head -1)",
-            "echo energy=$(cat /sys/class/power_supply/BAT*/energy_now /sys/class/power_supply/BAT*/energy_full /sys/class/power_supply/BAT*/energy_full_design /sys/class/power_supply/BAT*/power_now 2>/dev/null | tr '\\n' ' ')",
-            "echo prof=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)",
-            "echo rf=$(cat /sys/class/rfkill/rfkill*/soft 2>/dev/null | sort -u | tr -d '\\n')",
-            // one ps instead of three pgreps
+            "if [ -S /run/cloudflare-warp/warp_service ] && warp-cli --accept-tos status 2>/dev/null | grep -q 'Status update: Connected'; then echo warp=on; else echo warp=off; fi",
+            "for d in /sys/class/backlight/*; do read -r c 2>/dev/null < $d/brightness && read -r m 2>/dev/null < $d/max_brightness && [ \"$m\" -gt 0 ] && echo bri=$(( (c * 100 + m / 2) / m )); break; done",
+            "for d in /sys/class/power_supply/BAT*; do read -r x 2>/dev/null < $d/capacity && echo bat=$x; read -r x 2>/dev/null < $d/status && echo batst=$x; e=; for f in energy_now energy_full energy_full_design power_now; do read -r y 2>/dev/null < $d/$f && e=\"$e $y\"; done; echo energy=$e; break; done",
+            "for d in /sys/class/power_supply/A*; do read -r x 2>/dev/null < $d/online && echo ac=$x; break; done",
+            "read -r x 2>/dev/null < /sys/firmware/acpi/platform_profile && echo prof=$x",
+            "h0=; h1=; for d in /sys/class/rfkill/rfkill*; do read -r x 2>/dev/null < $d/soft && { [ \"$x\" = 0 ] && h0=0; [ \"$x\" = 1 ] && h1=1; }; done; echo rf=$h0$h1",
             "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects rec:wf-recorder; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
-            "echo net=$(awk 'NR>2 && $1 !~ /lo:/ {r+=$2; t+=$10} END {print r\" \"t}' /proc/net/dev)"
+            "rx=0; tx=0; { read -r _; read -r _; while read -r l; do set -- ${l/:/ }; [ \"$1\" = lo ] && continue; rx=$((rx + $2)); tx=$((tx + ${10})); done; } < /proc/net/dev; echo \"net=$rx $tx\""
         ].join("; ")]
         stdout: StdioCollector { onStreamFinished: {
             const v = {}; for (const l of this.text.split("\n")) { const i = l.indexOf("="); if (i > 0) v[l.slice(0, i)] = l.slice(i + 1).trim() }
@@ -242,8 +238,6 @@ Singleton {
             s.airplane = v.rf === "1";
             s.nmState = v.nm || ""; s.nmConn = v.conn || "";
             s.warp = { connected: v.warp === "on" };
-            let m = /([\d.]+)/.exec(v.vol || ""); if (m) s.volume = parseFloat(m[1]); s.muted = (v.vol || "").includes("MUTED");
-            m = /([\d.]+)/.exec(v.mic || ""); if (m) s.micVolume = parseFloat(m[1]); s.micOn = !(v.mic || "").includes("MUTED");
             if (v.bri) s.brightness = parseInt(v.bri) / 100;
             if (v.bat) {
                 const e = (v.energy || "").trim().split(/\s+/).map(Number);     // now, full, design, power (µWh / µW)
@@ -258,6 +252,17 @@ Singleton {
             if (s._net) { const dt = (t - s._net.t) / 1000; s.netDown = s.speed((n[0] - s._net.r) / dt); s.netUp = s.speed((n[1] - s._net.x) / dt) }
             s._net = { r: n[0], x: n[1], t: t };
         } } }
+    // volume / mute / mic follow PipeWire directly (event-based, no polling)
+    readonly property var pwSinkAudio: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio ? Pipewire.defaultAudioSink.audio : null
+    readonly property var pwSrcAudio: Pipewire.defaultAudioSource && Pipewire.defaultAudioSource.audio ? Pipewire.defaultAudioSource.audio : null
+    readonly property real pwVol: pwSinkAudio ? pwSinkAudio.volume : -1
+    readonly property bool pwMuted: pwSinkAudio ? pwSinkAudio.muted : false
+    readonly property real pwMic: pwSrcAudio ? pwSrcAudio.volume : -1
+    readonly property bool pwMicMuted: pwSrcAudio ? pwSrcAudio.muted : false
+    onPwVolChanged: if (pwVol >= 0) volume = pwVol
+    onPwMutedChanged: muted = pwMuted
+    onPwMicChanged: if (pwMic >= 0) micVolume = pwMic
+    onPwMicMutedChanged: micOn = !pwMicMuted
     // Wi-Fi / battery / brightness / net speed: the bar shows them live → a timer, slower while a game is focused
     Timer { interval: s.gaming ? 12000 : 4000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!status.running) status.running = true }
     Component.onCompleted: hyprQuery.running = true
@@ -345,14 +350,20 @@ Singleton {
     // keyring password pop-ups drawn by Isla (tools/keyring-prompter.py takes over gcr-prompter's service)
     // keyAsk = {id, kind: password|confirm, title, message, description, warning, new} or null
     property var keyAsk: null
-    Process { id: keyPrompter; running: true; stdinEnabled: true
-        command: ["python3", Quickshell.shellDir + "/tools/keyring-prompter.py"]
-        stdout: SplitParser { onRead: line => { try { const m = JSON.parse(line); s.keyAsk = m.kind === "close" ? null : m } catch (e) {} } }
-        onExited: { s.keyAsk = null; keyPrompterRestart.start() } }
-    Timer { id: keyPrompterRestart; interval: 3000; onTriggered: keyPrompter.running = true }
+    // keyring prompter + Bluetooth agent run in ONE Python (tools/isla-agents.py): messages carry ch "key" | "bt",
+    // answers go back as "key …" / "bt …"
+    Process { id: agents; running: true; stdinEnabled: true
+        command: ["python3", Quickshell.shellDir + "/tools/isla-agents.py"]
+        stdout: SplitParser { onRead: line => { try {
+            const m = JSON.parse(line);
+            if (m.ch === "key") s.keyAsk = m.kind === "close" ? null : m;
+            else if (m.ch === "bt") s.btAsk = m.kind === "cancel" ? null : m;
+        } catch (e) {} } }
+        onExited: { s.keyAsk = null; s.btAsk = null; agentsRestart.start() } }
+    Timer { id: agentsRestart; interval: 3000; onTriggered: agents.running = true }
     function keyAnswer(ok, password) {
         if (!keyAsk) return;
-        keyPrompter.write(keyAsk.id + (ok ? " ok" + (keyAsk.kind === "password" ? " " + password : "") : " cancel") + "\n");
+        agents.write("key " + keyAsk.id + (ok ? " ok" + (keyAsk.kind === "password" ? " " + password : "") : " cancel") + "\n");
         keyAsk = null;
     }
 
@@ -363,17 +374,12 @@ Singleton {
     // Bluetooth pairing agent (tools/bt-agent.py): a phone/PC asking to pair shows its code in the pair dialog.
     // btAsk = {id, kind: confirm|authorize|display, name, addr, key} or null
     property var btAsk: null
-    Process { id: btAgent; running: true; stdinEnabled: true
-        command: ["python3", Quickshell.shellDir + "/tools/bt-agent.py"]
-        stdout: SplitParser { onRead: line => { try { const m = JSON.parse(line); s.btAsk = m.kind === "cancel" ? null : m } catch (e) {} } }
-        onExited: btAgentRestart.start() }
-    Timer { id: btAgentRestart; interval: 3000; onTriggered: btAgent.running = true }
     Timer { id: btDisplayHide; interval: 30000; running: !!s.btAsk && s.btAsk.kind === "display"; onTriggered: s.btAsk = null }
     // ans: "yes" | "no" | "trust" (= allow and trust from now on)
     function btAnswer(ans) {
         if (!btAsk) return;
         if (btAsk.kind === "newdev") { if (ans !== "no") _btPair(btAsk.addr, btAsk.path, ans === "trust") }
-        else if (btAsk.kind !== "display") btAgent.write(btAsk.id + " " + ans + "\n");
+        else if (btAsk.kind !== "display") agents.write("bt " + btAsk.id + " " + ans + "\n");
         btAsk = null;
     }
     // tapping a new device in the panel: ask first (Pair only / Pair & trust), then pair + connect.
@@ -554,39 +560,13 @@ Singleton {
         clipDec.running = true;
     }
 
-    // ── PC monitor: CPU / RAM / GPU (every 2 s; graphs keep the last 40 samples) ──
-    property var sysmon: ({ cpu: 0, cpuTemp: 0, ram: 0, ramUsed: 0, ramTotal: 0, gpu: 0, gpuTemp: 0, vramUsed: 0, vramTotal: 0, fanCpu: 0, fanGpu: 0, ok: false })
-    property var cpuHist: []
-    property var ramHist: []
-    property var gpuHist: []
-    property var _cpuPrev: null
-    function _push(h, v) { const a = h.concat([v]); return a.length > 40 ? a.slice(a.length - 40) : a }
-    Process { id: sysmonP; command: ["sh", "-c", [
-            "head -1 /proc/stat",
-            "grep -E '^(MemTotal|MemAvailable):' /proc/meminfo | tr -s ' ' | cut -d' ' -f2",
-            // dedicated GPU = the card with the most VRAM
-            "best=; max=0; for c in /sys/class/drm/card[0-9]; do t=$(cat $c/device/mem_info_vram_total 2>/dev/null || echo 0); [ \"$t\" -gt \"$max\" ] && { max=$t; best=$c; }; done",
-            "echo gpu=$(cat $best/device/gpu_busy_percent 2>/dev/null) vu=$(cat $best/device/mem_info_vram_used 2>/dev/null) vt=$max gt=$(cat $best/device/hwmon/hwmon*/temp1_input 2>/dev/null | head -1)",
-            "for h in /sys/class/hwmon/hwmon*; do [ \"$(cat $h/name)\" = k10temp ] && echo ct=$(cat $h/temp1_input); [ \"$(cat $h/name)\" = asus ] && echo fc=$(cat $h/fan1_input 2>/dev/null) fg=$(cat $h/fan2_input 2>/dev/null); done"
-        ].join("; ")]
-        stdout: StdioCollector { onStreamFinished: {
-            const L = this.text.split("\n"), v = {};
-            const c = L[0].split(/\s+/).slice(1).map(Number), idle = c[3] + c[4], total = c.reduce((a, b) => a + b, 0);
-            let cpu = 0; if (s._cpuPrev) { const dt = total - s._cpuPrev.t, di = idle - s._cpuPrev.i; cpu = dt > 0 ? Math.round((1 - di / dt) * 100) : 0 }
-            s._cpuPrev = { t: total, i: idle };
-            const memT = parseInt(L[1]) || 1, memA = parseInt(L[2]) || 0;
-            for (const l of L.slice(3)) for (const kv of l.split(" ")) { const i = kv.indexOf("="); if (i > 0) v[kv.slice(0, i)] = parseFloat(kv.slice(i + 1)) || 0 }
-            const ram = Math.round((1 - memA / memT) * 100);
-            s.sysmon = { ok: true, cpu: cpu, cpuTemp: Math.round((v.ct || 0) / 1000), ram: ram, ramUsed: (memT - memA) / 1048576, ramTotal: memT / 1048576,
-                         gpu: Math.round(v.gpu || 0), gpuTemp: Math.round((v.gt || 0) / 1000), vramUsed: (v.vu || 0) / 1073741824, vramTotal: (v.vt || 0) / 1073741824,
-                         fanCpu: v.fc || 0, fanGpu: v.fg || 0 };
-            s.cpuHist = s._push(s.cpuHist, cpu); s.ramHist = s._push(s.ramHist, ram); s.gpuHist = s._push(s.gpuHist, Math.round(v.gpu || 0));
-        } } }
-    Timer { interval: s.gaming ? 6000 : 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!sysmonP.running) sysmonP.running = true }   // bar CPU/RAM/GPU, slower in games
-    // the gaming GPU's real name (e.g. "RX 6700S"), read once from Vulkan
-    property string gpuName: "GPU"
-    Process { running: true; command: ["sh", "-c", "vulkaninfo --summary 2>/dev/null | grep -A1 DISCRETE_GPU | sed -n 's/.*deviceName *= *//p' | head -1"]
-        stdout: StdioCollector { onStreamFinished: { const n = this.text.trim().replace(/\s*\(.*\)$/, "").replace(/^(AMD|NVIDIA)\s+(Radeon\s+|GeForce\s+)?/, ""); if (n) s.gpuName = n } } }
+    // ── PC monitor: CPU / RAM / GPU (SvcSysmon.qml) ──
+    SvcSysmon { id: sysmonPart; gaming: s.gaming }
+    property alias sysmon: sysmonPart.sysmon
+    property alias cpuHist: sysmonPart.cpuHist
+    property alias ramHist: sysmonPart.ramHist
+    property alias gpuHist: sysmonPart.gpuHist
+    property alias gpuName: sysmonPart.gpuName
 
     // ── live status for the bar icons (no waiting for the 4 s poll) ──
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }
@@ -672,7 +652,7 @@ Singleton {
     function toggle(what) {
         if (what === "wifi") run(["nmcli", "radio", "wifi", wifi.on ? "off" : "on"]);
         else if (what === "bt") run(["bluetoothctl", "power", bluetooth.on ? "off" : "on"]);
-        else if (what === "warp") run(["warp-cli", "--accept-tos", warp.connected ? "disconnect" : "connect"]);
+        else if (what === "warp") run(["sh", Quickshell.shellDir + "/tools/warp.sh", warp.connected ? "off" : "on"]);
         else if (what === "ime") { imeVi = !imeVi; run(["fcitx5-remote", "-t"]) }
         else if (what === "dnd") dnd = !dnd;
         else if (what === "airplane") { airplane = !airplane; run(["rfkill", airplane ? "block" : "unblock", "all"]) }
@@ -693,39 +673,10 @@ Singleton {
         else if (tools[name]) run(tools[name]);
     }
 
-    // ── weather (wttr.in JSON, every 30 min) ──
-    property var weather: ({ temp: "--", glyph: "cloud", ok: false })
-    function wxGlyph(desc, hour) {
-        const c = (desc || "").toLowerCase();
-        if (c.includes("rain") || c.includes("drizzle") || c.includes("shower") || c.includes("thunder")) return "rain";
-        if (c.includes("sun") || c.includes("clear")) return hour >= 18 || hour < 6 ? "moon" : "sun";
-        return "cloud";
-    }
-    function refreshWeather() { if (!wx.running) wx.running = true }
-    Process { id: wx; command: ["curl", "-s", "--max-time", "10", "https://wttr.in/" + s.city + "?format=j1"]
-        stdout: StdioCollector { onStreamFinished: {
-            let d; try { d = JSON.parse(this.text) } catch (e) { return }
-            const c = d.current_condition && d.current_condition[0]; if (!c) return;
-            const desc = c.weatherDesc && c.weatherDesc[0] ? c.weatherDesc[0].value : "";
-            const now = new Date(), dn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], mn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const days = (d.weather || []).slice(0, 3).map((w, i) => {
-                const dt = new Date(w.date + "T12:00:00");
-                return { label: i === 0 ? "Today" : dn[dt.getDay()] + " " + dt.getDate(), max: parseInt(w.maxtempC), min: parseInt(w.mintempC),
-                         rain: Math.max(...w.hourly.map(h => parseInt(h.chanceofrain) || 0)) };
-            });
-            const hours = [];
-            for (const [i, w] of (d.weather || []).slice(0, 2).entries())
-                for (const h of w.hourly) {
-                    const hr = Math.floor(parseInt(h.time) / 100), dt = new Date(w.date + "T00:00:00"); dt.setHours(hr);
-                    if (dt.getTime() > now.getTime() - 3600000 && hours.length < 3)
-                        hours.push({ label: (hr % 12 || 12) + (hr < 12 ? " AM" : " PM"), temp: parseInt(h.tempC), rain: parseInt(h.chanceofrain) || 0 });
-                }
-            s.weather = { ok: true, temp: c.temp_C + "°C", tempN: parseInt(c.temp_C), glyph: s.wxGlyph(desc, now.getHours()), desc: desc,
-                          max: days.length ? days[0].max : 0, min: days.length ? days[0].min : 0,
-                          humidity: c.humidity, wind: c.windspeedKmph, uv: c.uvIndex, feels: c.FeelsLikeC, pressure: c.pressure, visibility: c.visibility,
-                          days: days, hours: hours, updated: now };
-        } } }
-    Timer { interval: 30 * 60 * 1000; running: true; repeat: true; triggeredOnStart: true; onTriggered: wx.running = true }
+    // ── weather (SvcWeather.qml) ──
+    SvcWeather { id: weatherPart; city: s.city }
+    property alias weather: weatherPart.weather
+    function refreshWeather() { weatherPart.refreshWeather() }
 
     // you're in a game (Steam / Proton / gamescope window focused) → the bar stops its moving bits so the GPU stays with the game
     readonly property bool gaming: { const t = Hyprland.activeToplevel

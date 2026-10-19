@@ -96,7 +96,8 @@ Titan One (sticker clock). Icons are vector paths in `Glyphs.js` (24×24, use `G
 ### Structure
 - `shell.qml` — windows per screen (bar, dock, drop-downs, phone, toasts, pop-ups) + `IpcHandler` (`qs -c isla ipc call isla <fn>`:
   `phone <screen>`, `close`, `drop <name>`, `bar`, `big`, `power`, `lock`, `locktest` (30 s, safe), `lid`, `preview`).
-- `Services.qml` (singleton) — all live data: Hyprland, Wi-Fi/Bluetooth/sound, battery, sysmon, media, notifications,
+- `Services.qml` (singleton) — all live data (CPU/RAM/GPU stats live in `SvcSysmon.qml`, weather in `SvcWeather.qml`,
+  both used through Services.sysmon / Services.weather aliases): Hyprland, Wi-Fi/Bluetooth/sound, battery, sysmon, media, notifications,
   clipboard, weather, idle timers, lid, polkit agent, Bluetooth agent, keyring prompter, dark-mode app switching.
 - `Prefs.qml` (singleton) — saved settings (`keys` list = what gets saved to prefs.json).
 - `Theme.qml` (singleton) — all colours. Colours go through `v(key, default)`, which reads the active **palette**
@@ -146,11 +147,29 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 
 ## 7. Performance notes
 
-- Isla ≈ 715 MB RSS with `MALLOC_ARENA_MAX=2` (was ≈ 950 MB). Every Quickshell window has its own GL context; that is the floor.
-- Event-based: Hyprland window list (filtered events + 60 s safety), clipboard (file watch), privacy page (PipeWire links), EN/VI (fcitx tray icon).
-- Timed: status 4 s (12 s gaming), bar stats 2 s (6 s gaming), weather 30 min.
+- **Isla ≈ 470 MB RSS fresh** (2026-10-19, was ≈ 850 MB) with `MALLOC_ARENA_MAX=2`.
+- **The phone is lazy** (shell.qml `phoneLive` + `LazyLoader`): built on first open, only on that screen, removed
+  3 min after it closes (≈ 100–120 MB per screen while it exists). Cold open ≈ 0.15–0.45 s. Measured in a nested
+  test copy: lazy power menu / dropdowns / notifications / wipe overlay / dock preview saved only 0–25 MB (noise) →
+  deliberately NOT lazy. `QSG_RENDER_LOOP=basic` saved 0 MB → not used.
+- Wallpaper.qml drops the hidden picture 0.9 s after a cross-fade.
+- Event-based: Hyprland window list (filtered events + 60 s safety), clipboard (file watch), privacy page (PipeWire links),
+  EN/VI (fcitx tray icon), **volume / mute / mic (PipeWire `pwVol`/`pwMic` handlers)**.
+- Timed: status 4 s (12 s gaming) — one `bash`, files read with the `read` builtin, nmcli ×2, ps, warp-cli only when
+  `/run/cloudflare-warp/warp_service` exists (≈ 18 process starts per run, was ≈ 51). Bar stats 2 s (6 s gaming) —
+  `SvcSysmon.qml`, pure bash builtins (≈ 0 extra processes, was ≈ 44). Weather 30 min (`SvcWeather.qml`).
+- **Quickshell's UPower gives no data on this laptop** (displayDevice never ready) → battery is read from sysfs
+  (Isla status poll; greeter Svc.qml every 30 s).
+- Helpers: `tools/isla-agents.py` runs keyring-prompter + bt-agent in ONE Python (32 MB, was 2 × ~30 MB);
+  messages tagged `ch: key|bt`, answers `key …`/`bt …`. Both scripts still run alone (`__main__`).
+- Keyring: `~/.local/share/dbus-1/services/org.freedesktop.secrets.service` (SystemdService=gnome-keyring-daemon.service)
+  stops a second, unused gnome-keyring-daemon from starting at login (verify after reboot: only ONE should run).
+- WARP on demand: `tools/warp.sh on|off` (Isla's WARP toggle) starts/stops `warp-svc` (≈ 110 MB). Needs the one-time
+  `sudo ~/.config/quickshell/isla/tools/warp-ondemand-setup.sh` (polkit rule `/etc/polkit-1/rules.d/50-isla-warp.rules`
+  + `systemctl disable --now warp-svc`; `… undo` reverts). While warp-svc is still enabled, warp.sh never stops it.
 - While a game is focused: visualizer + spinning record paused, phone light mode, no pop-ups, dock trigger off, mouse focus click-only.
-- WARP tray app masked for the user (`systemctl --user unmask warp-taskbar` to undo); WARP itself works from Isla.
+- WARP tray app masked for the user (`systemctl --user unmask warp-taskbar` to undo).
+- firewalld (≈ 50 MB) kept on purpose (owner: don't replace it).
 
 ---
 

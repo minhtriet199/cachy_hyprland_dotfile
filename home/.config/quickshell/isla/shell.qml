@@ -460,9 +460,20 @@ ShellRoot {
                     }
                 }
 
-                // ── the phone ──
+                // ── the phone: built on first open (only on that screen), removed 3 min after it closes ──
+                // (≈ 120 MB per screen while it exists; the first open after removal takes ≈ 0.15–0.45 s)
+                property bool phoneLive: false
+                property string phonePending: ""
+                Timer { id: phoneIdle; interval: 180000; onTriggered: scr.phoneLive = false }
+                Connections {
+                    target: shell
+                    function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive) { scr.phonePending = screen; scr.phoneLive = true } }
+                }
+                LazyLoader {
+                active: scr.phoneLive
                 PanelWindow {
                     id: phoneWin
+                    onVisibleChanged: if (visible) phoneIdle.stop(); else phoneIdle.restart()
                     screen: scr.modelData
                     visible: stage.shown || stage.visibleAmount > 0.001
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -481,6 +492,8 @@ ShellRoot {
                             focus: true
                             svc: Services; prefs: Prefs; monitor: scr.name
                             onSoon: w => { soon.text = w + " is coming in the next Isla update ✿"; soon.show = true; soonTimer.restart() }
+                            // the request that built the phone: open that screen now
+                            Component.onCompleted: if (scr.phonePending) { const p = scr.phonePending; scr.phonePending = ""; go(p) }
                         }
                         Toast {
                             id: soon
@@ -503,6 +516,7 @@ ShellRoot {
                         }
                         function onPhoneClose() { stage.close() }
                     }
+                }
                 }
             }
         }

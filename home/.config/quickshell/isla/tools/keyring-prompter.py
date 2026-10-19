@@ -25,8 +25,12 @@ waiting = {}      # id → (sender, callback path, kind)
 active = {}       # (sender, callback path) → Gcr.SecretExchange
 
 
-def out(d):
+def emit(d):
     print(json.dumps(d), flush=True)
+
+
+def out(d):
+    emit(d)
 
 
 def ready(sender, path, reply, exchange, props=None):
@@ -76,11 +80,7 @@ class Prompter(dbus.service.Object):
         cb.PromptDone(reply_handler=lambda *a: None, error_handler=lambda *a: None)
 
 
-def answer(src, cond):
-    line = sys.stdin.readline()
-    if not line:
-        loop.quit()
-        return False
+def handle(line):
     parts = line.rstrip("\n").split(" ", 2)
     if len(parts) >= 2 and parts[0].isdigit() and int(parts[0]) in waiting:
         sender, path, kind = waiting.pop(int(parts[0]))
@@ -92,11 +92,24 @@ def answer(src, cond):
             ready(sender, path, "yes", ex.send(secret, -1) if kind == "password" else ex.send(None, 0))
         else:
             ready(sender, path, "no", ex.send(None, 0))
-    return True
 
 
-name = dbus.service.BusName("org.gnome.keyring.SystemPrompter", bus, allow_replacement=True, replace_existing=True, do_not_queue=True)
-Prompter(bus, PATH)
-GLib.io_add_watch(sys.stdin, GLib.IO_IN | GLib.IO_HUP, answer)
-loop = GLib.MainLoop()
-loop.run()
+def start():
+    global name
+    name = dbus.service.BusName("org.gnome.keyring.SystemPrompter", bus, allow_replacement=True, replace_existing=True, do_not_queue=True)
+    Prompter(bus, PATH)
+
+
+# normally run inside isla-agents.py (one Python for both Isla helpers); can still run on its own
+if __name__ == "__main__":
+    def answer(src, cond):
+        line = sys.stdin.readline()
+        if not line:
+            loop.quit()
+            return False
+        handle(line)
+        return True
+    start()
+    GLib.io_add_watch(sys.stdin, GLib.IO_IN | GLib.IO_HUP, answer)
+    loop = GLib.MainLoop()
+    loop.run()

@@ -20,7 +20,10 @@ Item {
         if (!started) { a.source = src; started = true; return }
         if (useA) b.source = src; else a.source = src;
         useA = !useA;
+        dropOld.restart();
     }
+    // after the cross-fade, let go of the picture that is now hidden (≈ 15 MB per screen)
+    Timer { id: dropOld; interval: 900; onTriggered: { if (w.useA) b.source = ""; else a.source = "" } }
     Image { id: a; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: false; smooth: true
         sourceSize: Qt.size(w.width, w.height); opacity: w.useA ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 600 } } }
     Image { id: b; anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: false; smooth: true
