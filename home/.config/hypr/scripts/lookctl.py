@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Window look (Isla Settings → Windows): opacity, backdrop tint, borders, corner radius, gaps.
+# Window look (Isla Settings → Windows): opacity, backdrop tint, borders, corner radius, gaps,
+# and kitty's own background see-through (kitty stays solid in Hyprland; only its background fades).
 #   lookctl.py get                 → current values as JSON
 #   lookctl.py set key=value ...   → save to ~/.local/state/hypr/look and apply live
 # config/look.lua reads the same file at startup / reload.
@@ -10,12 +11,13 @@ DEFAULTS = {
     "active_opacity": "0.95", "inactive_opacity": "0.90",
     "border_size": "2", "rounding": "10", "gaps_in": "3", "gaps_out": "8",
     "active1": "82dccc", "active2": "007d6f", "inactive": "798bb2",
-    "backdrop": "dark",
+    "backdrop": "dark", "terminal_opacity": "0.88",
 }
+KITTY = os.path.expanduser("~/.config/kitty/kitty.conf")
 # what shows through see-through windows: dark = dimmed blur (light text stays readable), light = frosted
 BACKDROP = {"dark": (0.5, 0.9), "light": (1.05, 0.8)}   # blur brightness, contrast
 CHECK = {
-    "active_opacity": (0.3, 1), "inactive_opacity": (0.3, 1),
+    "active_opacity": (0.3, 1), "inactive_opacity": (0.3, 1), "terminal_opacity": (0.3, 1),
     "border_size": (0, 8), "rounding": (0, 30), "gaps_in": (0, 30), "gaps_out": (0, 60),
 }
 
@@ -44,6 +46,19 @@ def lua(v):
         v["active1"], v["active2"], v["inactive"])
 
 
+def kitty(op):
+    # rewrite background_opacity in kitty.conf; SIGUSR1 makes open kitty windows reload it
+    # (works because kitty.conf has dynamic_background_opacity yes)
+    try:
+        s = open(KITTY).read()
+    except FileNotFoundError:
+        return
+    n = re.sub(r"(?m)^background_opacity\s+\S+", "background_opacity          " + op, s)
+    if n != s:
+        open(KITTY, "w").write(n)
+        subprocess.run(["pkill", "-USR1", "-x", "kitty"])
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "get":
         print(json.dumps(load()))
@@ -70,6 +85,7 @@ def main():
         f.writelines(f"{k}={v[k]}\n" for k in DEFAULTS)
     os.replace(STATE + ".tmp", STATE)
     subprocess.run(["hyprctl", "eval", lua(v)], stdout=subprocess.DEVNULL)
+    kitty(v["terminal_opacity"])
     print(json.dumps(v))
 
 

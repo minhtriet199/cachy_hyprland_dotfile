@@ -12,7 +12,7 @@ Item {
     implicitHeight: col.implicitHeight
     readonly property string tool: Quickshell.env("HOME") + "/.config/hypr/scripts/lookctl.py"
     property var v: ({ active_opacity: 0.95, inactive_opacity: 0.9, border_size: 2, rounding: 10, gaps_in: 3, gaps_out: 8,
-                       active1: "82dccc", active2: "007d6f", inactive: "798bb2", backdrop: "dark" })
+                       active1: "82dccc", active2: "007d6f", inactive: "798bb2", backdrop: "dark", terminal_opacity: 0.88 })
     property bool loaded: false
     function num(k) { return parseFloat(v[k]) }
 
@@ -91,8 +91,9 @@ Item {
         Label { text: "SEE-THROUGH" }
         Slide { key: "active_opacity"; title: "FOCUSED WINDOW"; lo: 0.3; hi: 1; pct: true; tint: Theme.sea }
         Slide { key: "inactive_opacity"; title: "OTHER WINDOWS"; lo: 0.3; hi: 1; pct: true; tint: Theme.lilac }
+        Slide { key: "terminal_opacity"; title: "TERMINAL BACKGROUND"; lo: 0.3; hi: 1; pct: true; tint: Theme.peach }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-            text: "100% = solid. Terminals, Firefox, video players and full-screen games always stay solid." }
+            text: "100% = solid. The terminal (kitty) only fades its background, so text stays sharp — focused or not. Firefox, video players and full-screen games always stay solid." }
         SetSeg { width: parent.width; label: "Behind"; options: ["Dark", "Light"]; current: wp.v.backdrop === "light" ? "Light" : "Dark"
             onPicked: x => wp.put("backdrop", x.toLowerCase()) }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
@@ -162,9 +163,9 @@ Item {
 
         Item { width: 1; height: 2 }
         UiRow {
-            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "95% / 90%, dark backdrop, 2 px border, 10 px corners, gaps 3 / 8"
+            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "95% / 90%, terminal 88%, dark backdrop, 2 px border, 10 px corners, gaps 3 / 8"
             onClicked: { wp.put("active_opacity", 0.95); wp.put("inactive_opacity", 0.9); wp.put("border_size", 2); wp.put("rounding", 10)
-                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2"); wp.put("backdrop", "dark"); wheel.load() }
+                         wp.put("gaps_in", 3); wp.put("gaps_out", 8); wp.put("active1", "82dccc"); wp.put("active2", "007d6f"); wp.put("inactive", "798bb2"); wp.put("backdrop", "dark"); wp.put("terminal_opacity", 0.88); wheel.load() }
         }
     }
 }
