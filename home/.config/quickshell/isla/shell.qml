@@ -125,6 +125,18 @@ ShellRoot {
         }
     }
 
+    // ── screen-share picker: only built while asked ──
+    property string shareList: ""
+    LazyLoader {
+        id: shareL
+        active: false
+        SharePicker {
+            screen: Quickshell.screens.find(x => x.name === shell.focusedName()) || Quickshell.screens[0]
+            listFile: shell.shareList
+            onDone: shareL.active = false
+        }
+    }
+
     // ── snip editor: only built while a snip is open ──
     property var snipReq: null
     LazyLoader {
@@ -147,6 +159,9 @@ ShellRoot {
         function bar(): void { Prefs.flip("bar") }
         function drop(which: string): void { shell.dropRequest(shell.focusedName(), which) }
         // snip editor (hypr/scripts/snip.sh): "crop.png|screen.ppm|MONITOR|x|y|w|h|scale" (logical px on that screen)
+        // screen-share picker (tools/share-pick.sh, for OBS / Discord / browser): shows on the screen you're on
+        function sharePick(listFile: string): void { shell.shareList = listFile; shareL.active = false; shareL.active = true }
+        function shareClose(): void { shareL.active = false }
         function snip(req: string): void { const f = req.split("|"); shell.snipReq = { crop: f[0], shot: f[1], mon: f[2],
             sel: Qt.rect(+f[3], +f[4], +f[5], +f[6]), dpr: +f[7] || 1 }; snipL.active = true }
         function power(): void { shell.powerRequest(shell.focusedName()) }

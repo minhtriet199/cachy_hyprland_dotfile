@@ -69,10 +69,10 @@ Singleton {
     ]
     // Commands for bar tools and quick buttons
     property var tools: ({
-        snip:       ["sh", "-c", "f=~/Pictures/screenshot/snip-$(date +%F-%H%M%S).png; mkdir -p ~/Pictures/screenshot; grim -g \"$(slurp)\" \"$f\" && wl-copy < \"$f\" && notify-send -a Screenshot 'Saved and copied' \"$f\""],
+        snip:       ["sh", "-c", "exec ~/.config/hypr/scripts/snip.sh"],
         picker:     ["sh", "-c", "hyprpicker -a"],
         clipboard:  ["sh", "-c", "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"],
-        record:     ["sh", "-c", "pkill -x wf-recorder || (mkdir -p ~/Videos && wf-recorder -f ~/Videos/rec-$(date +%F-%H%M%S).mp4)"]
+        record:     ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "toggle"]   // OBS: pick screen/window, start · stop
     })
     // Night light (hyprsunset) colour temperature
     property int nightTemp: 4500
@@ -228,7 +228,17 @@ Singleton {
     onGameModeChanged: if (Prefs.ready) applyGameMode()
     Connections { target: Prefs; function onReadyChanged() { if (Prefs.ready) s.applyGameMode() } }
     property bool easyEffects: false
+    // OBS recording (tools/obsctl.py): asked every 2 s while OBS is open; recSince = when it started (ms since epoch)
+    property bool obsUp: false
     property bool recording: false
+    property real recSince: 0
+    property string recTime: "00:00"
+    Process { id: recP; command: ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "status"]
+        stdout: StdioCollector { onStreamFinished: { try { const r = JSON.parse(this.text); s.recording = r.rec; if (r.rec) s.recSince = Date.now() - r.ms } catch (e) {} } } }
+    Timer { interval: 2000; repeat: true; triggeredOnStart: true; running: s.obsUp || s.recording; onTriggered: if (!recP.running) recP.running = true }
+    Timer { interval: 1000; repeat: true; triggeredOnStart: true; running: s.recording
+        onTriggered: { const t = Math.max(0, Math.floor((Date.now() - s.recSince) / 1000)), h = Math.floor(t / 3600), p = n => String(n).padStart(2, "0")
+            s.recTime = (h ? h + ":" : "") + p(Math.floor(t / 60) % 60) + ":" + p(t % 60) } }
     property real volume: 0.5
     property bool muted: false
     property real micVolume: 1
@@ -253,7 +263,7 @@ Singleton {
             "for d in /sys/class/power_supply/A*; do read -r x 2>/dev/null < $d/online && echo ac=$x; break; done",
             "read -r x 2>/dev/null < /sys/firmware/acpi/platform_profile && echo prof=$x",
             "h0=; h1=; for d in /sys/class/rfkill/rfkill*; do read -r x 2>/dev/null < $d/soft && { [ \"$x\" = 0 ] && h0=0; [ \"$x\" = 1 ] && h1=1; }; done; echo rf=$h0$h1",
-            "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects rec:wf-recorder; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
+            "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects obs:obs; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
             "rx=0; tx=0; { read -r _; read -r _; while read -r l; do set -- ${l/:/ }; [ \"$1\" = lo ] && continue; rx=$((rx + $2)); tx=$((tx + ${10})); done; } < /proc/net/dev; echo \"net=$rx $tx\""
         ].join("; ")]
         stdout: StdioCollector { onStreamFinished: {
@@ -272,7 +282,7 @@ Singleton {
                               minutes: (chg || dis) ? mins : -1, health: e.length >= 3 && e[2] > 0 ? Math.round(e[1] / e[2] * 100) : 100 };
             }
             s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
-            s.nightLight = v.night === "on"; s.easyEffects = v.fx === "on"; s.recording = v.rec === "on";
+            s.nightLight = v.night === "on"; s.easyEffects = v.fx === "on"; s.obsUp = v.obs === "on";
             const n = (v.net || "0 0").split(" ").map(Number), t = Date.now();
             if (s._net) { const dt = (t - s._net.t) / 1000; s.netDown = s.speed((n[0] - s._net.r) / dt); s.netUp = s.speed((n[1] - s._net.x) / dt) }
             s._net = { r: n[0], x: n[1], t: t };

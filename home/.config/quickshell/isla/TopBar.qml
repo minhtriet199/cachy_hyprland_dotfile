@@ -146,10 +146,17 @@ Item {
             id: datePill
             fill: Theme.gBerry; pressable: true; gap: 8
             onClicked: bar.drop("calendar", datePill)
-            Glyph { name: "calendar"; size: 19; stroke: 2.3 }
+            // recording (OBS): stop button + time + blinking dot + how long; otherwise calendar · time · date
+            UiCandy { visible: bar.svc.recording; Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 13; bw: 2; drop: 0; hi: 0
+                ink: Theme.ink; fill: Theme.inkPhone; pressable: true; onClicked: bar.svc.tool("record")
+                Rectangle { anchors.centerIn: parent; width: 9; height: 9; radius: 2; color: "#FFFFFF" } }
+            Glyph { visible: !bar.svc.recording; name: "calendar"; size: 19; stroke: 2.3 }
             UiText { text: bar.svc.timeText; px: 16; w: 700 }
-            Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: Theme.ink; opacity: 0.45 }
-            UiText { text: bar.svc.dateText; px: 16; w: 600 }
+            Rectangle { Layout.preferredWidth: bar.svc.recording ? 8 : 6; Layout.preferredHeight: Layout.preferredWidth; radius: 4
+                color: bar.svc.recording ? "#E2607F" : Theme.ink; opacity: bar.svc.recording ? (recBlink.on ? 1 : 0.3) : 0.45
+                Behavior on opacity { NumberAnimation { duration: 400 } }
+                Timer { id: recBlink; property bool on: true; interval: 700; repeat: true; running: bar.svc.recording; onTriggered: on = !on } }
+            UiText { text: bar.svc.recording ? bar.svc.recTime : bar.svc.dateText; px: 16; w: bar.svc.recording ? 700 : 600; font.features: { "tnum": 1 } }
         }
     }
 
