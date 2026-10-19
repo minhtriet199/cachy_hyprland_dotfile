@@ -288,17 +288,20 @@ Item {
         }
     }
 
-    // ── nav rail glued to the upright phone's right edge: back + jump to any screen ──
+    // ── nav rail glued to the phone's right edge (upright small, or sideways small/big): back + jump to any screen ──
     // Asks where the edge really is on screen (through the 3D view) and follows it, tilted like the edge.
     Item {
         id: rail
+        readonly property bool land: stage.wantLand
         readonly property real tick: stage.r + stage.wob + stage.lk + stage.flatP + stage.hand + pHolder.scale + pHolder.y + pHolder.x
-        readonly property point edgeTop: (tick, pBody.mapToItem(stage, 390, 120))
-        readonly property point edgeBot: (tick, pBody.mapToItem(stage, 390, 520))
+                                     + stage.flat + stage.slideIn + stage.ringW + lHolder.scale
+        readonly property point edgeTop: (tick, land ? lBody.mapToItem(stage, 920, 40) : pBody.mapToItem(stage, 390, 120))
+        readonly property point edgeBot: (tick, land ? lBody.mapToItem(stage, 920, 400) : pBody.mapToItem(stage, 390, 520))
         readonly property real ang: Math.atan2(edgeBot.x - edgeTop.x, edgeBot.y - edgeTop.y) * 180 / Math.PI
-        readonly property bool on: stage.shown && !stage.big && !stage.wantLand && stage.r > 0.6 && stage.hand < 0.5
-        visible: pHolder.visible
-        opacity: (1 - stage.hand) * (1 - stage.pv)
+        readonly property bool on: stage.shown && (land ? !stage.turning && (stage.hand > 0.5 || stage.slideIn > 0.9)
+                                                        : !stage.big && stage.r > 0.6 && stage.hand < 0.5)
+        visible: land ? lHolder.visible : pHolder.visible
+        opacity: (land ? 1 : 1 - stage.hand) * (1 - stage.pv)
         x: edgeTop.x + 21; y: edgeTop.y              // a little air past the side keys
         rotation: -ang; transformOrigin: Item.TopLeft
         Column {
@@ -469,7 +472,7 @@ Item {
     onScreenChanged: focusSoon.restart()
     function switchZone() {
         const screenZone = wantLand ? lBody : pBody;
-        const buttons = wantLand ? null : (big ? navBar : railCol);
+        const buttons = big && !wantLand ? navBar : railCol;
         const cur = zoneOf(stage.Window.activeFocusItem ? stage.Window.activeFocusItem.parent : null);
         if (buttons && cur !== buttons) focusFirst(buttons); else focusFirst(screenZone);
     }

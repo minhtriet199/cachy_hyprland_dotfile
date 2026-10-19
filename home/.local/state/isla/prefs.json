@@ -5,12 +5,12 @@
   "size": 0.7,
   "barStyle": "Transparent",
   "barPos": "Top",
-  "wallpaper": "/home/gamer/Pictures/Wallpapers/wallpaperflare.com_wallpaper(5).jpg",
+  "wallpaper": "/home/gamer/Pictures/Wallpapers/card_after_training106_converted.jpg",
   "wallDir": "/home/gamer/Pictures/Wallpapers",
   "displayName": "",
   "avatar": "pulse",
   "phoneBg": "/home/gamer/Pictures/Wallpapers/wallhaven-kx6xl1_1920x1080.png",
-  "lockWallpaper": "",
+  "lockWallpaper": "/home/gamer/Pictures/Wallpapers/card_after_training23_converted.jpg",
   "wipeBg": "wallpaper",
   "wipeIcon": "leaf",
   "idleLock": [
@@ -51,7 +51,7 @@
   "clipPins": [],
   "phoneSpot": "Middle",
   "wipeAuto": [
-    "#ebebd6",
-    "#dcdcb7"
+    "#f3ced3",
+    "#eaa9b2"
   ]
 }
