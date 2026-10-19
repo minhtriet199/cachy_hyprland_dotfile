@@ -6,12 +6,12 @@ Item {
     id: cw
     property var page                    // the Windows page (values + put())
     property string target: "active1"
-    readonly property color cur: "#" + page.v[target]
+    readonly property color cur: page ? "#" + page.v[target] : "#000000"
     // the wheel keeps its own hue/sat/value so dragging stays smooth (hex → hsv loses hue at grey)
     property real hh: 0
     property real ss: 0
     property real vv: 1
-    function load() { const c = cur; hh = Math.max(0, c.hsvHue); ss = c.hsvSaturation; vv = c.hsvValue; hexIn.text = page.v[target].toUpperCase() }
+    function load() { if (!page) return; const c = cur; hh = Math.max(0, c.hsvHue); ss = c.hsvSaturation; vv = c.hsvValue; hexIn.text = page.v[target].toUpperCase() }
     onTargetChanged: load()
     Connections { target: cw.page; function onLoadedChanged() { cw.load() } }
     Component.onCompleted: load()
