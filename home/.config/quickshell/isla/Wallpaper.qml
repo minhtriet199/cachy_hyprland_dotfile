@@ -9,8 +9,8 @@ Item {
     Rectangle {
         anchors.fill: parent; color: "#D3EAF0"
         visible: w.path === "" || (a.status !== Image.Ready && b.status !== Image.Ready)
-        Rectangle { x: -parent.width * 0.083; y: -parent.height * 0.2; width: parent.height * 0.7; height: width; radius: width / 2; color: "#E4DCFA" }
-        Rectangle { x: parent.width - parent.height * 0.44; y: parent.height * 0.11; width: parent.height * 0.63; height: width; radius: width / 2; color: "#FBE0D2" }
+        Rectangle { x: -parent.width * 0.083; y: -parent.height * 0.2; width: parent.height * 0.7; height: width; radius: width / 2; color: Theme.adapt("#E4DCFA") }
+        Rectangle { x: parent.width - parent.height * 0.44; y: parent.height * 0.11; width: parent.height * 0.63; height: width; radius: width / 2; color: Theme.adapt("#FBE0D2") }
         Rectangle { x: parent.width * 0.27; y: parent.height * 0.72; width: parent.height * 0.9; height: parent.height * 0.67; radius: height / 2; color: "#D3EED6" }
     }
     property bool useA: true

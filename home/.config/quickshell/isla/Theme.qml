@@ -75,7 +75,20 @@ Singleton {
     }
     readonly property var allPalettes: Object.assign({}, palettes, madePalettes)
     readonly property var pal: allPalettes[Prefs.theme] || palettes.isla
-    function v(k, d) { return pal[k] !== undefined ? pal[k] : d }
+    function v(k, d) { const x = pal[k] !== undefined ? pal[k] : d; return Prefs.dark ? dk(k, x) : x }
+    // dark mode (Prefs.dark) works with every theme: light backgrounds → dark (keeping a hint of their colour, so kinds
+    // still differ), dark text → light, outlines → a soft mid tone, bright accents stay as they are
+    // for colours written straight into a component (backgrounds): same dark-mode change as the theme colours
+    function adapt(x) { return Prefs.dark ? dk("", x) : x }
+    readonly property var _inkKeys: ["ink", "inkPhone", "inkClock"]
+    function dk(k, x) {
+        if (typeof x === "object" && x.length !== undefined) return Array.prototype.map.call(x, y => dk(k, y));
+        const c = Qt.lighter(x, 1.0), l = c.hslLightness, s = c.hslSaturation, h = Math.max(0, c.hslHue), a = c.a;
+        if (_inkKeys.includes(k)) return l < 0.4 ? Qt.hsla(h, s * 0.35, 0.62, a) : c;
+        if (l > 0.7) return Qt.hsla(h, Math.max(0.08, s * 0.3), 0.09 + (1 - l) * 0.55, a);
+        if (l < 0.4) return Qt.hsla(h, s * 0.4, 0.93 - l * 0.35, a);
+        return c;
+    }
     // box style (Settings → Shell → Look): candy · ring · pop · soft · flat · glass — see UiCandy
     readonly property string boxStyle: Prefs.boxStyle || "candy"
     readonly property bool ring: boxStyle === "ring"
@@ -96,40 +109,40 @@ Singleton {
     readonly property color paper: v("paper", "#FFFDF6")
     readonly property color sand: v("sand", "#F2E3C6")
     readonly property color screenDot: v("screenDot", "#F1E2C2")
-    readonly property color hi: Qt.rgba(1, 1, 1, 0.75)   // inset top highlight
+    readonly property color hi: v("hi", Qt.rgba(1, 1, 1, 0.75))   // inset top highlight
 
     // ── Candy pill gradients [top, bottom] ──
     readonly property var gSea:    v("gSea", ["#E6F8FA", "#BEE9EE"])
     readonly property var gLilac:  v("gLilac", ["#F1ECFE", "#D9CEFA"])
-    readonly property var gPeach:  ["#FFEDE3", "#FBCDB5"]
-    readonly property var gSun:    ["#FFF7DA", "#FFE39A"]
-    readonly property var gBerry:  ["#FDE8EE", "#F6BFD0"]
-    readonly property var gLeaf:   ["#E7F6E7", "#BFE6C2"]
+    readonly property var gPeach:  v("gPeach", ["#FFEDE3", "#FBCDB5"])
+    readonly property var gSun:    v("gSun", ["#FFF7DA", "#FFE39A"])
+    readonly property var gBerry:  v("gBerry", ["#FDE8EE", "#F6BFD0"])
+    readonly property var gLeaf:   v("gLeaf", ["#E7F6E7", "#BFE6C2"])
     readonly property var gChip:   v("gChip", ["#E6F8FA", "#C4ECF0"])
     readonly property var gActive: v("gActive", ["#C9B9F7", "#9C86E6"])   // current workspace, active tab
     readonly property var gPhone:  v("gPhone", ["#8FD9DE", "#55BFC6"])
     readonly property var gOn:     v("gOn", ["#D8F1F4", "#A9DDE4"])   // toggled tile
-    readonly property var gGo:     ["#93D296", "#6BB86F"]   // selected search row
+    readonly property var gGo:     v("gGo", ["#93D296", "#6BB86F"])   // selected search row
     readonly property var gDock:   v("gDock", ["#FFFDF7", "#FFF0D4"])
     readonly property var gTab:    v("gTab", ["#C9B9F7", "#A08AEA"])
     readonly property var gLilacSoft: v("gLilacSoft", ["#D9CEFA", "#B7A5F2"])
     readonly property var gSettings:  v("gSettings", ["#E6DEFB", "#C9B9F7"])
 
     // ── Solid accents ──
-    readonly property color leaf: "#7CC47F"
-    readonly property color leafDeep: "#3E9A5D"
-    readonly property color sun: "#FFD45C"
-    readonly property color sunDeep: "#FFC23C"
+    readonly property color leaf: v("leaf", "#7CC47F")
+    readonly property color leafDeep: v("leafDeep", "#3E9A5D")
+    readonly property color sun: v("sun", "#FFD45C")
+    readonly property color sunDeep: v("sunDeep", "#FFC23C")
     readonly property color sea: v("sea", "#55BFC6")
     readonly property color seaDeep: v("seaDeep", "#2F9EAB")
     readonly property color lilac: v("lilac", "#A893EC")
     readonly property color lilacSoft: v("lilacSoft", "#B9A6F0")
     readonly property color purple: v("purple", "#8E7BE6")
-    readonly property color berry: "#EE7D9C"
-    readonly property color peach: "#F7A982"
-    readonly property color orange: "#F7A04B"
-    readonly property color indigo: "#7C83F0"
-    readonly property color slate: "#5E7A84"
+    readonly property color berry: v("berry", "#EE7D9C")
+    readonly property color peach: v("peach", "#F7A982")
+    readonly property color orange: v("orange", "#F7A04B")
+    readonly property color indigo: v("indigo", "#7C83F0")
+    readonly property color slate: v("slate", "#5E7A84")
     readonly property color pinkSoft: v("pinkSoft", "#F6BFD0")
     readonly property color seaSoft: v("seaSoft", "#A9DDE4")
 

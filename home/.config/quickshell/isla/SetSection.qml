@@ -11,7 +11,7 @@ Item {
     width: parent ? parent.width : 400
     height: holder.childrenRect.height + padTop + 14 + 5
     UiCandy {
-        anchors.fill: parent; radius: 22; ink: Theme.inkPhone; drop: 4; hi: 0; fill: "#FFFCF5"
+        anchors.fill: parent; radius: 22; ink: Theme.inkPhone; drop: 4; hi: 0; fill: Theme.adapt("#FFFCF5")
         Item { id: holder; x: 14 + 2.5; y: sec.padTop + 2.5; width: parent.width - 33 }
         SetStripes { visible: sec.stripes; anchors.right: parent.right; anchors.rightMargin: 16 + 2.5; y: 10 + 2.5; w: 7; h: 12; colors: [Theme.sunDeep, "#A08AEA", Theme.leaf] }
     }

@@ -13,7 +13,7 @@ Item {
     property color shadowColor: ink
     property var bodyColors: [Theme.phoneA, Theme.phoneB]
     readonly property bool bgPhoto: Prefs.phoneBg.startsWith("/")
-    readonly property var bgPair: Prefs.phoneBgs[Prefs.phoneBg] || Prefs.phoneBgs.cream
+    readonly property var bgPair: Theme.adapt(Prefs.phoneBgs[Prefs.phoneBg] || Prefs.phoneBgs.cream)
     property color paper: bgPair[0]
     property color dotColor: bgPair[1]
     Behavior on paper { ColorAnimation { duration: 300 } }

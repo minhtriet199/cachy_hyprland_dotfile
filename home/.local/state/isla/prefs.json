@@ -1,8 +1,8 @@
 {
   "notifications": true,
-  "dock": true,
+  "dock": false,
   "bar": true,
-  "size": 0.75,
+  "size": 0.7,
   "barStyle": "Transparent",
   "barPos": "Top",
   "wallpaper": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
@@ -38,5 +38,6 @@
   "dndGaming": false,
   "theme": "isla",
   "boxStyle": "candy",
-  "themeHue": 0.85
+  "themeHue": 0.85,
+  "dark": true
 }

@@ -30,7 +30,8 @@ Singleton {
     property bool dndGaming: true               // no pop-ups while a game is focused
     property string theme: "isla"               // colour theme (Theme.palettes)
     property real themeHue: 0.85                // hue for the "Custom" theme (0…1)
-    property string boxStyle: "candy"           // "candy" or "ring"     // plugged in, on battery: sleep / screen / lock / nothing
+    property string boxStyle: "candy"           // "candy" or "ring"
+    property bool dark: false                   // dark mode (works with every colour theme)     // plugged in, on battery: sleep / screen / lock / nothing
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
@@ -41,7 +42,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }

@@ -70,7 +70,7 @@ Item {
                     Rectangle { anchors.fill: parent; radius: 10; color: Theme.inkPhone; rotation: 45
                         Rectangle { anchors.fill: parent; anchors.margins: 2.5; radius: 8; color: card.modelData[3] } }
                     Glyph { anchors.centerIn: parent; name: card.modelData[4]; size: 16; stroke: 2.6; color: "#FFFFFF" } }
-                UiText { anchors.right: parent.right; anchors.rightMargin: 14; y: 8; text: card.modelData[0]; px: 24; w: 700; color: "#E6DCC6" }
+                UiText { anchors.right: parent.right; anchors.rightMargin: 14; y: 8; text: card.modelData[0]; px: 24; w: 700; color: Theme.adapt("#E6DCC6") }
                 UiCandy { visible: card.ext; anchors.right: parent.right; anchors.rightMargin: 12; y: 40; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.paper
                     Glyph { anchors.centerIn: parent; name: "external"; size: 12; stroke: 2.6 } }
                 Column { x: 14; anchors.bottom: parent.bottom; anchors.bottomMargin: 14; width: parent.width - 28

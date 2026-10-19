@@ -131,7 +131,7 @@ DecorationFocus=85,191,198
 DecorationHover=169,221,228
 
 [General]
-ColorScheme=Isla
+ColorScheme=IslaDark
 Name=Isla
 TerminalApplication=kitty
 font=Nunito,10,-1,5,700,0,0,0,0,0,0,0,0,0,0,1

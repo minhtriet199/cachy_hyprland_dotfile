@@ -31,8 +31,8 @@ Item {
             // header
             Item {
                 x: 3; y: 3; width: parent.width - 6; height: 110
-                Rectangle { anchors.fill: parent; radius: 25; color: "#F8D3C4" }
-                Rectangle { y: parent.height - 25; width: parent.width; height: 25; color: "#F8D3C4" }
+                Rectangle { anchors.fill: parent; radius: 25; color: Theme.adapt("#F8D3C4") }
+                Rectangle { y: parent.height - 25; width: parent.width; height: 25; color: Theme.adapt("#F8D3C4") }
                 UiDots { anchors.fill: parent; radius: 25; dot: Qt.rgba(1, 1, 1, 0.6); step: 16; r: 2 }
             }
             Rectangle { x: 3; y: 113; width: parent.width - 6; height: 3; color: Theme.inkPhone }

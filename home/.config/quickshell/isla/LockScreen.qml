@@ -19,7 +19,7 @@ Item {
     Rectangle { anchors.fill: parent; color: "#A3D0E1" }
     Rectangle { x: parent.width - 660 * ls.sc; y: -360 * ls.sc; width: 1000 * ls.sc; height: 1000 * ls.sc; radius: width / 2; color: "#ADB6EA" }
     Rectangle { x: -260 * ls.sc; y: parent.height - 500 * ls.sc; width: 1160 * ls.sc; height: 1000 * ls.sc; radius: width / 2; color: "#C7E7EF" }
-    Rectangle { x: parent.width * 0.5; y: parent.height - 320 * ls.sc; width: 700 * ls.sc; height: 700 * ls.sc; radius: width / 2; color: "#E5DDF9" }
+    Rectangle { x: parent.width * 0.5; y: parent.height - 320 * ls.sc; width: 700 * ls.sc; height: 700 * ls.sc; radius: width / 2; color: Theme.adapt("#E5DDF9") }
     UiDots { anchors.fill: parent; dot: Qt.rgba(1, 1, 1, 0.45); step: 32 * ls.sc; r: 2.4 * ls.sc }
     // chosen lock wallpaper (Wallpapers → Lockscreen) covers the sky
     Image { anchors.fill: parent; visible: Prefs.lockWallpaper !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
@@ -33,7 +33,7 @@ Item {
         UiStrokeText { x: 330; y: 48; text: Qt.formatDate(ls.svc.now, "dddd, MMMM d"); px: 40; weight: 700; strokeW: 9; strokeColor: Theme.inkPhone; family: Theme.candy }
         Row {
             x: 318; y: 118; spacing: 14
-            UiStrokeText { text: ls.svc.clockH.replace(/^0/, "") + ":" + ls.svc.clockM; px: 230; weight: 400; strokeW: 22; strokeColor: Theme.inkPhone; family: Theme.candy; fillColor: "#F2FAFD" }
+            UiStrokeText { text: ls.svc.clockH.replace(/^0/, "") + ":" + ls.svc.clockM; px: 230; weight: 400; strokeW: 22; strokeColor: Theme.inkPhone; family: Theme.candy; fillColor: Theme.adapt("#F2FAFD") }
             UiCandy { visible: !ls.svc.h24; y: 120; width: 86; height: 60; radius: 14; rotation: 5; bw: 3; ink: Theme.inkPhone; drop: 5; hi: 4; fill: Theme.gActive
                 UiText { anchors.centerIn: parent; text: ls.svc.ampm; px: 30; w: 700; color: "#FFFFFF" } }
         }
