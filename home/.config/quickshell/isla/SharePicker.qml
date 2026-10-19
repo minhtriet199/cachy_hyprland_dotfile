@@ -24,7 +24,9 @@ PanelWindow {
         const out = [];
         for (const e of lf.text().split("[HA>]")) {
             const m = e.match(/^([\s\S]*?)\[HC>\]([\s\S]*?)\[HT>\]([\s\S]*?)\[HE>\]([\s\S]*)$/); if (!m) continue
-            const h = Hyprland.toplevels.values.find(t => String(t.address).replace(/^0x/, "") === m[4].replace(/^0x/, ""))
+            // the portal gives the window address in decimal, Hyprland in hex
+            const want = /^\d+$/.test(m[4]) ? Number(m[4]) : parseInt(m[4], 16)       // (small enough for a JS number)
+            const h = Hyprland.toplevels.values.find(t => parseInt(String(t.address).replace(/^0x/, ""), 16) === want)
             if (m[2] === "org.quickshell") continue                       // Isla's own windows
             out.push({ id: m[1], cls: m[2], title: m[3], top: h ? h.wayland : null })
         }
