@@ -239,7 +239,7 @@ ShellRoot {
                             x: Math.max(12, Math.min(scr.dw - width - 12, scr.dropX - width / 2))
                             y: scr.barTop ? 2 : parent.height - height - 8
                             sourceComponent: scr.drop === "battery" ? cBattery : scr.drop === "weather" ? cWeather : scr.drop === "notifs" ? cNotifs
-                                           : ["wifi", "bt", "sound"].includes(scr.drop) ? cPanel : scr.drop === "sys" ? cSys : scr.drop === "music" ? cMusic : cCalendar
+                                           : ["wifi", "bt", "sound"].includes(scr.drop) ? cPanel : scr.drop === "sys" ? cSys : scr.drop === "music" ? cMusic : scr.drop === "palette" ? cPalette : cCalendar
                             opacity: status === Loader.Ready ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: 140 } }
                         }
@@ -258,6 +258,7 @@ ShellRoot {
                         Component { id: cPanel; DropPanel { svc: Services; kind: scr.drop } }
                         Component { id: cSys; DropSys { svc: Services } }
                         Component { id: cMusic; DropMusic { svc: Services } }
+                        Component { id: cPalette; PaletteCard { svc: Services } }
                     }
                 }
 

@@ -22,6 +22,26 @@ owner wants followed, and what is still open.
   and should slow down while a game is focused (`Services.gaming`).
 - Don't open the Isla phone via IPC for screenshots while the owner is typing — it grabs the keyboard.
 
+### The owner's principles (2026-10-19) — follow them for every change
+1. **Clean code, not much code.** One shared piece instead of many variants: every dropdown is a `DropCard` (one header
+   style), every list row is `UiRow`, tilts come from `Theme.tilt(i)`, big topics live in their own `Svc*.qml` part
+   (`SvcSysmon`, `SvcWeather`, `SvcPalette`) used through `Services`. Delete the old version when you replace it — no
+   switches for old styles. Match the comment density and naming around you.
+2. **Optimize performance — measured, not guessed.** Before/after numbers (RSS of `qs -c isla`, process starts per
+   refresh). A/B test ideas in a scratch COPY inside a nested Hyprland. Drop ideas that don't measurably help
+   (e.g. `QSG_RENDER_LOOP=basic`, lazy power menu/dropdowns: tested, ~0 MB). Polls use bash `read` builtins, not
+   cat/awk/grep processes; prefer events (PipeWire, file watches) over timers; slow down / pause while gaming or in Game mode
+   (`Services.calm`).
+3. **Lazy loading where it pays.** Big things that are usually hidden are built on demand and removed when idle — the
+   phone (≈ 120 MB per screen) is built on first open, only on that screen, removed 3 min after closing. Small windows stay
+   (measured: not worth the glitch risk). Helpers share one process (`tools/isla-agents.py`). Services that run only when
+   used (WARP on demand).
+4. **Design philosophy: SekaiPop** (details §5 "Card design"). Dense and a bit cramped rather than "safe, clean, empty";
+   nothing perfectly flat (small tilts), sticker shadows, dark accent tiles mixed with light ones, pills hanging over the
+   header edge, show only the needed info. Restyle existing cards — **no sticky desktop widgets**.
+5. **Test like the owner will use it:** check Isla's log after every edit, screenshot the real result (card sheet render
+   or real screen), and report what was and wasn't verified.
+
 ---
 
 ## 2. The machine
@@ -142,9 +162,9 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 - Weather card shows only: condition, temp (°C raised), high/low, place, humidity · wind (direction arrow) · UV,
   8-point hourly line (`WeatherLine.qml`, diamond markers). Owner said the old one showed too much.
 - `ProfileCard.qml` (phone Profile page): wallpaper banner (MultiEffect mask), GOOD … tag, dark/pink/dark tiles.
-- `PaletteCard.qml` + `SvcPalette.qml` + `tools/palette.sh`: built and working (IPC `qs -c isla ipc call isla palette
-  get|wallpaper|music|random|shuffle|apply|undo`) but **not placed anywhere yet** — the desktop-widget column was
-  removed on the owner's request ("update the current widgets, don't stick them on the desktop"). Ask where it should live.
+- `PaletteCard.qml` + `SvcPalette.qml` + `tools/palette.sh`: opened from the **palette button in the bar pill
+  (picker · palette · bell · EN)** as a normal dropdown (`drop === "palette"`). Also IPC: `qs -c isla ipc call isla palette
+  get|wallpaper|music|random|shuffle|apply|undo`. Apply = Custom theme on the picked colour's hue; Undo = previous theme.
 - **Design check without touching the real shell:** copy Isla to scratch, patch out isla-agents/idle/screen-time in the copy,
   replace shell.qml with a FloatingWindow + Flow of all cards, `grabToImage` → PNG, run in a nested
   `dbus-run-session Hyprland` (see memory isla-memory-tuning for the patch list).

@@ -245,6 +245,7 @@ Item {
         BarPill {
             fill: Theme.gLilac; padL: 6; padR: 6; gap: 6
             BarToggle { name: "dropper"; on: false; onClicked: bar.svc.tool("picker") }   // colour picker
+            BarToggle { id: palT; name: "palette"; on: false; onClicked: bar.drop("palette", palT) }   // palette card (colours → theme)
             BarToggle {
                 id: bellT
                 name: bar.svc.dnd ? "bellOff" : "bell"; on: bar.svc.dnd

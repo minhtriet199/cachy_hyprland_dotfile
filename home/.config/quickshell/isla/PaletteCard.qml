@@ -1,6 +1,6 @@
 import QtQuick
 
-// Palette card (desktop widget), SekaiPop-style: 5 colours from the wallpaper / the song's cover / random.
+// Palette card (Settings → Quick → Look), SekaiPop-style: 5 colours from the wallpaper / the song's cover / random.
 // Tap a colour to pick it · Shuffle · copy its hex · Apply = Isla's Custom theme on that colour · Undo = theme from before.
 DropCard {
     id: d

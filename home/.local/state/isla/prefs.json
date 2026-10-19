@@ -41,6 +41,5 @@
   "themeHue": 0.78,
   "dark": false,
   "appsDark": true,
-  "gameMode": false,
-  "deskWidgets": true
+  "gameMode": false
 }
