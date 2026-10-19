@@ -33,9 +33,9 @@ Item {
     property string orient: "portrait"
     function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
-    readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "settings", "settingsQuick", "wallpapers",
+    readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "calc", "settings", "settingsQuick", "wallpapers",
                                        "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap"]
-    readonly property var tallScreens: ["quick", "clipboard", "profile"]       // upright layouts that scroll on the short sideways phone
+    readonly property var tallScreens: ["quick", "clipboard", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
     function rotate() {
         if (!shown) return;
         const was = wantLand;
@@ -44,12 +44,6 @@ Item {
     }
     Connections { target: stage.svc; function onPhoneRotate() { stage.rotate() } }
     signal closed()
-    property double ftT0: 0; property var ftList: []; property string ftTag: ""   // TEMP-FT
-    Connections { target: stage.Window.window; function onFrameSwapped() { if (stage.ftT0) stage.ftList.push(Date.now()) } }   // TEMP-FT
-    Timer { id: ftTimer; interval: 1300; onTriggered: {   // TEMP-FT
-        const f = stage.ftList, g = []; for (let i = 1; i < f.length; i++) g.push(f[i] - f[i-1]);
-        console.warn("FT", stage.ftTag, "first", f.length ? f[0] - stage.ftT0 : -1, "frames", f.length, "max", Math.max(...g, 0), "over12", g.filter(x => x > 12).length, "over25", g.filter(x => x > 25).length, "gaps@", JSON.stringify(g.map((x, i) => [x, f[i] - stage.ftT0]).filter(a => a[0] > 12)));
-        stage.ftT0 = 0 } }
     signal soon(string what)
 
     // ── animation state ──
@@ -68,7 +62,6 @@ Item {
     }
     // was = the sideways phone is the one showing now; land = it should be after this
     function transition(scr, land, was) {
-        ftT0 = Date.now(); ftList = []; ftTag = scr; ftTimer.restart()   // TEMP-FT
         if (land) {
             if (rise > 0.5 && !was && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
             else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); toLand.restart() }
@@ -187,6 +180,7 @@ Item {
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(pHolder.view) }
             Repeater {
+                id: pScreens
                 model: stage.allScreens
                 delegate: Loader {
                     id: ld
@@ -336,6 +330,7 @@ Item {
             layer.textureSize: Qt.size(width * stage.texScale, height * stage.texScale)
             transform: Matrix4x4 { matrix: M.toQt(lHolder.view) }
             Repeater {
+                id: lScreens
                 model: stage.allScreens
                 delegate: Loader {
                     required property string modelData
@@ -358,8 +353,8 @@ Item {
     // ── screens ──
     property string pendingQuery: ""
     function compFor(n, land) {
-        if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : cProfileTall;
-        return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, profile: cProfile, settings: cSettings,
+        if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : n === "calc" ? cCalcTall : cProfileTall;
+        return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, profile: cProfile, calc: cCalc, settings: cSettings,
                   settingsQuick: cSettingsQuick, wallpapers: cWallpapers })[n] || cSetPage;
     }
     // upright layouts inside a scroller for the short sideways phone
@@ -374,6 +369,9 @@ Item {
         Connections { target: stage; function onPendingQueryChanged() { if (stage.pendingQuery !== "") { query = stage.pendingQuery; stage.pendingQuery = "" } } }
         Component.onCompleted: if (stage.pendingQuery !== "") { query = stage.pendingQuery; stage.pendingQuery = "" } } }
     Component { id: cQuick; ScrQuick { svc: stage.svc; onGo: s => s === "quickedit" ? stage.soon("Edit buttons") : stage.go(s) } }
+    Component { id: cCalcTall; Flickable { clip: true; contentHeight: 600; boundsBehavior: Flickable.StopAtBounds
+        ScrCalc { width: parent.width; height: 600; focus: true; svc: stage.svc; onDone: stage.close() } } }
+    Component { id: cCalc; ScrCalc { svc: stage.svc; onDone: stage.close() } }
     Component { id: cProfile; ScrProfile { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
     Component { id: cClip; ScrClipboard { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
     Component { id: cIslands; ScrIslands { svc: stage.svc; monitor: stage.monitor; onGo: s => stage.go(s); onDone: stage.close() } }
@@ -404,6 +402,8 @@ Item {
             const a = stage.Window.activeFocusItem;
             if (a && a.cursorPosition !== undefined) return;             // a text field (Search, Clipboard…) keeps the cursor
             if (a && stage.zoneOf(a.parent) === (stage.wantLand ? lBody : pBody) && a.activeFocusOnTab) return;
+            const rep = stage.wantLand ? lScreens : pScreens;                 // a screen with its own text box (Clipboard, Calculator) takes the keys
+            for (let i = 0; i < rep.count; i++) { const l = rep.itemAt(i); if (l && l.cur && l.item && l.item.focusField) { l.item.focusField(); return } }
             stage.focusFirst(stage.wantLand ? lBody : pBody);
         }
     }

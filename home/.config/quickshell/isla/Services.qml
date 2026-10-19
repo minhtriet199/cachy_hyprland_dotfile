@@ -49,7 +49,7 @@ Singleton {
         { label: "pgAdmin", glyph: "database", tint: "#3E9A5D", cmd: ["helium-browser", "http://localhost:5050"] },
         { label: "OBS Studio", glyph: "record", tint: "#E2607F", cmd: ["obs"] },
         { label: "btop", glyph: "pulse", tint: "#F08A5D", cmd: ["kitty", "btop"] },
-        { label: "Calculator", glyph: "calc", tint: "#9AA7B0", cmd: ["kcalc"] },
+        { label: "Calculator", glyph: "calc", tint: "#55BFC6", internal: "calc" },
         { label: "WARP", glyph: "shield", tint: "#F7A04B", toggle: "warp" },
         { label: "Music", glyph: "music", tint: "#C58AF0", cmd: ["vlc"] },
         { label: "Islands", glyph: "map", tint: "#F7A982", internal: "islands" },
@@ -752,6 +752,7 @@ Singleton {
     // Isla's own screens, so typing "wifi" or "setting" offers the page (title, screen, glyph, tint, keywords)
     readonly property var phonePages: [
         ["Settings", "settings", "gear", "#5E7A84", "setting preferences options"],
+        ["Calculator", "calc", "calc", "#55BFC6", "calculator calc math sum maths", "Isla app"],
         ["Wi-Fi", "settingsWifi", "wifi", "#55BFC6", "wifi wireless network internet dns"],
         ["Bluetooth", "settingsBt", "bluetooth", "#7C83F0", "bluetooth earbuds headphones controller pair"],
         ["Sound", "settingsSound", "volume", "#7CC47F", "sound audio volume speaker mic microphone output input mixer"],
@@ -808,7 +809,7 @@ Singleton {
         const q = (query || "").trim().toLowerCase();
         if (!q) return { apps: [], actions: actions.slice(0, 4).map(a => Object.assign({ kind: "action" }, a)), math: "", pages: [] };
         const pages = phonePages.map(p => ({ p: p, sc: Math.max(score(p[0], q) * 2, score(p[4], q)) })).filter(x => x.sc > 0)
-            .sort((a, b) => b.sc - a.sc).slice(0, 3).map(x => ({ kind: "page", title: x.p[0], screen: x.p[1], glyph: x.p[2], tint: x.p[3] }));
+            .sort((a, b) => b.sc - a.sc).slice(0, 3).map(x => ({ kind: "page", title: x.p[0], screen: x.p[1], glyph: x.p[2], tint: x.p[3], sub: x.p[5] }));
         const apps = entries.map(e => ({ e: e, sc: Math.max(score(e.name, q) * 2, score(e.genericName, q), score((e.keywords || []).join(" "), q)) }))
             .filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc || a.e.name.localeCompare(b.e.name)).slice(0, 8)
             .map(x => { const l = lookFor(x.e.startupClass || x.e.id); return { kind: "app", name: x.e.name, generic: x.e.genericName || x.e.comment || "",

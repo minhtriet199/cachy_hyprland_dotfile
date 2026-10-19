@@ -167,7 +167,7 @@ Item {
                         text: (rc.kind === "page" ? rowItem.modelData.title : rc.kind === "app" ? rowItem.modelData.name : rc.kind === "action" ? rowItem.modelData.title
                             : rc.kind === "web" ? "Search Google for “" + rowItem.modelData.title + "”" : rc.kind === "math" ? "= " + rowItem.modelData.title : rowItem.modelData.name) || "" }
                     UiText { width: parent.width; height: 15; fam: "n"; px: 10.5; w: 800; color: rowItem.picked ? Theme.adapt("#EFFFF0") : Theme.textSoft
-                        text: rc.kind === "page" ? "Isla settings" : rc.kind === "app" ? (rowItem.modelData.generic || "App") : rc.kind === "action" ? (rowItem.modelData.sub || "")
+                        text: rc.kind === "page" ? (rowItem.modelData.sub || "Isla settings") : rc.kind === "app" ? (rowItem.modelData.generic || "App") : rc.kind === "action" ? (rowItem.modelData.sub || "")
                             : rc.kind === "web" ? "Opens in your browser" : rc.kind === "math" ? "Enter copies the answer" : "~/" + (rowItem.modelData.dir || "") + (rowItem.modelData.lineNo ? " · line " + rowItem.modelData.lineNo : "") }
                     UiText { visible: rc.kind === "content"; width: parent.width; height: 15; text: rowItem.modelData.line || ""; px: 11; w: 600; color: rc.txt; font.family: "monospace" }
                 }

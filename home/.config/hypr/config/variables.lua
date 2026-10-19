@@ -4,7 +4,7 @@ TERMINAL     = "kitty"
 FILE_MANAGER = "dolphin"
 BROWSER      = "helium-browser"
 EDITOR       = "gnome-text-editor --new-window"
-CALCULATOR   = "kcalc"
+CALCULATOR   = "qs -c isla ipc call isla phone calc"
 
 -- Monitors
 MONITOR1 = ""

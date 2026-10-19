@@ -75,7 +75,7 @@ hl.bind("SUPER + CONTROL + SHIFT + mouse_down", hl.dsp.window.move({ workspace =
 -- Apps
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("uwsm app -- kitty.desktop"), { description = "Terminal" })
 hl.bind("SUPER + T", hl.dsp.exec_cmd("uwsm app -- kitty.desktop"), { description = "Terminal" })
-hl.bind("XF86Calculator", hl.dsp.exec_cmd("uwsm app -- org.gnome.Calculator.desktop"), { description = "Calculator" })
+hl.bind("XF86Calculator", hl.dsp.exec_cmd("qs -c isla ipc call isla phone calc"), { description = "Calculator" })
 hl.bind("CONTROL + SHIFT + Escape", hl.dsp.exec_cmd("uwsm app -- kitty -e btop"), { description = "Task manager (btop)" })
 hl.bind("SUPER + Space", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher"), { description = "App launcher" })
 hl.bind("SUPER + period", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher /emo"), { description = "Emoji picker" })
