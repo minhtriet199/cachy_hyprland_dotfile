@@ -16,10 +16,12 @@ Singleton {
     property bool dark: false
     property string wipeBg: "cream"
     property string wipeIcon: "leaf"
+    property var wipeAuto: ["#FFF4E0", "#F1E2C2"]
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
                                       mint: ["#E3F4E3", "#C3E6C5"], sun: ["#FFF4CF", "#F5DE95"], night: ["#213F48", "#2F5A65"] })
+    readonly property var wipeColors: wipeBg === "wallpaper" ? wipeAuto : (wipeBgs[wipeBg] || wipeBgs.cream)
     property bool ready: false
-    readonly property var keys: ["displayName", "lockWallpaper", "h24", "theme", "themeHue", "boxStyle", "dark", "wipeBg", "wipeIcon"]
+    readonly property var keys: ["displayName", "lockWallpaper", "h24", "theme", "themeHue", "boxStyle", "dark", "wipeBg", "wipeIcon", "wipeAuto"]
     readonly property string dir: Quickshell.env("ISLA_GREETER_DATA") || "/var/lib/isla-greeter"
 
     FileView {

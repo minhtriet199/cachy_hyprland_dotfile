@@ -164,13 +164,15 @@ Item {
                     width: sq.cw - 40; spacing: 10
                     UiText { width: 84; height: 30; text: "Background"; px: 13; w: 700; color: Theme.textDeep }
                     Repeater {
-                        model: Object.keys(sq.prefs.wipeBgs)
+                        model: ["wallpaper"].concat(Object.keys(sq.prefs.wipeBgs))
                         delegate: UiCandy {
                             required property string modelData
                             readonly property bool picked: sq.prefs.wipeBg === modelData
                             width: 34; height: 30; radius: 10; bw: picked ? 3 : 2; ink: picked ? Theme.purple : Theme.inkPhone; drop: picked ? 2 : 0; hi: 0
-                            fill: sq.prefs.wipeBgs[modelData][0]; pressable: true
+                            fill: modelData === "wallpaper" ? sq.prefs.wipeAuto[0] : sq.prefs.wipeBgs[modelData][0]; pressable: true
                             onClicked: sq.prefs.set("wipeBg", modelData)
+                            // follows your wallpaper's colour
+                            Glyph { visible: modelData === "wallpaper"; anchors.centerIn: parent; name: "image"; size: 15; stroke: 2.4; color: Theme.inkPhone }
                         }
                     }
                 }
@@ -183,7 +185,7 @@ Item {
                             required property string modelData
                             readonly property bool picked: sq.prefs.wipeIcon === modelData
                             width: 38; height: 38; radius: 12; bw: picked ? 3 : 2; ink: picked ? Theme.purple : Theme.inkPhone; drop: picked ? 2 : 0; hi: 0
-                            fill: (sq.prefs.wipeBgs[sq.prefs.wipeBg] || sq.prefs.wipeBgs.cream)[0]; pressable: true
+                            fill: sq.prefs.wipeColors[0]; pressable: true
                             onClicked: sq.prefs.set("wipeIcon", modelData)
                             WipeIcon { visible: modelData !== "none"; anchors.centerIn: parent; width: 26; height: 26; name: modelData }
                             UiText { visible: modelData === "none"; anchors.centerIn: parent; text: "—"; px: 14; w: 700 }

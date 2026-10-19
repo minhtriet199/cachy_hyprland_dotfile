@@ -85,7 +85,7 @@ ShellRoot {
         id: sessionLock
         locked: true
         WlSessionLockSurface {
-            color: Prefs.wipeBgs[Prefs.wipeBg] ? Prefs.wipeBgs[Prefs.wipeBg][0] : "#FFF4E0"
+            color: Prefs.wipeColors[0]
             LockScreen { anchors.fill: parent; svc: Svc; lock: lockCtl; greeter: true; Component.onCompleted: forceActiveFocus() }
         }
     }

@@ -1,6 +1,7 @@
 import QtQuick
 
 // Desktop wallpaper (Isla draws it itself, like end-4 does). Cross-fades when you pick a new one.
+// (its colours also tint the lock / unlock wipe when Transition → Background is "Wallpaper": SvcPalette)
 Item {
     id: w
     property string path: ""

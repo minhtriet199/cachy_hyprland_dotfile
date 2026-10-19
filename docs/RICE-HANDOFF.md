@@ -171,6 +171,9 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
   small tilts via `Theme.tilt(index)` (fixed "random" angles), solid sticker shadows (`drop: 3`), dark ink tiles/buttons
   mixed with light ones (selected rows in `UiRow`, chosen power mode, Apply, Clear all, profile side tiles), pills that
   hang over the header edge (weather place + refresh). Calendar days on small tiles, weekends pink, today pink + outline.
+- **Transition (lock/unlock wipe) colour "Wallpaper"** (Settings → Quick → Transition, first tile, default for the owner): `SvcPalette`
+  always reads the wallpaper's 5 colours (`wallColors`) and saves a pastel of the most colourful one in `Prefs.wipeAuto`;
+  `Prefs.wipeColors` is what `IrisWipe` uses (greeter Prefs has the same keys → needs `sudo …/isla-greeter/install.sh`).
 - Weather card shows only: condition, temp (°C raised), high/low, place, humidity · wind (direction arrow) · UV,
   8-point hourly line (`WeatherLine.qml`, diamond markers). Owner said the old one showed too much.
 - `ProfileCard.qml` (phone Profile page): wallpaper banner (MultiEffect mask), GOOD … tag, dark/pink/dark tiles.

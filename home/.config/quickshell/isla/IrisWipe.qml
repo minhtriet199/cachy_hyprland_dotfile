@@ -9,7 +9,7 @@ Item {
     id: iw
     property real t: 0
     property string mode: "none"
-    readonly property var bg: Prefs.wipeBgs[Prefs.wipeBg] || Prefs.wipeBgs.cream
+    readonly property var bg: Prefs.wipeColors
     property color fill: bg[0]
     visible: mode !== "none"
     readonly property bool closing: mode === "coverL" || mode === "coverR"
