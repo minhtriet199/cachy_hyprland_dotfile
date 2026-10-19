@@ -4,7 +4,7 @@
 #                      (Isla's picker, through the screen-share portal), then start
 #   obsctl.py status   {"rec": true/false, "ms": elapsed}
 # The picker answers in $XDG_RUNTIME_DIR/isla-share/result (tools/share-pick.sh writes "pick" or "cancel").
-import base64, hashlib, json, os, socket, struct, subprocess, sys, time
+import base64, fcntl, hashlib, json, os, socket, struct, subprocess, sys, time
 
 CONF = os.path.expanduser("~/.config/obs-studio/plugin_config/obs-websocket/config.json")
 KIND = "pipewire-screen-capture-source"
@@ -124,18 +124,29 @@ def start():
         os.remove(RESULT)
     except FileNotFoundError:
         pass
-    # one screen-capture source in the current scene; making it (or pressing its "Reload") opens the picker
+    # a fresh screen-capture source each time: making it is what asks the portal → Isla's picker
+    # (pressing an old source's "Reload" opens a session that never asks)
     scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
-    names = [i["inputName"] for i in o.req("GetInputList", {"inputKind": KIND}).get("inputs", [])]
-    if names:
-        src = names[0]
-        if not any(i.get("sourceName") == src for i in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", [])):
-            o.req("CreateSceneItem", {"sceneName": scene, "sourceName": src})
-        o.req("PressInputPropertiesButton", {"inputName": src, "propertyName": "Reload"})
-    else:
-        src = NAME
+    for i in o.req("GetInputList", {"inputKind": KIND}).get("inputs", []):
+        o.req("RemoveInput", {"inputName": i["inputName"]})
+    time.sleep(0.3)
+    src = NAME
+    asked = os.path.join(os.path.dirname(RESULT), "windows")             # share-pick.sh writes it when the portal asks
+    for tryno in (1, 2):
+        t0 = time.time()
         o.req("CreateInput", {"sceneName": scene, "inputName": src, "inputKind": KIND, "inputSettings": {"ShowCursor": True}})
-    end = time.time() + 180
+        while time.time() - t0 < 10 and not (os.path.exists(asked) and os.path.getmtime(asked) >= t0 - 0.5):
+            time.sleep(0.2)
+        if os.path.exists(asked) and os.path.getmtime(asked) >= t0 - 0.5:
+            break
+        # xdg-desktop-portal-hyprland sometimes hangs after sharing a window: restart it and ask again
+        o.req("RemoveInput", {"inputName": src})
+        subprocess.run(["systemctl", "--user", "restart", "xdg-desktop-portal-hyprland"])
+        time.sleep(1.5)
+    else:
+        notify("Screen picker didn't open", "Try the record button again")
+        return
+    end = time.time() + 120
     while not os.path.exists(RESULT) and time.time() < end:
         time.sleep(0.2)
     if not os.path.exists(RESULT) or open(RESULT).read().strip() != "pick":
@@ -160,6 +171,12 @@ def main():
         st = o.req("GetRecordStatus") if o else {}
         print(json.dumps({"rec": bool(st.get("outputActive")), "ms": st.get("outputDuration", 0)}))
     elif cmd == "toggle":
+        os.makedirs(os.path.dirname(RESULT), exist_ok=True)
+        lock = open(RESULT + ".lock", "w")
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)     # already waiting on the picker: ignore extra taps
+        except OSError:
+            return
         o = connect() if obs_running() else None
         if o and o.req("GetRecordStatus").get("outputActive"):
             path = o.req("StopRecord").get("outputPath", "")
