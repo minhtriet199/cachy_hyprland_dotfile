@@ -44,6 +44,12 @@ Item {
     }
     Connections { target: stage.svc; function onPhoneRotate() { stage.rotate() } }
     signal closed()
+    property double ftT0: 0; property var ftList: []; property string ftTag: ""   // TEMP-FT
+    Connections { target: stage.Window.window; function onFrameSwapped() { if (stage.ftT0) stage.ftList.push(Date.now()) } }   // TEMP-FT
+    Timer { id: ftTimer; interval: 1300; onTriggered: {   // TEMP-FT
+        const f = stage.ftList, g = []; for (let i = 1; i < f.length; i++) g.push(f[i] - f[i-1]);
+        console.warn("FT", stage.ftTag, "first", f.length ? f[0] - stage.ftT0 : -1, "frames", f.length, "max", Math.max(...g, 0), "over12", g.filter(x => x > 12).length, "over25", g.filter(x => x > 25).length, "gaps@", JSON.stringify(g.map((x, i) => [x, f[i] - stage.ftT0]).filter(a => a[0] > 12)));
+        stage.ftT0 = 0 } }
     signal soon(string what)
 
     // ── animation state ──
@@ -62,6 +68,7 @@ Item {
     }
     // was = the sideways phone is the one showing now; land = it should be after this
     function transition(scr, land, was) {
+        ftT0 = Date.now(); ftList = []; ftTag = scr; ftTimer.restart()   // TEMP-FT
         if (land) {
             if (rise > 0.5 && !was && big) { viaTurn = false; setScreen(scr); fadeAnim.to = 1; fadeAnim.restart() }
             else if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); toLand.restart() }

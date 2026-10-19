@@ -473,10 +473,11 @@ ShellRoot {
                 // (≈ 120 MB per screen while it exists; the first open after removal takes ≈ 0.15–0.45 s)
                 property bool phoneLive: false
                 property string phonePending: ""
+                property double phoneT0: 0   // TEMP-FT
                 Timer { id: phoneIdle; interval: 180000; onTriggered: scr.phoneLive = false }
                 Connections {
                     target: shell
-                    function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive) { scr.phonePending = screen; scr.phoneLive = true } }
+                    function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive) { scr.phoneT0 = Date.now(); scr.phonePending = screen; scr.phoneLive = true } }   // TEMP-FT
                 }
                 LazyLoader {
                 active: scr.phoneLive
@@ -502,7 +503,7 @@ ShellRoot {
                             svc: Services; prefs: Prefs; monitor: scr.name
                             onSoon: w => { soon.text = w + " is coming in the next Isla update ✿"; soon.show = true; soonTimer.restart() }
                             // the request that built the phone: open that screen now
-                            Component.onCompleted: if (scr.phonePending) { const p = scr.phonePending; scr.phonePending = ""; go(p) }
+                            Component.onCompleted: if (scr.phonePending) { console.warn("FT build ms", Date.now() - scr.phoneT0); const p = scr.phonePending; scr.phonePending = ""; go(p) }
                         }
                         Toast {
                             id: soon
