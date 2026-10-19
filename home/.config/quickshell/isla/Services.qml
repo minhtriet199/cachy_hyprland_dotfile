@@ -72,8 +72,7 @@ Singleton {
         snip:       ["sh", "-c", "f=~/Pictures/screenshot/snip-$(date +%F-%H%M%S).png; mkdir -p ~/Pictures/screenshot; grim -g \"$(slurp)\" \"$f\" && wl-copy < \"$f\" && notify-send -a Screenshot 'Saved and copied' \"$f\""],
         picker:     ["sh", "-c", "hyprpicker -a"],
         clipboard:  ["sh", "-c", "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"],
-        record:     ["sh", "-c", "pkill -x wf-recorder || (mkdir -p ~/Videos && wf-recorder -f ~/Videos/rec-$(date +%F-%H%M%S).mp4)"],
-        displays:   ["sh", "-c", "command -v nwg-displays >/dev/null && nwg-displays || kitty sh -c 'hyprctl monitors; read'"]
+        record:     ["sh", "-c", "pkill -x wf-recorder || (mkdir -p ~/Videos && wf-recorder -f ~/Videos/rec-$(date +%F-%H%M%S).mp4)"]
     })
     // Night light (hyprsunset) colour temperature
     property int nightTemp: 4500
