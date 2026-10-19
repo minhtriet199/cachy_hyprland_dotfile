@@ -24,6 +24,8 @@ rsync -a --delete "$HOME/.local/share/icons/Isla/" "home/.local/share/icons/Isla
 cp -a "$HOME/.local/share/color-schemes/Isla.colors" "$HOME/.local/share/color-schemes/IslaDark.colors" "home/.local/share/color-schemes/" 2>/dev/null
 # GTK apps (keyring prompt, file pickers, dialogs) in Isla colours
 for v in 3.0 4.0; do mkdir -p home/.config/gtk-$v && cp -a "$HOME/.config/gtk-$v/gtk.css" "$HOME/.config/gtk-$v/"isla*.css home/.config/gtk-$v/ 2>/dev/null; [ -f "$HOME/.config/gtk-$v/settings.ini" ] && cp -a "$HOME/.config/gtk-$v/settings.ini" home/.config/gtk-$v/; done
+# handoff notes for the next person / AI
+mkdir -p docs && cp -a "$HOME/Documents/Md_File/RICE-HANDOFF.md" docs/ 2>/dev/null
 # Dolphin look (icon view, previews, panels, Isla Dark colours)
 cp -a "$HOME/.config/dolphinrc" "home/.config/" 2>/dev/null
 mkdir -p home/.local/share/dolphin/view_properties/global && cp -a "$HOME/.local/share/dolphin/view_properties/global/.directory" "home/.local/share/dolphin/view_properties/global/" 2>/dev/null

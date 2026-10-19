@@ -1,11 +1,11 @@
 [General]
-ShowFullPath=true
-Version=202
-ViewPropsTimestamp=2026,10,11,16,55,1.9300000000000002
+BrowseThroughArchives=true
 GlobalViewProps=true
+ShowFullPath=true
 ShowSpaceInfo=true
 ShowZoomSlider=true
-BrowseThroughArchives=true
+Version=202
+ViewPropsTimestamp=2026,10,11,16,55,1.9300000000000002
 
 [IconsMode]
 IconSize=80
@@ -19,9 +19,12 @@ Places Icons Static Size=22
 [MainWindow]
 MenuBar=Disabled
 
+[PreviewSettings]
+MaximumSize=104857600
+Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,directorythumbnail,fontthumbnail,imagethumbnail,jpegthumbnail,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,mobithumbnail,opendocumentthumbnail,gsthumbnail,rawthumbnail,svgthumbnail,ffmpegthumbs
+
+[Search]
+Location=Everywhere
+
 [UiSettings]
 ColorScheme=IslaDark
-
-[PreviewSettings]
-Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,directorythumbnail,fontthumbnail,imagethumbnail,jpegthumbnail,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,mobithumbnail,opendocumentthumbnail,gsthumbnail,rawthumbnail,svgthumbnail,ffmpegthumbs
-MaximumSize=104857600

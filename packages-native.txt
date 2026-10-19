@@ -86,6 +86,7 @@ fuzzel
 git
 github-cli
 glances
+gnome-sound-recorder
 grub
 grub-btrfs-support
 grub-hook
@@ -188,6 +189,7 @@ sg3_utils
 shelly
 smartmontools
 snapper
+snapshot
 sof-firmware
 sudo
 sysfsutils
