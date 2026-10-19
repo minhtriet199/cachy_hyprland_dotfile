@@ -4,7 +4,7 @@ TERMINAL     = "kitty"
 FILE_MANAGER = "dolphin"
 BROWSER      = "helium-browser"
 EDITOR       = "gnome-text-editor --new-window"
-CALCULATOR   = "gnome-calculator"
+CALCULATOR   = "kcalc"
 
 -- Monitors
 MONITOR1 = ""
