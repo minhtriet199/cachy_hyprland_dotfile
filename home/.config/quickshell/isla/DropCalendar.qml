@@ -217,7 +217,9 @@ DropCard {
                     font.family: Theme.body; font.weight: 800; font.pixelSize: 13; color: Theme.text
                     Keys.onReturnPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else compose.add() }
                     Keys.onEscapePressed: compose.hour = -1
-                    UiText { visible: !noteIn.text; text: "What's happening? (Shift+Enter = new line)"; fam: "n"; px: 12; w: 800; color: Theme.textSoft } }
+                    // Ctrl+V: a picture on the clipboard is attached; text still pastes as text
+                    Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_V) d.sch.pasteImage(); e.accepted = false }
+                    UiText { visible: !noteIn.text; text: "What's happening? (Ctrl+V a picture · Shift+Enter = new line)"; fam: "n"; px: 12; w: 800; color: Theme.textSoft } }
             }
             Row {
                 spacing: 6
