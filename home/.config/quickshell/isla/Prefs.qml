@@ -18,6 +18,7 @@ Singleton {
     property string avatar: "smile"         // profile glyph
     property string lockWallpaper: ""       // lock screen picture ("" = Isla's sky with blobs)
     property var calcHistory: []            // phone calculator: [[sum, answer], …], newest first (max 30)
+    property string phoneSpot: "Center"     // small upright phone: Left / Center / Right of the screen
     property var clipPins: []               // pinned clipboard items (cliphist preview text, so a re-copy stays pinned)
     // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
     property var idleLock: [15, 5]
@@ -46,7 +47,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "phoneSpot"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }

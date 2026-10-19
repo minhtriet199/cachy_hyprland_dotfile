@@ -1,6 +1,6 @@
 import QtQuick
 
-// Clipboard (canvas "Phone-Clipboard"): search, All / Pinned tabs, history with kind chips, preview card, Pin / Delete / Copy.
+// Clipboard (canvas "Phone-Clipboard"): search, All / Pinned tabs, history with kind chips, preview card, Delete / Copy (pin + ✕ on each row).
 // ↑↓ choose · Enter copies · Delete removes · Esc closes. Backed by cliphist.
 Item {
     id: c
@@ -93,6 +93,7 @@ Item {
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
             onCountChanged: if (!moving) positionViewAtBeginning()
             delegate: UiCandy {
+                id: row
                 required property var modelData
                 required property int index
                 readonly property bool picked: index === c.sel
@@ -105,10 +106,13 @@ Item {
                 UiCandy { x: 10; anchors.verticalCenter: parent.verticalCenter; width: 38; height: 20; radius: 7; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
                     fill: c.chip[modelData.kind] || Theme.paper
                     UiText { anchors.centerIn: parent; text: modelData.kind; fam: "n"; px: 9.5; w: 900 } }
-                Column { x: 58; width: parent.width - 58 - (modelData.pinned ? 60 : 40); anchors.verticalCenter: parent.verticalCenter
+                Column { x: 58; width: parent.width - 58 - 68; anchors.verticalCenter: parent.verticalCenter
                     UiText { width: parent.width; text: modelData.text.replace(/\s+/g, " "); px: 13; w: 600; height: 17 }
                     UiText { visible: text !== ""; width: parent.width; text: c.svc.ago(modelData.time); fam: "n"; px: 10; w: 800; color: Theme.textSoft; height: 13 } }
-                Glyph { visible: modelData.pinned; x: parent.width - 54; anchors.verticalCenter: parent.verticalCenter; name: "pushpin"; size: 15; stroke: 2.6; rotation: 30 }
+                UiCandy { x: parent.width - 60; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
+                    fill: row.modelData.pinned ? Theme.inkPhone : Theme.paper; pressable: true
+                    onClicked: c.svc.clipPin(row.modelData)
+                    Glyph { anchors.centerIn: parent; name: "pushpin"; size: 13; stroke: 2.6; rotation: 30; color: row.modelData.pinned ? "#FFFFFF" : Theme.text } }
                 UiCandy { x: parent.width - 32; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
                     fill: Theme.paper; pressable: true
                     onClicked: c.svc.clipDelete(modelData)
@@ -138,11 +142,6 @@ Item {
                     fam: "n"; px: 11; w: 800; color: Theme.textSoft }
                 Row {
                     anchors.right: parent.right; anchors.rightMargin: 14; anchors.bottom: parent.bottom; anchors.bottomMargin: 12; spacing: 8
-                    UiCandy { id: pinBtn; width: 36; height: 34; radius: 11; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; pressable: !!c.cur
-                        readonly property bool on: !!c.cur && c.cur.pinned
-                        fill: on ? Theme.inkPhone : Theme.paper
-                        onClicked: c.svc.clipPin(c.cur)
-                        Glyph { anchors.centerIn: parent; name: "pushpin"; size: 16; stroke: 2.6; rotation: 30; color: pinBtn.on ? "#FFFFFF" : Theme.text } }
                     UiCandy { width: 36; height: 34; radius: 11; bw: 2.5; ink: Theme.inkPhone; drop: 3; hi: 0; fill: Theme.pinkSoft; pressable: !!c.cur
                         onClicked: c.svc.clipDelete(c.cur)
                         Glyph { anchors.centerIn: parent; name: "trash"; size: 15; stroke: 2.6 } }

@@ -145,7 +145,8 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 | `clip-store.sh` | clipboard saver (cliphist + copy times in `~/.cache/isla/cliptimes`) |
 
 Clipboard pins: `Prefs.clipPins` holds the cliphist preview text (so re-copying keeps the pin). Page has All / Pinned tabs,
-pin button next to delete; `clipWipe` keeps pinned items. Pins can still fall out if cliphist's max-items (750) is reached.
+pin button next to ✕ on each row; `clipWipe` keeps pinned items.
+Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Left / Center / Right) shifts the small upright phone (`pHolder.spot` in PhoneStage.qml; off while big/sideways). Pins can still fall out if cliphist's max-items (750) is reached.
 | `timelang.py`, `apps.py`, `inuse.py`, `storage.py`, `diskmap.py`, `wifi-info.py`, `setbind.py`, `addbind.py` | data for their pages |
 
 ### Look of other apps

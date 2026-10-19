@@ -42,5 +42,11 @@
   "dark": false,
   "appsDark": true,
   "gameMode": false,
-  "calcHistory": []
+  "calcHistory": [
+    [
+      "19+30-40",
+      "9"
+    ]
+  ],
+  "clipPins": []
 }
