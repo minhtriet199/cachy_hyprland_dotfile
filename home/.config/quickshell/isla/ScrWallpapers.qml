@@ -300,14 +300,14 @@ Item {
             }
             WpButton { text: wp.narrow ? "›" : "Next ›"; h: 30; onClicked: wp.step(1) }
         }
-        Row {   // the rest: phone screen, delete, paste
+        Row {   // the rest: phone screen, preview, surprise, delete, paste (icons only on the upright phone)
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 8; height: 34
             WpButton { readonly property bool done: !!wp.cur && wp.prefs.phoneBg === wp.cur.path
                 text: (done ? "✓ " : "📱 ") + "Phone"; h: 28; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo("phoneBg") }
-            WpButton { text: "👁 Preview"; h: 28; onClicked: wp.preview() }
+            WpButton { text: wp.narrow ? "👁" : "👁 Preview"; h: 28; onClicked: wp.preview() }
             WpButton { text: wp.narrow ? "🎲" : "🎲 Surprise me"; h: 28; onClicked: wp.surprise() }
             WpButton { text: "🗑"; h: 28; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
-            WpButton { text: wp.svc.pasteMsg || "📋 Paste image"; h: 28; onClicked: wp.svc.pasteWallpaper() }
+            WpButton { text: wp.svc.pasteMsg || (wp.narrow ? "📋" : "📋 Paste image"); h: 28; onClicked: wp.svc.pasteWallpaper() }
         }
     }
     // delete confirmation (moves the picture to the Trash, so it can be restored)
