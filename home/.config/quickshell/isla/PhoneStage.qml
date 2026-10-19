@@ -205,13 +205,12 @@ Item {
                 M.T(0, -piv)))
             readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
             // back plate
-            Rectangle { width: 390; height: 834; radius: 54; color: Theme.phoneBack
-                transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(0, 0, -26))) } }
+            Plate3D { m: M.chain(pHolder.view, M.T(0, 0, -26)); plate.width: 390; plate.height: 834; plate.radius: 54; plate.color: Theme.phoneBack }
             // right side wall with the Pixel keys
-            Rectangle {
-                width: 26; height: 734; radius: 10; border.width: 3; border.color: Theme.inkPhone
-                gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-                transform: Matrix4x4 { matrix: M.toQt(M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90)))) }
+            Plate3D {
+                m: M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90))); tex: 2
+                plate.width: 26; plate.height: 734; plate.radius: 10; plate.border.width: 3; plate.border.color: Theme.inkPhone
+                plate.gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
                 Rectangle { x: 5; y: 124; width: 12; height: 58; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
                 Rectangle { x: 5; y: 210; width: 12; height: 118; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
             }
@@ -369,14 +368,12 @@ Item {
                 const a = M.norm(M.chain(M.about(460, 220, M.S(1 / scale)), M.T(-x, -y), pHolder.place, pHolder.view, landOnPort)), b = M.norm(rest), s = M.smooth(0.55, 1, stage.turn);
                 return a.map((v, i) => v + (b[i] - v) * s);
             }
-            Rectangle { y: 0; width: 920; height: 430; radius: 54; color: Theme.phoneBack
-                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -22))) } }
-            Rectangle { y: 0; width: 920; height: 430; radius: 54; color: "#2A4B55"
-                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(0, 0, -11))) } }
-            Rectangle {
-                width: 820; height: 22; radius: 10; border.width: 3; border.color: Theme.inkPhone
-                gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
-                transform: Matrix4x4 { matrix: M.toQt(M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90)))) }
+            Plate3D { m: M.chain(lHolder.view, M.T(0, 0, -22)); plate.width: 920; plate.height: 430; plate.radius: 54; plate.color: Theme.phoneBack }
+            Plate3D { m: M.chain(lHolder.view, M.T(0, 0, -11)); plate.width: 920; plate.height: 430; plate.radius: 54; plate.color: "#2A4B55" }
+            Plate3D {
+                m: M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90))); tex: 2
+                plate.width: 820; plate.height: 22; plate.radius: 10; plate.border.width: 3; plate.border.color: Theme.inkPhone
+                plate.gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
                 Rectangle { x: 120; y: 4; width: 58; height: 10; radius: 6; color: Theme.phoneKeyHi; border.width: 2; border.color: Theme.inkPhone }
                 Rectangle { x: 200; y: 4; width: 118; height: 10; radius: 6; color: Theme.phoneKey; border.width: 2; border.color: Theme.inkPhone }
             }

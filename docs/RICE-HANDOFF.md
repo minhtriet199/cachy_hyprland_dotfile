@@ -132,6 +132,8 @@ Titan One (sticker clock). Icons are vector paths in `Glyphs.js` (24×24, use `G
   so nothing is see-through. The turn waits for 2 drawn frames (`prepTurn`, ≤ 260 ms), bezier curve + small ring-out swing.
   `portShown`/`landShown` = what each phone shows (no pages built for the hidden shape). IPC `rotate` turns the open phone.
   Measured: frames ≈ 8 ms (worst 19–36 ms) vs up to 124 ms before.
+  Back plates / side walls are `Plate3D` (a Rectangle drawn through a small padded, smoothed layer): plain Rectangles under
+  the perspective matrix had stair-step edges, most visible on the ASUS at scale 1. RSS unchanged (561 vs 596 MB, noise).
 - Screens: `Scr*.qml` (Home, Quick, Settings grid, Settings pages via `ScrSetPage.qml`, Wallpapers, Clipboard, …).
 - Settings pages: `*Panel.qml` loaded by `ScrSetPage.qml` (`kind` → component map). Grid entries in `ScrSettings.qml`,
   search entries in `Services.qml` (`settingsSearch` list).
