@@ -142,7 +142,7 @@ Item {
                 SetSeg { width: sq.cw - 40; label: "Boxes"; options: ["Candy", "Ring", "Pop", "Soft", "Flat", "Glass"]
                     current: (sq.prefs.boxStyle || "candy").charAt(0).toUpperCase() + (sq.prefs.boxStyle || "candy").slice(1)
                     onPicked: v => sq.prefs.set("boxStyle", v.toLowerCase()) }
-                SetSeg { width: sq.cw - 40; label: "Phone"; options: ["Left", "Center", "Right"]; current: sq.prefs.phoneSpot; onPicked: v => sq.prefs.set("phoneSpot", v) }
+                SetSeg { width: sq.cw - 40; label: "Phone"; options: ["Low", "Middle", "High"]; current: sq.prefs.phoneSpot; onPicked: v => sq.prefs.set("phoneSpot", v) }
             }
         }
         // Bar

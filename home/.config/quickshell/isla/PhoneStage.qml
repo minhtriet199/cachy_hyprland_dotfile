@@ -146,11 +146,11 @@ Item {
     readonly property real r: rise
     Item {
         id: pHolder
-        // Settings → Look → Phone: slide the small upright phone left / right (gone while big or sideways, so it still lands on those)
-        property real spot: ({ Left: -1, Right: 1 }[stage.prefs ? stage.prefs.phoneSpot : ""] || 0) * Math.max(0, stage.width / 2 - 330)
+        x: stage.width / 2 - 240 + 45 * stage.flatP
+        // Settings → Look → Phone: lift the small upright phone (gone while big or sideways, so it still lands on those)
+        property real spot: ({ Middle: 140, High: 270 }[stage.prefs ? stage.prefs.phoneSpot : ""] || 0)
         Behavior on spot { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
-        x: stage.width / 2 - 240 + 45 * stage.flatP + spot * (1 - stage.flatP) * (1 - stage.lk)
-        readonly property real baseY: stage.height + 250 - 844        // as designed: bottom of the phone below the screen edge
+        readonly property real baseY: stage.height + 250 - 844 - spot * (1 - stage.lk)     // as designed: bottom of the phone below the screen edge
         y: baseY + stage.flatP * ((stage.height / 2 - 422) - baseY)
         width: 390; height: 844
         // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone

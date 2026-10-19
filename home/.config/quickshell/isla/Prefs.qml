@@ -18,7 +18,7 @@ Singleton {
     property string avatar: "smile"         // profile glyph
     property string lockWallpaper: ""       // lock screen picture ("" = Isla's sky with blobs)
     property var calcHistory: []            // phone calculator: [[sum, answer], …], newest first (max 30)
-    property string phoneSpot: "Center"     // small upright phone: Left / Center / Right of the screen
+    property string phoneSpot: "Low"        // small upright phone height: Low (as designed) / Middle / High
     property var clipPins: []               // pinned clipboard items (cliphist preview text, so a re-copy stays pinned)
     // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
     property var idleLock: [15, 5]
