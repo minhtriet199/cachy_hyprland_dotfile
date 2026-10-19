@@ -186,6 +186,18 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
   replace shell.qml with a FloatingWindow + Flow of all cards, `grabToImage` → PNG, run in a nested
   `dbus-run-session Hyprland` (see memory isla-memory-tuning for the patch list).
 
+### Built 2026-10-20 (where things live)
+| Feature | Files | How it works |
+|---|---|---|
+| **Snip editor** (Print / bar snip) | `hypr/scripts/snip.sh`, `isla/SnipEditor.qml` (LazyLoader in shell.qml, IPC `snip`) | Freeze + slurp → the cut opens in place over the frozen screen. Tools: pen, marker, arrow, rect, oval, text, number, pixelate; 8 colours + colour wheel (reuses `WinColorWheel`); size; undo/redo. **Enter / Save = save to ~/Pictures/screenshot + copy · Esc / Copy / click outside / right-click = copy only** (with drawings). Files in `$XDG_RUNTIME_DIR/isla-snip`. Window id is `sn` — never `ed` (UiCandy has a property `ed`; that clash broke every button once). |
+| **Record button → OBS** | `isla/tools/obsctl.py` (stdlib obs-websocket client), `isla/tools/share-pick.sh`, `isla/SharePicker.qml`, `isla/SvcRecord.qml`, `hypr/xdph.conf` (`custom_picker_binary`) | Tap = OBS restarts in the tray with its capture source's RestoreToken cleared → portal → Isla picker (live previews of screens + windows) → StartRecord into ~/Videos. Tap again = stop. Bar date pill becomes ⏹ time • elapsed (watches `isla-share/rec`, no polling). The picker is also used by Discord / browsers. Why the restart: see memory `obs-record-flow`. |
+| **Screen-share picker** | `SharePicker.qml` | XDPH gives window addresses in **decimal**; Hyprland in hex — compare as numbers (no BigInt in QML JS). |
+| **Calendar notes + reminders** | `isla/SvcSchedule.qml`, `isla/DropCalendar.qml`, `Toast.qml` (image + pin) | Click a day → hour list → click hour = new note, click note = edit. Typed minutes, text, picture (Ctrl+V, Paste, File via zenity). Data `~/.local/state/isla/schedule.json` + `schedule/` pictures. Reminder = pinned bubble (stays until clicked), only if logged in at that time. Timer sleeps until the next note (max 60 s). Notes >30 days old deleted at every start. Title click zooms month → 12 months → 12 years. |
+| **Windows look** | `hypr/scripts/lookctl.py`, `hypr/config/look.lua`, `isla/WindowsPanel.qml` | New **Behind: Dark / Light** switch (blur brightness 0.5 / 1.05). All "always solid" window rules removed (terminals, browser, video, password dialogs) — every window follows focus/unfocus opacity; kitty itself is solid (`background_opacity 1.0`). |
+| **Brightness per screen** | `isla/DropBattery.qml` | One slider per external screen (screenctl.py, DDC or HDR nits), refreshed on monitor add/remove. |
+| **Phone** | `PhoneStage.qml`, `ScrWallpapers.qml` | Nav rail also on the sideways phone (small + big). Big mode rotates with the one-phone turn (no cross-fade). Wallpapers: 🎲 Surprise me (R key) spins to a random picture. |
+| **Other** | `shell.qml`, `games.lua`, `WifiDetail.qml` | Sticker clock on every monitor. games.lua: any non-eDP screen = workspaces 1–9. Wi-Fi Manual IPv4 row fits the panel. |
+
 ## 6. QML lessons learned the hard way
 
 - **Never put a `//` comment mid-line before more code** — everything after it is silently ignored (once killed a page's scroll/clip).
@@ -198,6 +210,14 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 - PyGObject cannot implement `Gcr.Prompt` (async callback data is lost) — talk D-Bus directly instead.
 
 ---
+
+- (2026-10-20) Don't give a window/root the id `ed`, `bs`, `eb`, `eh`, `gap`, `ir` … — inside a `UiCandy` child those names
+  resolve to UiCandy's own properties (an id `ed` made every toolbar button call `0.commitText()`).
+- Inside a UiCandy, `parent` is its content holder, not the UiCandy — give the delegate an `id` and use that.
+- QML's JS has **no `BigInt`** and **no regex `s` flag** (use `[\s\S]`); a broken file in shell.qml's tree stops ALL of Isla
+  → check `qs log -c isla` right after every edit.
+- `z` is a FINAL property of Item (can't declare `property real z`); one property per declaration (`property real a: 1, b: 2` fails).
+- `pkill -f <pattern>` inside a Bash tool call can match and kill that same shell — kill by PID instead.
 
 ## 7. Performance notes
 
@@ -290,6 +310,36 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 7. Owner declined keyring auto-unlock — don't add it.
 
 ---
+7. **Left over from 2026-10-20 (start here next time):**
+   - **Instant-camera photo viewer — unfinished.** Owner wants pictures to open inside an Instax-style frame (thick
+     bottom with the name, washi tape, small tilt), ←/→ browse folder, scroll zoom, Q = open in qView, Esc close, and it
+     should be the **default image viewer**. Files exist: `isla/view.qml` (run with `qs -p`), `isla/tools/isla-view.sh`,
+     `~/.local/share/applications/isla-view.desktop`. **Bug:** the window opens (470×526) but draws nothing — the Image's
+     implicit size stays 1 and the UiCandy card never shows. A plain transparent FloatingWindow with a red Rectangle +
+     Image works (scratch test), so the problem is inside view.qml (suspect: Theme/Prefs singletons when run with `-p` on a
+     single file, or Image sizing). Debug in a scratch COPY. When it works: `xdg-mime default isla-view.desktop image/png
+     image/jpeg image/webp image/gif`, save the Hyprland rule in `windowrules.lua` (title `^(Isla View)$`: float, center,
+     border_size 0, no_shadow, no_blur — only tested with `hyprctl eval`, not saved), add `isla-view` to the launcher list in
+     `dotfiles-sync`. Or delete the three files if the owner drops the idea.
+   - **Owner should test a real OBS recording** (only the cancel path was tested — never record the owner's screen/mic
+     yourself). Check: timer in the bar, file in ~/Videos, stop from the phone. OBS records whatever audio OBS is set to.
+   - **Fresh memory measurement:** Isla was 579 MB after dozens of reloads (old fresh number 471 MB). Restart Isla and
+     measure RSS of `qs -c isla` to confirm the new features cost ~nothing when idle (SnipEditor / SharePicker are lazy).
+   - **Screen-share hang:** after sharing a single *window*, xdg-desktop-portal-hyprland can freeze ("tried scheduling on
+     already scheduled cb"). Fix: `systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal`, then restart OBS.
+   - **Not yet confirmed by the owner:** snip editor after the button fix (tools, colour wheel, close by click outside /
+     right-click), sideways-phone nav rail, big-mode rotate (3D tilt mid-turn may be too strong at big size — owner may
+     want it flatter), battery-dropdown slider for the ASUS screen, Dark/Light backdrop, Surprise me on the upright phone.
+   - **Snip editor ideas not built:** resize the cut with handles (Vitreus has them), move/delete a single drawn mark.
+   - **Calendar:** reminders show as a bubble only (not added to the phone's notification list) and also show in
+     Do-not-disturb — ask the owner if that's wanted. The owner's test note "assa" was overwritten by a test (gone).
+   - **Other monitors:** opacity, brightness, positions and Isla bars work for any monitor. Still tied to the ASUS:
+     `hypr/config/workspaces.lua` pins workspaces 1–9 to `HDMI-A-1` (a screen on DisplayPort/USB-C gets 1–9 but not
+     pinned) and `Services.monitorNames` labels. Making them generic needs care (no hyprctl calls inside the Lua config).
+   - **Log noise (old, harmless?):** `Services.qml … Unable to assign [undefined] to bool` (the `gaming` binding) and
+     `Unable to assign [undefined] to QDateTime` right after a reload.
+   - **Owner rule broken this session:** OBS remote control was turned on (localhost, password), `xdph.conf` changed and
+     the portal services restarted without asking first. Ask before system changes next time.
 
 ## 9. Quick commands
 
