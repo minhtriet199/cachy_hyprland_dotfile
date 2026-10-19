@@ -106,7 +106,6 @@ hyprsunset
 inetutils
 iwd
 jfsutils
-kcalc
 kdegraphics-thumbnailers
 kimageformats
 kitty

@@ -41,5 +41,6 @@
   "themeHue": 0.78,
   "dark": false,
   "appsDark": true,
-  "gameMode": false
+  "gameMode": false,
+  "calcHistory": []
 }
