@@ -124,13 +124,28 @@ Singleton {
             try { s.hMonitors = JSON.parse(parts[0]) } catch (e) {}
             try { s.hWorkspaces = JSON.parse(parts[1]) } catch (e) {}
             try { s.clients = JSON.parse(parts[2]).map(c => ({ cls: c["class"] || c.initialClass || "app", title: c.title, workspace: c.workspace.id, address: c.address })) } catch (e) {}
+            if (s._rehome) { s._rehome = false; s.rehome() }
         } } }
+    // a screen was unplugged: Hyprland parks its workspaces (e.g. ASUS 1-9) on the laptop, where ws.sh can't reach them →
+    // move their windows to new workspaces of the screen they are on now, after its newest one
+    property bool _rehome: true                          // also once at start (booted without the monitor)
+    function rehome() {
+        for (const w of hWorkspaces.slice().sort((a, b) => a.id - b.id)) {
+            const b = base(w.monitor), wins = clients.filter(c => c.workspace === w.id);
+            if (w.id < 1 || (w.id > b && w.id <= b + 9) || !wins.length || !hMonitors.some(m => m.name === w.monitor)) continue;
+            const used = i => clients.some(c => c.workspace === b + i);
+            let n = 0; for (let i = 1; i <= 9; i++) if (used(i)) n = i;
+            if (n === 9) { n = 0; while (n < 9 && used(n + 1)) n++ }          // full to the end: first gap
+            const to = b + Math.min(n + 1, 9);
+            for (const c of wins) { moveWindowTo(c.address, to); c.workspace = to }
+        }
+    }
     Timer { id: refreshSoon; interval: 80; onTriggered: hyprQuery.running = true }
     // only events that change windows / workspaces / screens (title changes from browsers & terminals are constant: skip them)
     readonly property var _hyprEvents: ["openwindow", "closewindow", "movewindow", "movewindowv2", "workspace", "workspacev2", "createworkspace", "createworkspacev2",
         "destroyworkspace", "destroyworkspacev2", "moveworkspace", "moveworkspacev2", "renameworkspace", "focusedmon", "focusedmonv2", "monitoradded", "monitoraddedv2",
         "monitorremoved", "monitorremovedv2", "activespecial", "activespecialv2", "changefloatingmode", "fullscreen", "pin"]
-    Connections { target: Hyprland; function onRawEvent(ev) { if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
+    Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
     Timer { interval: 60000; running: true; repeat: true; onTriggered: hyprQuery.running = true }   // safety net only
     readonly property var monitors: hMonitors.map(m => ({ name: m.name, label: (monitorNames[m.name] && monitorNames[m.name].label) || m.name }))
     function base(mon) { return (monitorNames[mon] && monitorNames[mon].base) || 0 }
@@ -530,11 +545,11 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             const parts = this.text.split("\n@@\n"), times = {};
             for (const l of (parts[1] || "").split("\n")) { const p = l.split(" "); if (p.length === 2) times[p[0]] = parseInt(p[1]) * 1000 }
-            s.clips = parts[0].split("\n").filter(l => l.includes("\t")).slice(0, 300).map(l => {
+            s.clips = parts[0].split("\n").filter(l => l.includes("\t")).map(l => {
                 const i = l.indexOf("\t"), id = l.slice(0, i), t = l.slice(i + 1), k = s.clipKind(t);
                 const m = /binary data ([\d.]+ \w+) (\w+) (\d+x\d+)/.exec(t);
-                return { id: id, text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: k, info: m ? m[1] : "", time: times[id] || 0 };
-            });
+                return { id: id, key: t, text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: k, info: m ? m[1] : "", time: times[id] || 0, pinned: Prefs.clipPins.includes(t) };
+            }).filter((c, i) => i < 300 || c.pinned);      // pinned ones stay even when old
         } } }
     // "just now", "5 min ago", "2 h ago", "Yesterday 14:20", "17 Oct 09:30"
     function ago(ms) {
@@ -553,8 +568,12 @@ Singleton {
         onFileChanged: { reload(); s.loadClips() } }
     Process { id: clipAct; onExited: s.loadClips() }
     function clipCopy(c) { run(["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id]) }
-    function clipDelete(c) { if (clipAct.running) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
-    function clipWipe() { if (clipAct.running) return; clipAct.command = ["cliphist", "wipe"]; clipAct.running = true }
+    function clipDelete(c) { if (clipAct.running) return; if (c.pinned) clipPin(c); clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
+    // wipe keeps pinned items (deletes every line whose text is not in the pins)
+    function clipWipe() { if (clipAct.running) return
+        clipAct.command = ["bash", "-c", "cliphist list | awk -F'\\t' 'NR==FNR{p[$0];next} !(substr($0,index($0,\"\\t\")+1) in p)' <(printf '%s\\n' \"$@\") - | cliphist delete", "_"].concat(Prefs.clipPins)
+        clipAct.running = true }
+    function clipPin(c) { Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key])); loadClips() }
     // full text / image file for the preview card
     property string clipFull: ""
     property string clipImage: ""

@@ -103,6 +103,8 @@ Gotchas:
 Key scripts (`~/.config/hypr/scripts/`): `screenctl.py` (screens: list/set/hdr/mode/pos/poslive/order),
 `snip.sh` (Super+S: raw-grabs screens first, then freezes — avoids HDR "burnt" snips; puts a corner-jumped
 cursor back), `lookctl.py`, `inputctl.py`, `keybinds.py`, `ws.sh` (per-monitor workspaces: ASUS 1–9, laptop 11–19).
+**Unplugging a screen:** Isla `Services.rehome()` (on Hyprland `monitorremoved`, and once at start) moves windows of
+workspaces that landed on the wrong screen (ASUS 1–9 → laptop) to new laptop workspaces after the newest used one.
 
 ---
 
@@ -141,6 +143,9 @@ colour wheel) · Time & language · Mouse & touchpad · Apps (defaults + startup
 | `keyring-prompter.py` | owns `org.gnome.keyring.SystemPrompter`, speaks `org.gnome.keyring.internal.Prompter` → `KeyringDialog` |
 | `appearance.py` | apps light/dark: Kvantum Isla↔IslaDark, kdeglobals, GTK isla.css↔isla-dark.css, gsettings |
 | `clip-store.sh` | clipboard saver (cliphist + copy times in `~/.cache/isla/cliptimes`) |
+
+Clipboard pins: `Prefs.clipPins` holds the cliphist preview text (so re-copying keeps the pin). Page has All / Pinned tabs,
+pin button next to delete; `clipWipe` keeps pinned items. Pins can still fall out if cliphist's max-items (750) is reached.
 | `timelang.py`, `apps.py`, `inuse.py`, `storage.py`, `diskmap.py`, `wifi-info.py`, `setbind.py`, `addbind.py` | data for their pages |
 
 ### Look of other apps
