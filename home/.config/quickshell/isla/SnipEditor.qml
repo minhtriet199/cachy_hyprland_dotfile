@@ -51,7 +51,8 @@ PanelWindow {
     // ── frozen screen, dimmed; the cut stays bright ──
     Image { anchors.fill: parent; source: sn.shot ? "file://" + sn.shot : ""; cache: false; asynchronous: false }
     Rectangle { anchors.fill: parent; color: "#000000"; opacity: 0.45 }
-    MouseArea { anchors.fill: parent }           // clicks outside the cut do nothing
+    // click outside the cut, or right-click anywhere = same as Esc (copy, close)
+    MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: sn.wheelOn ? sn.openWheel(false) : sn.finish(false) }
 
     // size tag
     UiCandy { x: sn.sel.x; y: Math.max(4, sn.sel.y - 34); width: szT.implicitWidth + 22; height: 26; radius: 13; bw: 2; drop: 2; hi: 0; ink: Theme.inkPhone; fill: Theme.paper
@@ -111,7 +112,9 @@ PanelWindow {
         }
         MouseArea {
             anchors.fill: parent; cursorShape: sn.tool === "text" ? Qt.IBeamCursor : Qt.CrossCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
             onPressed: m => {
+                if (m.button === Qt.RightButton) { sn.finish(false); return }
                 sn.commitText()
                 if (sn.tool === "text") { typer.x = m.x; typer.y = m.y; typer.text = ""; typer.visible = true; typer.forceActiveFocus(); return }
                 if (sn.tool === "num") { sn.push({ t: "num", c: String(sn.ink), w: sn.w, x1: m.x, y1: m.y, n: sn.nextNum }); return }
@@ -140,6 +143,7 @@ PanelWindow {
         spacing: 6
         UiCandy {
             width: row.implicitWidth + 20; height: 50; radius: 25; bw: 3; drop: 5; hi: 3; ink: Theme.inkPhone; fill: Theme.paper
+            MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton }   // gaps between buttons don't close
             Row {
                 id: row; anchors.centerIn: parent; spacing: 4
                 Repeater { model: sn.tools

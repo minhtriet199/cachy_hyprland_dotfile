@@ -716,6 +716,12 @@ Singleton {
     SvcPalette { id: palettePart; wallpaper: Prefs.wallpaper; art: s.media ? s.media.art : "" }
     readonly property alias palette: palettePart
 
+    // ── calendar notes (SvcSchedule.qml): at their time a bubble that stays until clicked ──
+    SvcSchedule { id: schedulePart
+        onDue: n => s.pushToast({ app: "⏰ " + String(n.hour).padStart(2, "0") + ":" + String(n.min).padStart(2, "0"), body: n.text,
+                                  image: n.image, tint: Theme.sun, pinned: true }) }
+    property alias schedule: schedulePart
+
     // ── weather (SvcWeather.qml) ──
     SvcWeather { id: weatherPart; city: s.city }
     property alias weather: weatherPart.weather
@@ -852,7 +858,7 @@ Singleton {
     property var notifications: []          // newest first, for the phone
     property var toast: null                // newest one (kept for older callers)
     property int toastSerial: 0
-    // desktop bubbles: up to 3 on screen, the rest wait in a queue; each stays 4 s (paused while hovered)
+    // desktop bubbles: up to 3 on screen, the rest wait in a queue; each stays 4 s (paused while hovered), pinned ones until clicked
     property var toasts: []                 // on screen, newest first
     property var toastQueue: []
     property bool toastHover: false
@@ -860,14 +866,14 @@ Singleton {
     function pushToast(item) { toastQueue = toastQueue.concat([item]); pumpToasts() }
     function pumpToasts() {
         let on = toasts.slice(), q = toastQueue.slice();
-        while (on.length < 3 && q.length) on = [Object.assign({}, q.shift(), { key: ++_toastKey, until: Date.now() + 4000 })].concat(on);
+        while (on.length < 3 && q.length) { const it = q.shift(); on = [Object.assign({}, it, { key: ++_toastKey, until: Date.now() + 4000 })].concat(on) }
         toasts = on; toastQueue = q;
     }
     function dropToast(key) { toasts = toasts.filter(t => t.key !== key); pumpToasts() }
     Timer { interval: 250; repeat: true; running: s.toasts.length > 0; onTriggered: {
         const now = Date.now();
         if (s.toastHover) { s.toasts = s.toasts.map(t => Object.assign({}, t, { until: Math.max(t.until, now + 1500) })); return }
-        if (s.toasts.some(t => t.until <= now)) { s.toasts = s.toasts.filter(t => t.until > now); s.pumpToasts() }
+        if (s.toasts.some(t => !t.pinned && t.until <= now)) { s.toasts = s.toasts.filter(t => t.pinned || t.until > now); s.pumpToasts() }
     } }
     NotificationServer {
         id: server

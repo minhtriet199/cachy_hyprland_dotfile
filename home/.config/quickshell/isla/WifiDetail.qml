@@ -141,19 +141,21 @@ Item {
                 }
             }
             Row {
+                id: ipRow
                 visible: wd.manual
-                spacing: 6
+                width: parent.width; spacing: 6
+                readonly property real room: width - 70 - 2 * spacing          // the two boxes share what Save leaves
                 UiCandy {
-                    width: 210; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                    width: ipRow.room * 0.56; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
                     TextInput { id: ipIn; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
                         font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
-                        UiText { visible: !ipIn.text; text: "Address, e.g. 192.168.1.50/24"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
+                        UiText { visible: !ipIn.text; text: "Address, e.g. 192.168.1.50/24"; width: parent.width; elide: Text.ElideRight; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
                 }
                 UiCandy {
-                    width: 150; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
+                    width: ipRow.room * 0.44; height: 32; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper
                     TextInput { id: gwIn; x: 10; width: parent.width - 20; anchors.verticalCenter: parent.verticalCenter; clip: true
                         font.family: Theme.body; font.weight: 800; font.pixelSize: 12; color: Theme.text
-                        UiText { visible: !gwIn.text; text: "Router, e.g. 192.168.1.1"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
+                        UiText { visible: !gwIn.text; text: "Router, e.g. 192.168.1.1"; width: parent.width; elide: Text.ElideRight; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter } }
                 }
                 UiCandy { width: 70; height: 32; radius: 10; bw: 2.5; drop: 2; hi: 3; fill: Theme.gGo; pressable: true
                     onClicked: { const a = ipIn.text.trim(); if (!a) return; wd.svc.wifiModify(wd.i, ["ipv4.method", "manual", "ipv4.addresses", a.includes("/") ? a : a + "/24", "ipv4.gateway", gwIn.text.trim()]) }

@@ -439,6 +439,7 @@ ShellRoot {
                                 required property var modelData
                                 width: 360
                                 app: modelData.app; body: modelData.body; tint: modelData.tint
+                                image: modelData.image || ""; pinned: !!modelData.pinned
                                 onClicked: { Services.activateNotification(modelData); Services.dropToast(modelData.key) }
                                 onDismissed: Services.dropToast(modelData.key)
                             }

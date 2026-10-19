@@ -7,6 +7,8 @@ Item {
     property string body: ""
     property color tint: Theme.peach
     property bool compact: false          // phone list version
+    property string image: ""             // a picture under the text (calendar notes)
+    property bool pinned: false           // stays until clicked (calendar notes): shows a pin
     property bool expanded: false         // long message opened with the › button
     onBodyChanged: expanded = false
     signal clicked()
@@ -18,7 +20,7 @@ Item {
         id: bubble
         y: t.compact ? 13 : 15
         width: t.width
-        height: msg.implicitHeight + (t.compact ? 35 : 46)
+        height: msg.implicitHeight + (t.compact ? 35 : 46) + (pic.visible ? pic.height + 10 : 0)
         radius: t.compact ? 20 : 28
         bw: t.compact ? 2.5 : 3
         drop: t.compact ? 3 : 6
@@ -37,6 +39,11 @@ Item {
             lineHeightMode: Text.FixedHeight; lineHeight: t.compact ? 17.5 : 19.5
             verticalAlignment: Text.AlignTop
         }
+        Image { id: pic; visible: t.image !== "" && status === Image.Ready; x: msg.x; y: msg.y + msg.implicitHeight + 8
+            width: msg.width; height: Math.min(180, width * (implicitHeight / Math.max(1, implicitWidth)))
+            source: t.image ? "file://" + t.image : ""; fillMode: Image.PreserveAspectFit; horizontalAlignment: Image.AlignLeft
+            sourceSize.width: 600; asynchronous: true }
+        Glyph { visible: t.pinned; anchors.right: parent.right; anchors.rightMargin: 16; y: 10; name: "pushpin"; size: 16; stroke: 2.4; color: Theme.berry }
         // › only when the text is cut off: opens the rest of the message
         UiCandy {
             id: more
