@@ -9,7 +9,7 @@ hl.window_rule({
     float             = true,
     keep_aspect_ratio = true,
     size              = { "max(monitor_w, monitor_h)*0.28", "min(monitor_w, monitor_h)*0.28" },
-    move              = { "monitor_w - window_w - 24", "monitor_h - window_h - 24" }, -- bottom-right corner
+    center            = true,
     pin               = true,         -- stays on top, even over a fullscreen game
 })
 
