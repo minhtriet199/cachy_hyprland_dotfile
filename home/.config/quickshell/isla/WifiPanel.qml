@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 
 // Wi-Fi: on/off, networks (click = connect, × = disconnect), password box for new locked networks,
 // Used by the bar dropdown and the phone.
@@ -25,6 +26,10 @@ Item {
             Row {
                 anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 8
                 UiText { visible: w.svc.wifiScanning; anchors.verticalCenter: parent.verticalCenter; text: "Searching…"; fam: "n"; px: 11; w: 800; color: Theme.seaDeep }
+                // card stuck after Windows → reset it in kitty (tools/wifi-fix.sh)
+                UiCandy { width: 28; height: 28; bw: 2; drop: 2; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: w.svc.openApp(["kitty", "--title", "Fix Wi-Fi", "sh", "-c", Quickshell.shellDir + "/tools/wifi-fix.sh; echo; echo 'Press Enter to close'; read x"])
+                    Glyph { anchors.centerIn: parent; name: "wrench"; size: 14; stroke: 2.4 } }
                 UiCandy { width: 28; height: 28; bw: 2; drop: 2; hi: 0; fill: w.svc.wifiScanning ? Theme.gOn : Theme.paper; pressable: !w.svc.wifiScanning; onClicked: w.svc.wifiRescanNow()
                     Glyph { id: spin; anchors.centerIn: parent; name: "reload"; size: 14; stroke: 2.6
                         RotationAnimation on rotation { running: w.svc.wifiScanning; loops: Animation.Infinite; from: 0; to: 360; duration: 900 }

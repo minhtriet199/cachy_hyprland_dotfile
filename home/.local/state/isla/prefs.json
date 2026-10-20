@@ -5,7 +5,7 @@
   "size": 0.7,
   "barStyle": "Transparent",
   "barPos": "Top",
-  "wallpaper": "/home/gamer/Pictures/Wallpapers/card_after_training106_converted.jpg",
+  "wallpaper": "/home/gamer/Pictures/Wallpapers/card_after_training20_converted.jpg",
   "wallDir": "/home/gamer/Pictures/Wallpapers",
   "displayName": "",
   "avatar": "pulse",
@@ -51,7 +51,7 @@
   "clipPins": [],
   "phoneSpot": "Middle",
   "wipeAuto": [
-    "#f3ced3",
-    "#eaa9b2"
+    "#cee6f2",
+    "#aad4e9"
   ]
 }
