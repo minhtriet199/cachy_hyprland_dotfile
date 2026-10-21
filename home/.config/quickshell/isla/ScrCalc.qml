@@ -9,24 +9,60 @@ Item {
     property var svc
     property string expr: ""
     property bool showHist: false
+    property bool fresh: false          // just pressed =: a digit starts a new sum, an operator goes on from the answer
+    property string lastSum: ""         // the sum that gave the answer on show
+    property string lastOp: ""          // its last step ("+3"), so = again repeats it: 8 = → 11
+    property bool err: false            // = on a sum that can't be worked out (÷ 0 …), until the next key
     readonly property var hist: Prefs.calcHistory
+    readonly property string ops: "+-×÷^"
     signal done()
-    readonly property string live: svc.math(expr).replace(/^= /, "")
+    // what actually gets worked out: no dangling operator / dot / "(", open brackets closed, 2(3) → 2×(3)
+    function tidy(t) {
+        t = t.replace(/[+\-×÷^.(]+$/, "");
+        const open = (t.match(/\(/g) || []).length - (t.match(/\)/g) || []).length;
+        return (t + ")".repeat(Math.max(0, open))).replace(/([\d.)])\(/g, "$1×(").replace(/\)([\d.])/g, ")×$1");
+    }
+    readonly property string live: fresh ? "" : svc.math(tidy(expr)).replace(/^= /, "")
     function focusField() { c.forceActiveFocus() }
     function pretty(t) { return t.replace(/([+×÷^])/g, " $1 ").replace(/([\d)])-/g, "$1 − ") }   // 96+23 → 96 + 23
     readonly property int cursorPosition: expr.length   // the phone treats this screen as a text box: keys come here, no focus ring
     function put(k) {
-        if (k === "C") expr = "";
-        else if (k === "⌫") expr = expr.slice(0, -1);
-        else if (k === "=") { if (live) { Prefs.set("calcHistory", [[expr, live]].concat(hist).slice(0, 30)); expr = live } }
-        else expr += k;
+        err = false;
+        k = ({ "x": "×", "*": "×", "/": "÷", ",": "." })[k] || k;
+        if (k === "C") { expr = ""; fresh = false; lastOp = "" }
+        else if (k === "⌫") { expr = fresh ? "" : expr.slice(0, -1); fresh = false }
+        else if (k === "=") equals();
+        else if (ops.includes(k)) {
+            fresh = false;
+            const end = expr.slice(-1);
+            if (k === "-" && end !== "" && "×÷^(".includes(end)) expr += k;          // a negative number: 5 × −3, (−2)
+            else {                                                                    // operators in a row: the new one wins
+                const base = expr.replace(/[+\-×÷^]+$/, "");
+                expr = base === "" || base.endsWith("(") ? base + (k === "-" ? k : "") : base + k;   // only − can start
+            }
+        } else {                                                                      // digit . ( )
+            if (fresh) { expr = ""; fresh = false }
+            const num = expr.match(/[\d.]*$/)[0];
+            if (k === "." && num.includes(".")) return;
+            if (k === ")" && (expr.split("(").length <= expr.split(")").length || /[+\-×÷^(]$/.test(expr))) return;
+            expr += k === "." && num === "" ? "0." : k;
+        }
+    }
+    function equals() {
+        if (fresh && lastOp) expr += lastOp;
+        const t = tidy(expr), v = t ? svc.math(t).replace(/^= /, "") : "";
+        if (!v) { if (/[+\-×÷^]/.test(t.replace(/^-/, ""))) err = true; else if (t) { expr = t; lastSum = ""; lastOp = ""; fresh = true } return }   // 5 + = → 5
+        lastOp = (t.match(/[+\-×÷^]\(?-?[\d.]+\)?$/) || [""])[0];
+        Prefs.set("calcHistory", [[t, v]].concat(hist).slice(0, 30));
+        lastSum = t; expr = v; fresh = true;
     }
     Keys.onPressed: e => {
         if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_C) { svc.copy(live || expr); e.accepted = true }
         else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) { put("="); e.accepted = true }
         else if (e.key === Qt.Key_Backspace) { put("⌫"); e.accepted = true }
         else if (e.key === Qt.Key_Escape) { if (showHist) showHist = false; else if (expr) put("C"); else c.done(); e.accepted = true }
-        else if (/^[\d+\-*/().,x^]$/.test(e.text)) { put(e.text === "*" ? "×" : e.text === "/" ? "÷" : e.text); e.accepted = true }
+        else if (e.text === "=") { put("="); e.accepted = true }
+        else if (/^[\d+\-*/().,x^]$/.test(e.text)) { put(e.text); e.accepted = true }
     }
 
     Column {
@@ -50,12 +86,13 @@ Item {
         // display: the sum small, the answer big (click copies it)
         DropCard {
             width: parent.width; height: 120; headerH: 120; ink: Theme.inkPhone; drop: 5
-            UiTag { x: parent.width - width - 18; y: -9; z: 2; text: c.live ? "= LIVE" : "READY"; fill: c.live ? Theme.sun : Theme.berry; ink: Theme.inkPhone
-                textColor: c.live ? Theme.inkPhone : "#FFFFFF"; tilt: 5; px: 11 }
+            UiTag { x: parent.width - width - 18; y: -9; z: 2; text: c.err ? "ERROR" : c.live ? "= LIVE" : c.fresh ? "ANSWER" : "READY"
+                fill: c.live || c.fresh ? Theme.sun : Theme.berry; ink: Theme.inkPhone
+                textColor: c.live || c.fresh ? Theme.inkPhone : "#FFFFFF"; tilt: 5; px: 11 }
             // the sum on its own line, the answer big under it (no overlap)
             UiText { x: 24; y: 16; width: parent.width - 48; height: 22; horizontalAlignment: Text.AlignRight; elide: Text.ElideLeft
-                text: c.live ? c.pretty(c.expr) + " =" : "Enter =  ·  click the answer to copy"; fam: "n"; px: 15; w: 800
-                color: Theme.inkPhone; opacity: c.live ? 1 : 0.6 }
+                text: c.err ? "Can't work that out (÷ 0?)" : c.fresh && c.lastSum ? c.pretty(c.lastSum) + " =" : c.live ? c.pretty(c.tidy(c.expr)) + " =" : "Enter =  ·  click the answer to copy"
+                fam: "n"; px: 15; w: 800; color: Theme.inkPhone; opacity: c.live || c.fresh || c.err ? 1 : 0.6 }
             Item {
                 x: 20; y: 42; width: parent.width - 40; height: 60; clip: true
                 UiStrokeText { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
@@ -100,7 +137,7 @@ Item {
                     required property int index
                     width: hv.width - 6; height: 46; glyph: "calc"; title: c.pretty(modelData[0]) + " = " + modelData[1]; sub: ""
                     rotation: Theme.tilt(index) * 0.4
-                    onClicked: { c.expr = modelData[1]; c.showHist = false; c.focusField() }
+                    onClicked: { c.expr = modelData[1]; c.lastSum = modelData[0]; c.lastOp = ""; c.fresh = true; c.showHist = false; c.focusField() }
                 }
             }
             UiText { visible: !c.hist.length; anchors.centerIn: hv; text: "No sums yet — press = to keep one"; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
