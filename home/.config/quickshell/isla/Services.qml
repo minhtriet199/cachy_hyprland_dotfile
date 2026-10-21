@@ -232,6 +232,8 @@ Singleton {
     // OBS recording for the bar timer (SvcRecord.qml)
     property bool obsUp: false
     SvcRecord { id: recordPart; obsUp: s.obsUp }
+    // Helium / Chromium theme in Isla colours (SvcHelium.qml)
+    SvcHelium {}
     readonly property bool recording: recordPart.recording
     readonly property string recTime: recordPart.time
     property real volume: 0.5
