@@ -43,7 +43,9 @@
   "appsDark": true,
   "gameMode": false,
   "calcHistory": [],
-  "clipPins": [],
+  "clipPins": [
+    "/home/gamer/Documents/Md_File/"
+  ],
   "phoneSpot": "Middle",
   "wipeAuto": [
     "#cee6f2",

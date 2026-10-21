@@ -244,6 +244,18 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 - While a game is focused: visualizer + spinning record paused, phone light mode, no pop-ups, dock trigger off, mouse focus click-only.
 - WARP tray app masked for the user (`systemctl --user unmask warp-taskbar` to undo).
 - firewalld (≈ 50 MB) kept on purpose (owner: don't replace it).
+- **Hot reload leaks RAM — restart Isla after editing it** (2026-10-21). Saving any Isla .qml makes Quickshell reload
+  in place and it keeps part of the old copy: one reload took Isla 475 → 616 MB (system 2.3 → 2.6 GB). After you finish
+  editing, restart it fresh:
+  ```sh
+  qs -c isla kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c isla")'
+  pgrep -ax qs        # must be exactly ONE "qs -c isla"
+  ```
+  - Launch through Hyprland (`hyprctl eval`), not from your own shell, so Isla isn't a child of the terminal.
+  - Keep `MALLOC_ARENA_MAX=2` (a bare `qs -c isla -d` runs ≈ 25 % bigger).
+  - Never `hyprctl dispatch 'hl.exec_cmd(…)'`: the Lua runs (starts Isla) and then the dispatch errors → you think it
+    failed, run it again, and get TWO Islas. The second one can't register the polkit agent. If two run, kill the newer PID.
+  - Never `pkill -f`/`kill $(pgrep -f …)` (see memory isla-memory-tuning).
 
 ---
 
@@ -345,7 +357,8 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 
 ```sh
 qs -c isla log                 # Isla log (errors after edits)
-qs -c isla kill; qs -c isla -d # restart Isla
+qs -c isla kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c isla")'   # restart Isla (see §7)
+pgrep -ax qs                   # exactly one Isla?
 qs -c isla ipc call isla phone settingsQuick   # open a phone page
 hyprctl configerrors           # Hyprland config errors
 dotfiles-sync "message"        # commit + push configs

@@ -546,6 +546,7 @@ Singleton {
     }
     // copy times come from tools/clip-store.sh (the clipboard saver writes "<id> <unix time>")
     Process { id: clipList; command: ["sh", "-c", "cliphist list; echo '@@'; tail -n 600 \"$HOME/.cache/isla/cliptimes\" 2>/dev/null"]
+        onExited: if (s.clipAgain) { s.clipAgain = false; running = true }
         stdout: StdioCollector { onStreamFinished: {
             const parts = this.text.split("\n@@\n"), times = {};
             for (const l of (parts[1] || "").split("\n")) { const p = l.split(" "); if (p.length === 2) times[p[0]] = parseInt(p[1]) * 1000 }
@@ -566,7 +567,9 @@ Singleton {
         if (ms >= y.getTime() - 86400000) return "Yesterday " + hm;
         return Qt.formatDate(t, "d MMM") + " " + hm;
     }
-    function loadClips() { if (!clipList.running) clipList.running = true }
+    // a reload asked for while one is running runs again after it (skipping it lost pins / new copies)
+    property bool clipAgain: false
+    function loadClips() { if (clipList.running) clipAgain = true; else clipList.running = true }
     // new copy → tools/clip-store.sh appends to cliptimes → reload the list (no polling)
     FileView { path: Quickshell.env("HOME") + "/.cache/isla/cliptimes"; watchChanges: true; printErrors: false
         onFileChanged: { reload(); s.loadClips() } }
@@ -577,7 +580,8 @@ Singleton {
     function clipWipe() { if (clipAct.running) return
         clipAct.command = ["bash", "-c", "cliphist list | awk -F'\\t' 'NR==FNR{p[$0];next} !(substr($0,index($0,\"\\t\")+1) in p)' <(printf '%s\\n' \"$@\") - | cliphist delete", "_"].concat(Prefs.clipPins)
         clipAct.running = true }
-    function clipPin(c) { Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key])); loadClips() }
+    function clipPin(c) { Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key]))
+        clips = clips.map(x => x.key === c.key ? Object.assign({}, x, { pinned: !c.pinned }) : x) }   // show it now, no reload
     // full text / image file for the preview card
     property string clipFull: ""
     property string clipImage: ""
@@ -588,7 +592,7 @@ Singleton {
     function clipPreview(c) {
         clipFull = ""; clipImage = ""; if (!c) return;
         clipDec.running = false;
-        if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"", c.id, f] }   // whole file or nothing (moving fast stops a half-written one)
+        if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "[ -s \"$1\" ] || { mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"; }", c.id, f] }   // whole file or nothing (moving fast stops a half-written one); already decoded → reuse it
         else { clipDec.want = ""; clipDec.command = ["sh", "-c", "cliphist decode \"$0\" | head -c 4000", c.id] }
         clipDec.running = true;
     }
