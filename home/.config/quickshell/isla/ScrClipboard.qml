@@ -26,8 +26,9 @@ Item {
     // typing while on the list goes to the search box (letters, numbers, Backspace)
     Keys.onPressed: e => {
         if (field.activeFocus || (e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) return;
-        if (e.key === Qt.Key_Backspace) { field.forceActiveFocus(); field.text = field.text.slice(0, -1); e.accepted = true }
-        else if (e.text.length === 1 && e.text > " ") { field.forceActiveFocus(); field.text += e.text; field.cursorPosition = field.text.length; e.accepted = true }
+        if (e.key === Qt.Key_Delete) { if (c.cur) c.svc.clipDelete(c.cur); e.accepted = true }   // (its text is an invisible char: typed into the search it emptied the list)
+        else if (e.key === Qt.Key_Backspace) { field.forceActiveFocus(); field.text = field.text.slice(0, -1); e.accepted = true }
+        else if (e.text.length === 1 && e.text > " " && e.text !== "\x7f") { field.forceActiveFocus(); field.text += e.text; field.cursorPosition = field.text.length; e.accepted = true }
     }
 
     Column {

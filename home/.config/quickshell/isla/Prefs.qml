@@ -20,6 +20,7 @@ Singleton {
     property var calcHistory: []            // phone calculator: [[sum, answer], …], newest first (max 30)
     property string phoneSpot: "Low"        // small upright phone height: Low (as designed) / Middle / High
     property var clipPins: []               // pinned clipboard items (cliphist preview text, so a re-copy stays pinned)
+    property int clipDays: 30               // unpinned clipboard items older than this are deleted (tools/clip-prune.sh)
     // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
     property var idleLock: [15, 5]
     property var idleScreen: [10, 3]
@@ -49,7 +50,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "phoneSpot", "wipeAuto"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/isla"
 
     function set(k, v) { p[k] = v; save() }

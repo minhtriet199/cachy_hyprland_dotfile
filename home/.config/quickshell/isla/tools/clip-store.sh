@@ -9,4 +9,7 @@ mkdir -p "${f%/*}"
 echo "$id $(date +%s)" >> "$f"
 # keep the file small
 [ "$(wc -l < "$f")" -gt 2000 ] && tail -n 1000 "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+# old-item cleanup, at most once an hour
+st="$HOME/.cache/isla/clip-pruned"
+[ -n "$(find "$st" -mmin -60 2>/dev/null)" ] || { touch "$st"; "${0%/*}/clip-prune.sh" >/dev/null 2>&1 & }
 exit 0

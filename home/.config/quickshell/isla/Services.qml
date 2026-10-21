@@ -537,6 +537,14 @@ Singleton {
     // ── clipboard history (cliphist) ──
     property var clips: []                         // [{ id, text, kind, info, time }] newest first (time = ms, 0 = not known)
     readonly property string clipCache: Quickshell.env("HOME") + "/.cache/isla/clip"
+    // pins keep their own copy (~/.local/share/isla/clip-pins/<md5 of key>) → never lost to cliphist's limit or the
+    // old-item cleanup (tools/clip-prune.sh); only removed by hand (unpin or ✕)
+    readonly property string pinDir: Quickshell.env("HOME") + "/.local/share/isla/clip-pins"
+    function pinFile(key) { return pinDir + "/" + Qt.md5(key) }
+    function clipItem(id, t, time) {
+        const m = /binary data ([\d.]+ \w+) (\w+) (\d+x\d+)/.exec(t), pinned = Prefs.clipPins.includes(t);
+        return { id: id, key: t, text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: clipKind(t), info: m ? m[1] : "", time: time, pinned: pinned, file: pinned ? pinFile(t) : "" };
+    }
     function clipKind(t) {
         if (t.startsWith("[[ binary data")) return "IMG";
         if (/^(https?|ftp):\/\/\S+$/.test(t.trim())) return "URL";
@@ -550,11 +558,13 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             const parts = this.text.split("\n@@\n"), times = {};
             for (const l of (parts[1] || "").split("\n")) { const p = l.split(" "); if (p.length === 2) times[p[0]] = parseInt(p[1]) * 1000 }
-            s.clips = parts[0].split("\n").filter(l => l.includes("\t")).map(l => {
-                const i = l.indexOf("\t"), id = l.slice(0, i), t = l.slice(i + 1), k = s.clipKind(t);
-                const m = /binary data ([\d.]+ \w+) (\w+) (\d+x\d+)/.exec(t);
-                return { id: id, key: t, text: m ? m[2].toUpperCase() + " image · " + m[3] : t, kind: k, info: m ? m[1] : "", time: times[id] || 0, pinned: Prefs.clipPins.includes(t) };
+            const list = parts[0].split("\n").filter(l => l.includes("\t")).map(l => {
+                const i = l.indexOf("\t"), id = l.slice(0, i);
+                return s.clipItem(id, l.slice(i + 1), times[id] || 0);
             }).filter((c, i) => i < 300 || c.pinned);      // pinned ones stay even when old
+            // pins no longer in cliphist come from their own copy (no id)
+            const have = new Set(list.map(c => c.key));
+            s.clips = list.concat(Prefs.clipPins.filter(k => !have.has(k)).map(k => s.clipItem("", k, 0)));
         } } }
     // "just now", "5 min ago", "2 h ago", "Yesterday 14:20", "17 Oct 09:30"
     function ago(ms) {
@@ -574,14 +584,18 @@ Singleton {
     FileView { path: Quickshell.env("HOME") + "/.cache/isla/cliptimes"; watchChanges: true; printErrors: false
         onFileChanged: { reload(); s.loadClips() } }
     Process { id: clipAct; onExited: s.loadClips() }
-    function clipCopy(c) { run(["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id]) }
-    function clipDelete(c) { if (clipAct.running) return; if (c.pinned) clipPin(c); clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
+    function clipCopy(c) { run(c.id ? ["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id] : ["sh", "-c", "wl-copy < \"$0\"", c.file]) }
+    function clipDelete(c) { if (clipAct.running) return; if (c.pinned) clipPin(c); if (!c.id) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
     // wipe keeps pinned items (deletes every line whose text is not in the pins)
     function clipWipe() { if (clipAct.running) return
         clipAct.command = ["bash", "-c", "cliphist list | awk -F'\\t' 'NR==FNR{p[$0];next} !(substr($0,index($0,\"\\t\")+1) in p)' <(printf '%s\\n' \"$@\") - | cliphist delete", "_"].concat(Prefs.clipPins)
         clipAct.running = true }
-    function clipPin(c) { Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key]))
-        clips = clips.map(x => x.key === c.key ? Object.assign({}, x, { pinned: !c.pinned }) : x) }   // show it now, no reload
+    function clipPin(c) { const f = pinFile(c.key)
+        if (c.pinned) run(["rm", "-f", f])
+        else run(["sh", "-c", "mkdir -p \"${1%/*}\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"", c.id, f])
+        Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key]))
+        clips = c.pinned && !c.id ? clips.filter(x => x.key !== c.key)      // show it now, no reload
+              : clips.map(x => x.key === c.key ? Object.assign({}, x, { pinned: !c.pinned, file: c.pinned ? "" : f }) : x) }
     // full text / image file for the preview card
     property string clipFull: ""
     property string clipImage: ""
@@ -592,7 +606,8 @@ Singleton {
     function clipPreview(c) {
         clipFull = ""; clipImage = ""; if (!c) return;
         clipDec.running = false;
-        if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "[ -s \"$1\" ] || { mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"; }", c.id, f] }   // whole file or nothing (moving fast stops a half-written one); already decoded → reuse it
+        if (!c.id) { if (c.kind === "IMG") { clipImage = "file://" + c.file; return } clipDec.want = ""; clipDec.command = ["head", "-c", "4000", c.file] }
+        else if (c.kind === "IMG") { const f = clipCache + "-" + c.id + ".png"; clipDec.want = f; clipDec.command = ["sh", "-c", "[ -s \"$1\" ] || { mkdir -p \"$(dirname \"$1\")\" && cliphist decode \"$0\" > \"$1.part\" && mv \"$1.part\" \"$1\"; }", c.id, f] }   // whole file or nothing (moving fast stops a half-written one); already decoded → reuse it
         else { clipDec.want = ""; clipDec.command = ["sh", "-c", "cliphist decode \"$0\" | head -c 4000", c.id] }
         clipDec.running = true;
     }
