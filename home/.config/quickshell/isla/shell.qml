@@ -149,6 +149,17 @@ ShellRoot {
         }
     }
 
+    // ── "where's my mouse" rings (double-tap Ctrl, hypr/config/locate.lua): only built while showing ──
+    property var locateReq: null
+    LazyLoader {
+        id: locateL
+        active: false
+        LocatePointer {
+            screen: shell.locateReq.scr; at: shell.locateReq.at
+            onDone: locateL.active = false
+        }
+    }
+
     // From a terminal:  qs -c isla ipc call isla phone search
     IpcHandler {
         target: "isla"
@@ -164,6 +175,10 @@ ShellRoot {
         function shareClose(): void { shareL.active = false }
         function snip(req: string): void { const f = req.split("|"); shell.snipReq = { crop: f[0], shot: f[1], mon: f[2],
             sel: Qt.rect(+f[3], +f[4], +f[5], +f[6]), dpr: +f[7] || 1 }; snipL.active = true }
+        // pointer at X Y (Hyprland's global logical px) → rings on the screen under it
+        function locate(x: real, y: real): void {
+            const scr = Quickshell.screens.find(m => x >= m.x && x < m.x + m.width && y >= m.y && y < m.y + m.height) || Quickshell.screens[0]
+            locateL.active = false; shell.locateReq = { scr: scr, at: Qt.point(x - scr.x, y - scr.y) }; locateL.active = true }
         function power(): void { shell.powerRequest(shell.focusedName()) }
         function lock(): void { lockCtl.lockNow() }
         function locktest(): void { lockCtl.lockTest() }

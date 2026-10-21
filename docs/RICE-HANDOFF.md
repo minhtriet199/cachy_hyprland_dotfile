@@ -328,7 +328,13 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 7. **Left over from 2026-10-20 (start here next time):**
    - **2026-10-21 owner answers:** photo viewer dropped (files deleted); OBS recording, snip editor, phone nav rail,
      big-mode rotate, battery slider, backdrop, Surprise me all tested OK by the owner; snip-editor extras and
-     generic other-monitor workspaces not wanted for now. Calendar reminders during Do not disturb are held and shown
+     then asked for both extras (done same day): **snip editor** has resize handles (cut then shows from the
+     frozen whole screen, marks stay put — kept in device px from the first cut's corner) and a Select tool (click a mark,
+     drag to move, Delete/trash removes; undo/redo are snapshots so they cover moves + deletes). **Other monitors:**
+     `workspaces.lua` pins 1–9 to the first non-eDP screen via `hl.get_monitors()`, redone on hyprland.start /
+     monitor.added / monitor.removed (old rules `set_enabled(false)`); Isla `Services.monInfo()` names any screen
+     (brand from `make`, Laptop for eDP, left/right from position), `mainMonitor` = first external. Hotplug itself
+     not tested (no other screen here). Calendar reminders during Do not disturb are held and shown
      when DND ends (`Services.heldReminders`). Greeter is installed (greetd runs isla-greeter-session) and works.
    - **Fresh memory measurement:** Isla was 579 MB after dozens of reloads (old fresh number 471 MB). Restart Isla and
      measure RSS of `qs -c isla` to confirm the new features cost ~nothing when idle (SnipEditor / SharePicker are lazy).
