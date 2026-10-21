@@ -20,7 +20,7 @@ Singleton {
     property var calcHistory: []            // phone calculator: [[sum, answer], …], newest first (max 30)
     property string phoneSpot: "Low"        // small upright phone height: Low (as designed) / Middle / High
     property var clipPins: []               // pinned clipboard items (cliphist preview text, so a re-copy stays pinned)
-    property int clipDays: 30               // unpinned clipboard items older than this are deleted (tools/clip-prune.sh)
+    property int clipDays: 15               // unpinned clipboard items older than this are deleted (tools/clip-prune.sh)
     // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
     property var idleLock: [15, 5]
     property var idleScreen: [10, 3]

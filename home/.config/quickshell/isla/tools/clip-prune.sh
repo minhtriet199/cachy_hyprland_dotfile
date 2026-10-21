@@ -1,9 +1,9 @@
 #!/bin/bash
 # Clipboard cleanup (run by clip-store.sh at most once an hour): deletes unpinned cliphist items copied more than
-# Prefs.clipDays (default 30) days ago, and the preview images / copy times of items that are gone.
+# Prefs.clipDays (default 15) days ago, and the preview images / copy times of items that are gone.
 # Pins are never touched (they also keep their own copy in ~/.local/share/isla/clip-pins).
 prefs="$HOME/.local/state/isla/prefs.json"; times="$HOME/.cache/isla/cliptimes"
-days=$(jq -r '.clipDays // 30' "$prefs" 2>/dev/null); [ "$days" -gt 0 ] 2>/dev/null || days=30
+days=$(jq -r '.clipDays // 15' "$prefs" 2>/dev/null); [ "$days" -gt 0 ] 2>/dev/null || days=15
 cut=$(( $(date +%s) - days * 86400 ))
 # cliphist ids only grow → everything up to the newest id copied before the cutoff is old (also ones with no time)
 old=$(awk -v c="$cut" '$2 < c && $1 > m { m = $1 } END { print m + 0 }' "$times" 2>/dev/null)

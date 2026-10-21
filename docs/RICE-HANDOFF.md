@@ -336,8 +336,10 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
      (brand from `make`, Laptop for eDP, left/right from position), `mainMonitor` = first external. Hotplug itself
      not tested (no other screen here). Calendar reminders during Do not disturb are held and shown
      when DND ends (`Services.heldReminders`). Greeter is installed (greetd runs isla-greeter-session) and works.
-   - **Fresh memory measurement:** Isla was 579 MB after dozens of reloads (old fresh number 471 MB). Restart Isla and
-     measure RSS of `qs -c isla` to confirm the new features cost ~nothing when idle (SnipEditor / SharePicker are lazy).
+   - **Memory re-measured 2026-10-21:** fresh Isla 468–473 MB (same as the old 471 MB) → new features cost ~nothing idle.
+   - **Double-tap Ctrl → rings round the pointer** (`hypr/config/locate.lua` → `ipc call isla locate X Y` →
+     LocatePointer.qml). Binds must be `CTRL + Control_L/R` with release (bare key never matched). Taps verified reaching
+     Hyprland; rings verified via IPC; owner still to confirm the full double-tap shows them.
    - **Screen-share hang:** after sharing a single *window*, xdg-desktop-portal-hyprland can freeze ("tried scheduling on
      already scheduled cb"). Fix: `systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal`, then restart OBS.
    - **Log noise (old, harmless?):** `Services.qml … Unable to assign [undefined] to bool` (the `gaming` binding) and
