@@ -320,37 +320,20 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
    + spinning record paused (`Services.calm` = gameMode || gaming). Blur and power profile untouched (owner sets those).
 4. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
    from wallpaper) / C (desktop widgets) — no answer yet.
-5. Not verified on screen yet: power-menu countdown, wallpaper Preview, lock-screen eye button, clipboard copy times after reboot.
+5. Verified by the owner 2026-10-21 (on-screen checks all OK).
 6. Leftover `.pacnew` files in /etc (pacman.conf, resolv.conf, mirrorlists) are old/plain-Arch — **keep the current files**.
 7. Owner declined keyring auto-unlock — don't add it.
 
 ---
 7. **Left over from 2026-10-20 (start here next time):**
-   - **Instant-camera photo viewer — unfinished.** Owner wants pictures to open inside an Instax-style frame (thick
-     bottom with the name, washi tape, small tilt), ←/→ browse folder, scroll zoom, Q = open in qView, Esc close, and it
-     should be the **default image viewer**. Files exist: `isla/view.qml` (run with `qs -p`), `isla/tools/isla-view.sh`,
-     `~/.local/share/applications/isla-view.desktop`. **Bug:** the window opens (470×526) but draws nothing — the Image's
-     implicit size stays 1 and the UiCandy card never shows. A plain transparent FloatingWindow with a red Rectangle +
-     Image works (scratch test), so the problem is inside view.qml (suspect: Theme/Prefs singletons when run with `-p` on a
-     single file, or Image sizing). Debug in a scratch COPY. When it works: `xdg-mime default isla-view.desktop image/png
-     image/jpeg image/webp image/gif`, save the Hyprland rule in `windowrules.lua` (title `^(Isla View)$`: float, center,
-     border_size 0, no_shadow, no_blur — only tested with `hyprctl eval`, not saved), add `isla-view` to the launcher list in
-     `dotfiles-sync`. Or delete the three files if the owner drops the idea.
-   - **Owner should test a real OBS recording** (only the cancel path was tested — never record the owner's screen/mic
-     yourself). Check: timer in the bar, file in ~/Videos, stop from the phone. OBS records whatever audio OBS is set to.
+   - **2026-10-21 owner answers:** photo viewer dropped (files deleted); OBS recording, snip editor, phone nav rail,
+     big-mode rotate, battery slider, backdrop, Surprise me all tested OK by the owner; snip-editor extras and
+     generic other-monitor workspaces not wanted for now. Calendar reminders during Do not disturb are held and shown
+     when DND ends (`Services.heldReminders`). Greeter is installed (greetd runs isla-greeter-session) and works.
    - **Fresh memory measurement:** Isla was 579 MB after dozens of reloads (old fresh number 471 MB). Restart Isla and
      measure RSS of `qs -c isla` to confirm the new features cost ~nothing when idle (SnipEditor / SharePicker are lazy).
    - **Screen-share hang:** after sharing a single *window*, xdg-desktop-portal-hyprland can freeze ("tried scheduling on
      already scheduled cb"). Fix: `systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal`, then restart OBS.
-   - **Not yet confirmed by the owner:** snip editor after the button fix (tools, colour wheel, close by click outside /
-     right-click), sideways-phone nav rail, big-mode rotate (3D tilt mid-turn may be too strong at big size — owner may
-     want it flatter), battery-dropdown slider for the ASUS screen, Dark/Light backdrop, Surprise me on the upright phone.
-   - **Snip editor ideas not built:** resize the cut with handles (Vitreus has them), move/delete a single drawn mark.
-   - **Calendar:** reminders show as a bubble only (not added to the phone's notification list) and also show in
-     Do-not-disturb — ask the owner if that's wanted. The owner's test note "assa" was overwritten by a test (gone).
-   - **Other monitors:** opacity, brightness, positions and Isla bars work for any monitor. Still tied to the ASUS:
-     `hypr/config/workspaces.lua` pins workspaces 1–9 to `HDMI-A-1` (a screen on DisplayPort/USB-C gets 1–9 but not
-     pinned) and `Services.monitorNames` labels. Making them generic needs care (no hyprctl calls inside the Lua config).
    - **Log noise (old, harmless?):** `Services.qml … Unable to assign [undefined] to bool` (the `gaming` binding) and
      `Unable to assign [undefined] to QDateTime` right after a reload.
    - **Owner rule broken this session:** OBS remote control was turned on (localhost, password), `xdph.conf` changed and

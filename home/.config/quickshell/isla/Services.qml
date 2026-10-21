@@ -731,9 +731,13 @@ Singleton {
     readonly property alias palette: palettePart
 
     // ── calendar notes (SvcSchedule.qml): at their time a bubble that stays until clicked ──
+    // Do not disturb holds them (they're not in the notification list, so they'd be lost) → shown when it ends
+    property var heldReminders: []
+    function remind(n) { pushToast({ app: "⏰ " + String(n.hour).padStart(2, "0") + ":" + String(n.min).padStart(2, "0"), body: n.text,
+                                     image: n.image, tint: Theme.sun, pinned: true }) }
+    onDndOnChanged: if (!dndOn && heldReminders.length) { const h = heldReminders; heldReminders = []; h.forEach(remind) }
     SvcSchedule { id: schedulePart
-        onDue: n => s.pushToast({ app: "⏰ " + String(n.hour).padStart(2, "0") + ":" + String(n.min).padStart(2, "0"), body: n.text,
-                                  image: n.image, tint: Theme.sun, pinned: true }) }
+        onDue: n => { if (s.dndOn) s.heldReminders = s.heldReminders.concat([n]); else s.remind(n) } }
     property alias schedule: schedulePart
 
     // ── weather (SvcWeather.qml) ──
