@@ -23,10 +23,13 @@ Singleton {
     readonly property string city: Prefs.location && Prefs.weatherAuto ? "" : encodeURIComponent(Prefs.city.trim()).replace(/%20/g, "+")
     onCityChanged: refreshWeather()
     readonly property bool h24: Prefs.h24                // 24-hour clock (Settings → Time & language)
-    property string mainMonitor: "HDMI-A-1"             // gets the big clock + notification bubbles
+    // gets the big clock + notification bubbles: the external screen (any port), else the laptop
+    readonly property string mainMonitor: (hMonitors.find(m => !m.name.startsWith("eDP")) || hMonitors[0] || { name: "" }).name
     property real dockSize: 0.75                        // dock size (1 = original, 0.75 = smaller)
-    // Optional nicer names + workspace numbering per monitor (base 10 = workspaces 11–19 shown as 1–9)
-    property var monitorNames: ({ "HDMI-A-1": { label: "ASUS · left", base: 0 }, "eDP-1": { label: "Laptop · right", base: 10 }, "eDP-2": { label: "Laptop · right", base: 10 } })
+    // Optional fixed names per output, e.g. { "DP-1": { label: "Work · left", base: 0 } }. Without one (monInfo):
+    // laptop = "Laptop", workspaces 11–19 shown as 1–9; any external screen = its brand ("ASUS"), workspaces 1–9;
+    // "· left" / "· right" from where it sits (hypr/config/workspaces.lua pins 1–9 to the external screen)
+    property var monitorNames: ({})
     // Dock apps (cmd runs the program; cls = its window class, for the running dot)
     property var dockApps: [
         { label: "Terminal", glyph: "terminal", tint: "#7CC47F", cmd: ["kitty"], cls: "kitty" },
@@ -148,15 +151,23 @@ Singleton {
         "monitorremoved", "monitorremovedv2", "activespecial", "activespecialv2", "changefloatingmode", "fullscreen", "pin"]
     Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (ev.name.startsWith("monitoradded") || ev.name.startsWith("monitorremoved")) s.loadScreens(); if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
     Timer { interval: 60000; running: true; repeat: true; onTriggered: hyprQuery.running = true }   // safety net only
-    readonly property var monitors: hMonitors.map(m => ({ name: m.name, label: (monitorNames[m.name] && monitorNames[m.name].label) || m.name }))
-    function base(mon) { return (monitorNames[mon] && monitorNames[mon].base) || 0 }
+    function monInfo(name) {
+        if (monitorNames[name]) return monitorNames[name]
+        const m = hMonitors.find(x => x.name === name) || { x: 0 }, lap = String(name).startsWith("eDP")
+        const brand = lap ? "Laptop" : (m.make || "").split(" ")[0].replace(/tek$/i, "") || m.model || name
+        const others = hMonitors.filter(x => x.name !== name)
+        const side = !others.length ? "" : others.every(o => m.x < o.x) ? " · left" : others.every(o => m.x > o.x) ? " · right" : ""
+        return { label: brand + side, base: lap ? 10 : 0 }
+    }
+    readonly property var monitors: hMonitors.map(m => ({ name: m.name, label: monInfo(m.name).label }))
+    function base(mon) { return monInfo(mon).base }
     // "ASUS · Workspace 1" for a Wayland toplevel (dock previews)
     function whereIs(t) {
         const h = Hyprland.toplevels.values.find(x => x.wayland === t); if (!h) return "";
         const addr = "0x" + String(h.address).replace(/^0x/, "");
         const c = clients.find(x => x.address === addr); if (!c) return "";
         const w = hWorkspaces.find(x => x.id === c.workspace), mon = w ? w.monitor : "";
-        const label = ((monitorNames[mon] && monitorNames[mon].label) || mon).split(" · ")[0];
+        const label = monInfo(mon).label.split(" · ")[0];
         return label + " · Workspace " + (c.workspace - base(mon));
     }
     function activeIdOn(mon) { const m = hMonitors.find(x => x.name === mon); return m ? m.activeWorkspace.id : -1 }

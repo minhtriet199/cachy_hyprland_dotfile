@@ -69,7 +69,7 @@ PanelWindow {
                         Repeater { model: Quickshell.screens
                             delegate: Pick { required property var modelData
                                 src: modelData; w: 300
-                                label: (Services.monitorNames[modelData.name] ? Services.monitorNames[modelData.name].label.split(" · ")[0] : modelData.model || modelData.name)
+                                label: Services.monInfo(modelData.name).label.split(" · ")[0]
                                 sub: modelData.name + " · " + modelData.width + "×" + modelData.height; glyph: "monitor"
                                 onPicked: sp.answer("screen:" + modelData.name) } }
                     }

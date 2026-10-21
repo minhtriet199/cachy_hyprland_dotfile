@@ -1,6 +1,6 @@
 #!/bin/sh
 # Separate workspaces per monitor, picked by where the MOUSE is.
-#   ASUS (HDMI-A-1): workspaces 1-9
+#   External screen (any port): workspaces 1-9
 #   Laptop (eDP-1/eDP-2): workspaces 11-19 (labelled 1-9)
 # usage: ws.sh go|move N
 action="$1"
