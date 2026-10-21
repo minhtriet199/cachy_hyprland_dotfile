@@ -26,13 +26,23 @@ Item {
     function focusField() { c.forceActiveFocus() }
     function pretty(t) { return t.replace(/([+×÷^])/g, " $1 ").replace(/([\d)])-/g, "$1 − ") }   // 96+23 → 96 + 23
     readonly property int cursorPosition: expr.length   // the phone treats this screen as a text box: keys come here, no focus ring
+    // the last step of a sum, for = again: "+3", "×−3", "+(2×3)"
+    function lastStep(t) {
+        let i = t.length - 1;
+        if (t[i] === ")") for (let d = 0; i >= 0; i--) { d += t[i] === ")" ? 1 : t[i] === "(" ? -1 : 0; if (d === 0) break }
+        else while (i > 0 && /[\d.e]/.test(t[i - 1])) i--;
+        if (t[i - 1] === "-" && i > 1 && ops.includes(t[i - 2])) i--;
+        return i > 0 && ops.includes(t[i - 1]) ? t.slice(i - 1) : "";
+    }
     function put(k) {
+        const wasErr = err;
         err = false;
         k = ({ "x": "×", "*": "×", "/": "÷", ",": "." })[k] || k;
         if (k === "C") { expr = ""; fresh = false; lastOp = "" }
         else if (k === "⌫") { expr = fresh ? "" : expr.slice(0, -1); fresh = false }
         else if (k === "=") equals();
         else if (ops.includes(k)) {
+            if (wasErr) expr = "";                                                    // after an error: start again
             fresh = false;
             const end = expr.slice(-1);
             if (k === "-" && end !== "" && "×÷^(".includes(end)) expr += k;          // a negative number: 5 × −3, (−2)
@@ -41,8 +51,9 @@ Item {
                 expr = base === "" || base.endsWith("(") ? base + (k === "-" ? k : "") : base + k;   // only − can start
             }
         } else {                                                                      // digit . ( )
-            if (fresh) { expr = ""; fresh = false }
+            if (fresh || wasErr) { expr = ""; fresh = false }
             const num = expr.match(/[\d.]*$/)[0];
+            if (/\d/.test(k) && num === "0") expr = expr.slice(0, -1);              // 0 then 7 → 7 (like a real calculator)
             if (k === "." && num.includes(".")) return;
             if (k === ")" && (expr.split("(").length <= expr.split(")").length || /[+\-×÷^(]$/.test(expr))) return;
             expr += k === "." && num === "" ? "0." : k;
@@ -51,8 +62,8 @@ Item {
     function equals() {
         if (fresh && lastOp) expr += lastOp;
         const t = tidy(expr), v = t ? svc.math(t).replace(/^= /, "") : "";
-        if (!v) { if (/[+\-×÷^]/.test(t.replace(/^-/, ""))) err = true; else if (t) { expr = t; lastSum = ""; lastOp = ""; fresh = true } return }   // 5 + = → 5
-        lastOp = (t.match(/[+\-×÷^]\(?-?[\d.]+\)?$/) || [""])[0];
+        if (!v) { if (/[+\-×÷^]/.test(t.replace(/^-/, ""))) err = true; else if (t) { expr = t.replace(/[()]/g, ""); lastSum = ""; lastOp = ""; fresh = true } return }   // 5 + = → 5, ((2 → 2
+        lastOp = lastStep(t);
         Prefs.set("calcHistory", [[t, v]].concat(hist).slice(0, 30));
         lastSum = t; expr = v; fresh = true;
     }

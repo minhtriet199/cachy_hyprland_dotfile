@@ -809,9 +809,12 @@ Singleton {
     function runAction(a) { if (a.toggle) toggle(a.toggle); else if (a.tool) tool(a.tool); else if (a.cmd) run(a.cmd) }
     function score(text, q) { const t = (text || "").toLowerCase(); if (t.startsWith(q)) return 3; if (t.includes(" " + q)) return 2; if (t.includes(q)) return 1; return 0 }
     function math(q) {
-        if (!/^[\d\s+\-*/().,%^x×÷]+$/.test(q) || !/[+\-*/^%x×÷]/.test(q) || !/\d/.test(q)) return "";
-        try { const v = Function("return (" + q.replace(/[x×]/g, "*").replace(/÷/g, "/").replace(/\^/g, "**").replace(/,/g, ".") + ")")();
-              return Number.isFinite(v) ? "= " + String(+v.toFixed(8)) : "" } catch (e) { return "" }
+        if (!/^[\d\s+\-*/().,%^x×÷e]+$/.test(q) || !/[+\-*/^%x×÷]/.test(q) || !/\d/.test(q)) return "";
+        // −2^2 = −(2^2) (JS can't have a minus right before **) · 007 → 7 (no old-style octal)
+        const js = q.replace(/(^|[(×x*÷/^])-([\d.]+(?:\^-?[\d.]+)+)/g, "$1(-($2))").replace(/(^|[^\d.e])0+(?=\d)/g, "$1")
+                    .replace(/[x×]/g, "*").replace(/÷/g, "/").replace(/\^/g, "**").replace(/,/g, ".");
+        try { const v = Function("return (" + js + ")")(), a = Math.abs(v);
+              return Number.isFinite(v) ? "= " + String(a >= 1e15 || a > 0 && a < 1e-6 ? +v.toPrecision(10) : +v.toFixed(8)) : "" } catch (e) { return "" }
     }
     // Isla's own screens, so typing "wifi" or "setting" offers the page (title, screen, glyph, tint, keywords)
     readonly property var phonePages: [

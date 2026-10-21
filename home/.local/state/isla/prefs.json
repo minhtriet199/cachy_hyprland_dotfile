@@ -42,7 +42,16 @@
   "dark": false,
   "appsDark": true,
   "gameMode": false,
-  "calcHistory": [],
+  "calcHistory": [
+    [
+      "952+36",
+      "988"
+    ],
+    [
+      "99+63+6289+3",
+      "6454"
+    ]
+  ],
   "clipPins": [
     "/home/gamer/Documents/Md_File/RICE-HANDOFF.md",
     "4. Reply \"done\".",
