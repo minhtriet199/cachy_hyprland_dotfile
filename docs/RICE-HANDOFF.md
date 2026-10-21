@@ -368,7 +368,8 @@ Keep the owner rules (§1): clean small code, measured performance, lazy-load, S
    Window = one `FloatingWindow` titled "Isla Phone" in shell.qml (lazy, like the overlay; closing it with X / your close
    key deletes it). `PhoneStage { windowed: true }` = always the flat big pose, no scrim, no big/small button. Hyprland
    ignores the window's own size changes, so a turn sends `hl.dsp.window.resize` (stays centred). Window rule in
-   windowrules.lua: float + center. Switching the setting reopens the Look page the new way.
+   windowrules.lua: float + center. **Super+Z** (`ipc call isla phonemode`) or the setting switches mode and reopens
+   the same page the new way (Home if the phone was closed).
 3. **Right-click on the empty desktop → small menu** (picture right-click-desktop-menu.png): *Edit Desktop*,
    *Wallpapers*, *Group themes*. Same candy card style.
 4. **Edit Desktop mode** (Edit-Desktop.png): the desktop shrinks into a framed preview; bottom tray with tabs

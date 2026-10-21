@@ -18,6 +18,15 @@
   "repeating": false
  },
  {
+  "keys": "SUPER + Z",
+  "action": "exec",
+  "arg": "qs -c isla ipc call isla phonemode",
+  "category": "Windows",
+  "desc": "Phone: overlay ↔ window",
+  "locked": false,
+  "repeating": false
+ },
+ {
   "keys": "SUPER + D",
   "action": "exec",
   "arg": "~/.config/hypr/scripts/shell-cmd.sh bar-toggle",

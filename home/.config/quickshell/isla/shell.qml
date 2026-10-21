@@ -169,8 +169,11 @@ ShellRoot {
         target: shell
         function onPhoneRequest(monitor, screen) { if (Prefs.phoneWindow && !shell.phoneWinLive) { shell.phoneWinPending = screen; shell.phoneWinLive = true } }
     }
-    // switched Overlay ↔ Window (on the phone itself): open that page again the new way
-    Connections { target: Prefs; function onPhoneWindowChanged() { if (Prefs.ready) shell.phone("settingsQuick") } }
+    // switched Overlay ↔ Window (Settings → Look, or Super+Z → ipc phonemode): open the same page again the new way
+    // (Home if the phone was closed, so you see which way it is now)
+    property bool phoneOpen: false
+    property string phonePage: "home"
+    Connections { target: Prefs; function onPhoneWindowChanged() { if (Prefs.ready) shell.phone(shell.phoneOpen ? shell.phonePage : "home") } }
     LazyLoader {
         active: shell.phoneWinLive
         FloatingWindow {
@@ -197,6 +200,8 @@ ShellRoot {
                     anchors.fill: parent
                     focus: true
                     windowed: true
+                    onShownChanged: shell.phoneOpen = shown
+                    onScreenChanged: shell.phonePage = screen
                     svc: Services; prefs: Prefs; monitor: phoneApp.screen ? phoneApp.screen.name : shell.focusedName()
                     Component.onCompleted: if (shell.phoneWinPending) { const p = shell.phoneWinPending; shell.phoneWinPending = ""; go(p) }
                 }
@@ -218,6 +223,7 @@ ShellRoot {
         target: "isla"
         function phone(screen: string): void { shell.phone(screen) }
         function close(): void { shell.phoneClose() }
+        function phonemode(): void { Prefs.flip("phoneWindow") }    // phone: overlay ↔ window (Super+Z)
         function lid(state: string): void { Services.lid(state === "closed") }
         function wallpaper(path: string): void { Prefs.set("wallpaper", path) }
         function bar(): void { Prefs.flip("bar") }
@@ -599,6 +605,8 @@ ShellRoot {
                             anchors.fill: parent
                             focus: true
                             svc: Services; prefs: Prefs; monitor: scr.name
+                            onShownChanged: shell.phoneOpen = shown
+                            onScreenChanged: shell.phonePage = screen
                             onSoon: w => { soon.text = w + " is coming in the next Isla update ✿"; soon.show = true; soonTimer.restart() }
                             // the request that built the phone: open that screen now
                             Component.onCompleted: if (scr.phonePending) { const p = scr.phonePending; scr.phonePending = ""; go(p) }
