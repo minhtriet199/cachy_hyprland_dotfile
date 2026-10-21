@@ -42,12 +42,7 @@
   "dark": false,
   "appsDark": true,
   "gameMode": false,
-  "calcHistory": [
-    [
-      "19+30-40",
-      "9"
-    ]
-  ],
+  "calcHistory": [],
   "clipPins": [],
   "phoneSpot": "Middle",
   "wipeAuto": [

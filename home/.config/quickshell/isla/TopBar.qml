@@ -285,6 +285,9 @@ Item {
                 pulse: bar.svc.btState === "searching" }
             // sound: muted · low · medium · loud (live)
             // hover + scroll = volume (smooth, follows how far you scroll)
+            // hover = volume % (left of the icon, so the icon stays under the cursor as the pill grows)
+            UiText { visible: sndI.hovered; height: 13; fam: "n"; px: 12; w: 900; color: Theme.seaDeep
+                text: bar.svc.liveMuted ? "Muted" : Math.round(bar.svc.liveVol * 100) + "%" }
             BarIcon { id: sndI; name: bar.svc.volIcon; onClicked: bar.drop("sound", sndI); onWheel: dy => bar.svc.nudgeVolume(dy / 120 * 0.05) }
         }
         BarPill {

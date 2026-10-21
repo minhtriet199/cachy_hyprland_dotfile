@@ -8,6 +8,7 @@ Item {
     property bool pulse: false            // gentle blink (Bluetooth searching)
     property string badge: ""             // "!" in the corner: "nointernet" (orange) · "error" (red)
     property real size: 19
+    readonly property bool hovered: ma.containsMouse
     signal clicked()
     signal wheel(real dy)
     implicitWidth: size; implicitHeight: size
