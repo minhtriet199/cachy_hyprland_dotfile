@@ -25,6 +25,55 @@ Item {
     Behavior on flat { NumberAnimation { duration: 380 * stage.dur; easing.type: Easing.OutCubic } }
     property real flatP: big ? 1 : 0                                   // big portrait: centred, larger, upright (kept while sideways, so a turn lands on it)
     Behavior on flatP { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
+    // ── overlay ↔ window hand-over (Super+Z): ONE phone moves; the other one takes over in the same spot in one frame ──
+    // handT 1 = flat, at the window phone's size, right on the window phone: its window's middle is (handMx, handMy) on
+    // this stage, window handW × handH (design px). Sideways the phone sits 40 left / 18 up in its window (side buttons)
+    // and 30 below the middle here.
+    property real handT: 0
+    property real handMx: width / 2
+    property real handMy: height / 2
+    property real handW: 410
+    property real handH: 868
+    readonly property real handX: handMx - (wantLand ? 40 : 0) - width / 2
+    readonly property real handY: handMy - (wantLand ? 18 + 30 : 0) - height / 2
+    readonly property real handFitP: winFitP(handW, handH)
+    readonly property real handFitL: winFitL(handW, handH)
+    readonly property real fp: Math.max(flatP, handT)          // upright flat amount actually drawn
+    readonly property real fl: Math.max(flat, handT)           // … sideways
+    function winFitP(w, h) { return Math.min(1.25, (h - 24) / 844, (w - 24) / 390) }     // a window hugs the phone
+    function winFitL(w, h) { return Math.min((w - 104) / 1012, (h - 60) / 484) }        // … with room for the side buttons
+    readonly property real fitP: windowed ? winFitP(width, height) : Math.min(1.25, height * 0.9 / 844) * (1 - handT) + handFitP * handT
+    readonly property real fitL: windowed ? winFitL(width, height) : Math.min(width * 0.75 / 1012, height * 0.8 / 484) * (1 - handT) + handFitL * handT
+    Translate { id: handMove; x: stage.handX * stage.handT; y: stage.handY * stage.handT }
+    NumberAnimation { id: handAnim; target: stage; property: "handT"; duration: 480 * stage.dur; easing.type: Easing.InOutCubic; onFinished: stage.handDone() }
+    signal handDone()
+    signal handShown()                                          // took over and is on screen: the other phone can go
+    function handTo(t) { handAnim.stop(); handAnim.from = handT; handAnim.to = t; handAnim.start() }
+    function handAim(mx, my, w, h) { handMx = mx; handMy = my; handW = w; handH = h }
+    // show / hide at once, already up and in place (no rise / drop)
+    function appear(scr, land) {
+        riseAnim.stop(); dropAnim.stop(); slideAnim.stop(); wobAnim.stop(); toLand.stop(); toPort.stop(); ringAnim.stop();
+        history = []; orient = land ? "landscape" : "portrait"; viaTurn = land; turn = land ? 1 : 0; hand = land ? 1 : 0;
+        slideIn = 0; rise = 1; wobT = 1; ringW = 0; turning = false;
+        if (windowed && svc) svc.phoneBig = true;
+        setScreen(scr); swapAnim.stop(); swapT = 1; shown = true; focusSoon.restart();
+    }
+    function vanish() {
+        if (!shown) return;
+        riseAnim.stop(); dropAnim.stop(); slideAnim.stop(); handAnim.stop(); toLand.stop(); toPort.stop(); prepMax.stop(); prepFrames = 0;
+        history = []; shown = false; rise = 0; hand = 0; slideIn = 0; turning = false; handT = 0;
+        turn = 0; viaTurn = false; orient = "portrait"; screen = "home"; portShown = "home"; shownLand = false; closed();
+    }
+    // the other phone hands over: req = { page, land, hand: { x, y, w, h } } → appear right on top of it, then say so
+    property int handWait: 0
+    function takeOver(req) {
+        if (req.hand) { handAnim.stop(); handT = 1; appear(req.page, req.land); handAim(req.hand.x, req.hand.y, req.hand.w, req.hand.h) }
+        else appear(req.page, req.land);
+        handWait = 2; handMax.restart();
+    }
+    Connections { target: stage.Window.window; enabled: stage.handWait > 0
+        function onFrameSwapped() { stage.handWait = stage.handWait - 1; if (stage.handWait <= 0) { handMax.stop(); stage.handShown() } } }
+    Timer { id: handMax; interval: 300; onTriggered: if (stage.handWait > 0) { stage.handWait = 0; stage.handShown() } }
     // light mode (side button ⚡, or on by itself while a game has focus): the phone face is drawn at a lower
     // sharpness, animations are about half as long and the wobble is skipped — less GPU work next to the game
     // wallpaper live preview (Wallpapers → Preview): the desktop shows the picture and the phone shrinks into the
@@ -184,7 +233,7 @@ Item {
     // ── scrim (click outside = close) ──
     Rectangle {
         visible: !stage.windowed
-        anchors.fill: parent; color: Theme.scrim; opacity: Math.min(1, stage.visibleAmount) * (1 - stage.pv)
+        anchors.fill: parent; color: Theme.scrim; opacity: Math.min(1, stage.visibleAmount) * (1 - stage.pv) * (1 - stage.handT)
         MouseArea { anchors.fill: parent; enabled: stage.shown; onClicked: stage.previewing ? stage.svc.wallPreview = "" : stage.close() }
     }
 
@@ -195,31 +244,30 @@ Item {
     Item {
         id: portWrap
         anchors.fill: parent
-        transform: [cornerScale, cornerMove]
+        transform: [cornerScale, cornerMove, handMove]
         layer.enabled: stage.turning
         layer.textureSize: Qt.size(width * stage.px, height * stage.px)
         opacity: stage.turning ? Math.max(0.004, stage.portAlpha) : 1     // 0.004: still drawn while the turn gets ready
         Item {
             id: pHolder
-            x: stage.width / 2 - 240 + 45 * stage.flatP
+            x: stage.width / 2 - 240 + 45 * stage.fp
             // Settings → Look → Phone: lift the small upright phone (gone while big or sideways, so it still lands on those)
             property real spot: ({ Middle: 140, High: 270 }[stage.prefs ? stage.prefs.phoneSpot : ""] || 0)
             Behavior on spot { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
             readonly property real baseY: stage.height + 250 - 844 - spot * (1 - stage.lk)     // as designed: bottom of the phone below the screen edge
-            y: baseY + stage.flatP * ((stage.height / 2 - 422) - baseY)
+            y: baseY + stage.fp * ((stage.height / 2 - 422) - baseY)
             width: 390; height: 844
             // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
             readonly property real smallScale: 1.1
-            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * (stage.windowed ? Math.min(1.25, (stage.height - 24) / 844, (stage.width - 24) / 390)   /* window: hugs the phone */
-                                                                                  : Math.min(1.25, stage.height * 0.9 / 844))
+            scale: (1 - stage.fp) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.fp * stage.fitP
             visible: stage.r > 0.001 && (stage.hand < 1 || stage.turning)
             opacity: stage.turning ? 1 : 1 - stage.hand
             readonly property var place: M.chain(M.T(x, y), M.about(195, 422, M.S(scale)))
             readonly property real piv: 422 * (1 - stage.lk)
             readonly property var inner: M.about(195, 422, M.chain(
                 M.T(0, (1 - stage.r) * 1150), M.T(51 * stage.lk, (-343.5 - (stage.height - 1080) / 2) * stage.lk + piv)   /* lands exactly on the sideways phone at any shell size */, M.S(1 + 0.213 * stage.lk),
-                M.Ry(-32 * (1 - stage.flatP) + 46 * stage.lk), M.Rx(5 * (1 - stage.flatP) - 29 * stage.lk),
-                M.Rz(5 * (1 - stage.flatP) - (1 - stage.r) * 14 + (stage.wob + stage.ringW) * (1 - stage.lk) - 98 * stage.lk),
+                M.Ry(-32 * (1 - stage.fp) + 46 * stage.lk), M.Rx(5 * (1 - stage.fp) - 29 * stage.lk),
+                M.Rz(5 * (1 - stage.fp) - (1 - stage.r) * 14 + (stage.wob + stage.ringW) * (1 - stage.lk) - 98 * stage.lk),
                 M.T(0, -piv)))
             readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
             // back plate
@@ -274,7 +322,7 @@ Item {
                             id: navRow
                             anchors.centerIn: parent; spacing: 4
                             Repeater {
-                                model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]].slice(0, stage.windowed ? 7 : 8)
+                                model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]].slice(0, stage.windowed || stage.handT > 0 ? 7 : 8)
                                 delegate: UiCandy {
                                     id: nb
                                     required property var modelData
@@ -312,7 +360,7 @@ Item {
         id: rail
         readonly property bool land: stage.wantLand
         readonly property real tick: stage.r + stage.wob + stage.lk + stage.flatP + stage.hand + pHolder.scale + pHolder.y + pHolder.x
-                                     + stage.flat + stage.slideIn + stage.ringW + lHolder.scale + stage.cS + cornerMove.x + cornerMove.y
+                                     + stage.flat + stage.slideIn + stage.ringW + lHolder.scale + stage.cS + cornerMove.x + cornerMove.y + handMove.x + handMove.y
         readonly property point edgeTop: (tick, land ? lBody.mapToItem(stage, 920, 40) : pBody.mapToItem(stage, 390, 120))
         readonly property point edgeBot: (tick, land ? lBody.mapToItem(stage, 920, 400) : pBody.mapToItem(stage, 390, 520))
         readonly property real ang: Math.atan2(edgeBot.x - edgeTop.x, edgeBot.y - edgeTop.y) * 180 / Math.PI
@@ -329,7 +377,7 @@ Item {
             spacing: 8
             Repeater {
                 model: [["back", "back", "Back"], ["home", "home", "Home"], ["quick", "sliders", "Quick"], ["islands", "map", "Islands"],
-                        ["lite", "bolt", "Light mode"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]].slice(0, stage.windowed ? 7 : 8)
+                        ["lite", "bolt", "Light mode"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]].slice(0, stage.windowed || stage.handT > 0 ? 7 : 8)
                 delegate: UiCandy {
                     id: rb
                     required property var modelData
@@ -370,7 +418,7 @@ Item {
     Item {
         id: landWrap
         anchors.fill: parent
-        transform: [cornerScale, cornerMove]
+        transform: [cornerScale, cornerMove, handMove]
         layer.enabled: stage.turning
         layer.textureSize: Qt.size(width * stage.px, height * stage.px)
         opacity: stage.turning ? Math.max(0.004, stage.landAlpha) : 1     // 0.004: still drawn while the turn gets ready
@@ -380,12 +428,11 @@ Item {
             x: stage.width / 2 - 460 - (stage.windowed ? 40 : 0); y: stage.height / 2 - 190 - (stage.windowed ? 48 : 0)
             width: 920; height: 440
             readonly property real baseScale: 1.12                     // small mode: a little larger than the design
-            scale: baseScale + stage.flat * ((stage.windowed ? Math.min((stage.width - 104) / 1012, (stage.height - 60) / 484)
-                                                              : Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484)) - baseScale)
+            scale: baseScale + stage.fl * (stage.fitL - baseScale)
             visible: stage.hand > 0.001 || stage.slideIn > 0.001 || stage.turning
             opacity: stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
             readonly property var inner: M.about(460, 220, stage.hand > 0.001 || stage.turning
-                ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.flat)), M.Rx(-24 * (1 - stage.flat)), M.Rz(-3 * (1 - stage.flat) + stage.ringW))
+                ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.fl)), M.Rx(-24 * (1 - stage.fl)), M.Rz(-3 * (1 - stage.fl) + stage.ringW))
                 : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
             readonly property var rest: M.chain(M.F(), M.persp(2200, 460, 220), inner)
             // while turning: lie over the upright phone (a quarter turn round, same size), then ease into its own place

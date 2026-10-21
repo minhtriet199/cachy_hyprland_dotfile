@@ -163,17 +163,67 @@ ShellRoot {
     // ── phone as a normal app window (Settings → Look → Open as: Window): one for all screens, built on first open,
     //    let go 3 min after it closes; closing the window (X / your close key) removes it at once ──
     property bool phoneWinLive: false
-    property string phoneWinPending: ""
+    property var phoneWinPending: null             // a page name, or a take-over request (below)
     Timer { id: phoneWinIdle; interval: 180000; onTriggered: shell.phoneWinLive = false }
     Connections {
         target: shell
         function onPhoneRequest(monitor, screen) { if (Prefs.phoneWindow && !shell.phoneWinLive) { shell.phoneWinPending = screen; shell.phoneWinLive = true } }
     }
-    // switched Overlay ↔ Window (Settings → Look, or Super+Z → ipc phonemode): open the same page again the new way
-    // (Home if the phone was closed, so you see which way it is now)
+    // ── Super+Z / Settings → Open as: ONE phone moves between overlay and window (closed phone: opens Home the new way) ──
+    // overlay → window: the overlay phone glides to where the window goes (middle of the screen's free area) at the window
+    //   phone's size; meanwhile the window opens hidden on the same page, is put exactly there, shown, then the overlay goes.
+    // window → overlay: the overlay phone appears right on top of the window phone, the window goes, the phone glides home.
     property bool phoneOpen: false
     property string phonePage: "home"
-    Connections { target: Prefs; function onPhoneWindowChanged() { if (Prefs.ready) shell.phone(shell.phoneOpen ? shell.phonePage : "home") } }
+    property bool phoneLand: false
+    property string phoneMon: ""                   // screen of the open overlay phone
+    property bool phoneGhost: false                // window phone up but hidden (the overlay phone still covers that spot)
+    property var swapTo: null                      // where the window goes (global logical px)
+    property int swapWait: 0                       // overlay glide done + window up = 2
+    signal phoneSwapOut(string monitor, real mx, real my, real w, real h)   // overlay: glide onto a window phone at (mx, my) design px
+    signal phoneSwapWin(var req)                                         // window: take over (hidden) on req.page
+    signal phoneSwapIn(string monitor, var req)                          // overlay: take over from the window phone
+    signal phoneSwapDone(bool toWin)                                     // the phone that handed over goes
+    function winSize(land) { return land ? Qt.size(900, 440) : Qt.size(410, 868) }     // a fresh phone window (design px)
+    function scFor(s) { return s.height / 1080 * Prefs.size }
+    Connections { target: Prefs; function onPhoneWindowChanged() { if (!Prefs.ready) return; if (shell.phoneOpen) swapProbe.running = true; else shell.phone("home") } }
+    Process {
+        id: swapProbe
+        command: ["sh", "-c", "hyprctl -j monitors; echo @; hyprctl -j clients"]
+        stdout: StdioCollector { onStreamFinished: { const p = this.text.split("\n@\n"); shell.swapGo(JSON.parse(p[0]), JSON.parse(p[1])) } }
+    }
+    function swapGo(mons, wins) {
+        const req = { page: phonePage, land: phoneLand };
+        if (Prefs.phoneWindow) {
+            const s = Quickshell.screens.find(x => x.name === phoneMon), m = mons.find(x => x.name === phoneMon);
+            if (!s || !m) { phoneSwapDone(true); phone(phonePage); return }
+            const r = m.reserved || [0, 0, 0, 0], sc = scFor(s), ws = winSize(phoneLand);
+            const cx = r[0] + (s.width - r[0] - r[2]) / 2, cy = r[1] + (s.height - r[1] - r[3]) / 2;
+            swapTo = { x: Math.round(s.x + cx - ws.width * sc / 2), y: Math.round(s.y + cy - ws.height * sc / 2), w: Math.round(ws.width * sc), h: Math.round(ws.height * sc) };
+            swapWait = 0; phoneGhost = true; swapSafety.restart();
+            phoneSwapOut(phoneMon, cx / sc, cy / sc, ws.width, ws.height);
+            if (phoneWinLive) phoneSwapWin(req); else { phoneWinPending = req; phoneWinLive = true }
+        } else {
+            const w = wins.find(c => c.title === "Isla Phone"), gx = w ? w.at[0] + w.size[0] / 2 : -1, gy = w ? w.at[1] + w.size[1] / 2 : -1;
+            const s = Quickshell.screens.find(m => gx >= m.x && gx < m.x + m.width && gy >= m.y && gy < m.y + m.height);
+            if (!s) { phoneSwapDone(false); phone(phonePage); return }
+            const sc = scFor(s);
+            req.hand = { x: (gx - s.x) / sc, y: (gy - s.y) / sc, w: w.size[0] / sc, h: w.size[1] / sc };
+            phoneSwapIn(s.name, req);
+        }
+    }
+    // overlay → window, both ready: put the window exactly under the overlay phone, show it, then the overlay goes
+    function swapStep() {
+        swapWait = swapWait + 1; if (swapWait < 2) return;
+        const t = swapTo, sel = "window = \"title:^(Isla Phone)$\"";
+        swapPlace.command = ["sh", "-c", "hyprctl dispatch \"$0\" >/dev/null; hyprctl dispatch \"$1\" >/dev/null",
+            "hl.dsp.window.resize({ x = " + t.w + ", y = " + t.h + ", " + sel + " })", "hl.dsp.window.move({ x = " + t.x + ", y = " + t.y + ", " + sel + " })"];
+        swapPlace.running = true;
+    }
+    Process { id: swapPlace; onExited: swapShow.restart() }
+    Timer { id: swapShow; interval: 60; onTriggered: { shell.phoneGhost = false; swapGone.restart() } }
+    Timer { id: swapGone; interval: 50; onTriggered: { swapSafety.stop(); shell.phoneSwapDone(true) } }
+    Timer { id: swapSafety; interval: 3000; onTriggered: if (shell.phoneGhost) { shell.phoneGhost = false; shell.phoneSwapDone(true) } }   // never stay hidden
     LazyLoader {
         active: shell.phoneWinLive
         FloatingWindow {
@@ -181,17 +231,19 @@ ShellRoot {
             readonly property real sc: (screen ? screen.height : 1080) / 1080 * Prefs.size     // the screen it's on (Hyprland places it)
             title: "Isla Phone"
             // upright / sideways shape; Hyprland only uses it for the first size, so a turn asks it to resize (stays centred)
-            implicitWidth: (wstage.wantLand ? 900 : 410) * sc
-            implicitHeight: (wstage.wantLand ? 440 : 868) * sc
+            implicitWidth: shell.winSize(wstage.wantLand).width * sc
+            implicitHeight: shell.winSize(wstage.wantLand).height * sc
             Connections { target: wstage; function onWantLandChanged() { if (phoneApp.visible) Quickshell.execDetached(["hyprctl", "dispatch",
                 "hl.dsp.window.resize({ x = " + Math.round(phoneApp.implicitWidth) + ", y = " + Math.round(phoneApp.implicitHeight) + ", window = \"title:^(Isla Phone)$\" })"]) } }
             minimumSize: Qt.size(320 * sc, 420 * sc)
             visible: wstage.shown || wstage.visibleAmount > 0.001
             onVisibleChanged: if (visible) phoneWinIdle.stop(); else phoneWinIdle.restart()
             onClosed: { wstage.shown = false; shell.phoneWinLive = false }
+            onBackingWindowVisibleChanged: if (backingWindowVisible && shell.phoneGhost) shell.swapStep()
             color: "transparent"          // only the phone shows; Hyprland's border / shadow / blur are off for it (windowrules.lua)
             Item {
                 focus: true
+                opacity: shell.phoneGhost ? 0 : 1
                 width: phoneApp.width / phoneApp.sc; height: phoneApp.height / phoneApp.sc
                 scale: phoneApp.sc; transformOrigin: Item.TopLeft
                 PhoneStage {
@@ -199,10 +251,11 @@ ShellRoot {
                     anchors.fill: parent
                     focus: true
                     windowed: true
-                    onShownChanged: shell.phoneOpen = shown
-                    onScreenChanged: shell.phonePage = screen
+                    onShownChanged: if (Prefs.phoneWindow) shell.phoneOpen = shown
+                    onScreenChanged: if (Prefs.phoneWindow) shell.phonePage = screen
+                    onWantLandChanged: if (Prefs.phoneWindow) shell.phoneLand = wantLand
                     svc: Services; prefs: Prefs; monitor: phoneApp.screen ? phoneApp.screen.name : shell.focusedName()
-                    Component.onCompleted: if (shell.phoneWinPending) { const p = shell.phoneWinPending; shell.phoneWinPending = ""; go(p) }
+                    Component.onCompleted: if (shell.phoneWinPending) { const p = shell.phoneWinPending; shell.phoneWinPending = null; typeof p === "string" ? go(p) : takeOver(p) }
                 }
             }
             Connections {
@@ -213,6 +266,8 @@ ShellRoot {
                     wstage.go(screen);
                 }
                 function onPhoneClose() { wstage.close() }
+                function onPhoneSwapWin(req) { wstage.takeOver(req) }
+                function onPhoneSwapDone(toWin) { if (!toWin) wstage.vanish() }
             }
         }
     }
@@ -222,7 +277,7 @@ ShellRoot {
         target: "isla"
         function phone(screen: string): void { shell.phone(screen) }
         function close(): void { shell.phoneClose() }
-        function phonemode(): void { Prefs.flip("phoneWindow") }    // phone: overlay ↔ window (Super+Z)
+        function phonemode(): void { if (!shell.phoneGhost && !swapProbe.running) Prefs.flip("phoneWindow") }    // phone: overlay ↔ window (Super+Z)
         function lid(state: string): void { Services.lid(state === "closed") }
         function wallpaper(path: string): void { Prefs.set("wallpaper", path) }
         function bar(): void { Prefs.flip("bar") }
@@ -576,11 +631,12 @@ ShellRoot {
                 // ── the phone: built on first open (only on that screen), removed 3 min after it closes ──
                 // (≈ 120 MB per screen while it exists; the first open after removal takes ≈ 0.15–0.45 s)
                 property bool phoneLive: false
-                property string phonePending: ""
+                property var phonePending: null              // a page name, or a take-over request from the window phone
                 Timer { id: phoneIdle; interval: 180000; onTriggered: scr.phoneLive = false }
                 Connections {
                     target: shell
                     function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive && !Prefs.phoneWindow) { scr.phonePending = screen; scr.phoneLive = true } }
+                    function onPhoneSwapIn(monitor, req) { if (monitor === scr.name && !scr.phoneLive) { scr.phonePending = req; scr.phoneLive = true } }
                 }
                 LazyLoader {
                 active: scr.phoneLive
@@ -604,11 +660,14 @@ ShellRoot {
                             anchors.fill: parent
                             focus: true
                             svc: Services; prefs: Prefs; monitor: scr.name
-                            onShownChanged: shell.phoneOpen = shown
-                            onScreenChanged: shell.phonePage = screen
+                            onShownChanged: if (!Prefs.phoneWindow) { shell.phoneOpen = shown; if (shown) shell.phoneMon = scr.name }
+                            onScreenChanged: if (!Prefs.phoneWindow) shell.phonePage = screen
+                            onWantLandChanged: if (!Prefs.phoneWindow) shell.phoneLand = wantLand
+                            onHandDone: if (Prefs.phoneWindow && shell.phoneGhost) shell.swapStep()      // glided onto the window's spot
+                            onHandShown: { shell.phoneSwapDone(false); Services.phoneBig = false; handTo(0) }   // on top of the window phone: it goes, glide home
                             onSoon: w => { soon.text = w + " is coming in the next Isla update ✿"; soon.show = true; soonTimer.restart() }
                             // the request that built the phone: open that screen now
-                            Component.onCompleted: if (scr.phonePending) { const p = scr.phonePending; scr.phonePending = ""; go(p) }
+                            Component.onCompleted: if (scr.phonePending) { const p = scr.phonePending; scr.phonePending = null; typeof p === "string" ? go(p) : takeOver(p) }
                         }
                         Toast {
                             id: soon
@@ -630,6 +689,9 @@ ShellRoot {
                             stage.go(screen);
                         }
                         function onPhoneClose() { stage.close() }
+                        function onPhoneSwapOut(monitor, mx, my, w, h) { if (monitor !== scr.name || !stage.shown) return; stage.handAim(mx, my, w, h); Services.phoneBig = true; stage.handTo(1) }
+                        function onPhoneSwapIn(monitor, req) { if (monitor === scr.name) stage.takeOver(req) }
+                        function onPhoneSwapDone(toWin) { if (toWin) stage.vanish() }
                     }
                 }
                 }
