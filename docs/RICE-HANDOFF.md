@@ -1,6 +1,6 @@
 # CachyOS + Hyprland + Isla — handoff for the next AI
 
-Last updated: 2026-10-19. Read this first, then `~/.claude/projects/-home-gamer/memory/cachyos-g14-setup.md`
+Last updated: 2026-10-22. Read this first, then `~/.claude/projects/-home-gamer/memory/cachyos-g14-setup.md`
 (longer history). This file explains the machine, the rice ("Isla"), where the code is, the rules the
 owner wants followed, and what is still open.
 
@@ -363,10 +363,12 @@ Pictures from the owner: `Md_File/todo-refs/` (right-click-desktop-menu.png, wid
 **This overrides the old "no desktop widgets" taste** — the owner now wants desktop widgets via Edit Desktop.
 Keep the owner rules (§1): clean small code, measured performance, lazy-load, SekaiPop look; recheck old features after each step.
 
-1. **Ctrl+S rotates the phone** while the phone is open (same as the rotate button / `ipc call isla rotate`).
-2. **Phone as a real window.** A mode that turns the phone into a normal floating app window (not a layer-shell
-   overlay): stays open while using other apps, can be moved, focused, minimised to a workspace and closed like any
-   app (own title, shows in the task list / window rules).
+1. ✅ **Done 2026-10-22: Ctrl+S turns the phone** (PhoneStage `Keys.onPressed`, also in the F1 key list).
+2. ✅ **Done 2026-10-22: Phone as a real window.** Settings → Look → **Open as: Overlay / Window** (`Prefs.phoneWindow`).
+   Window = one `FloatingWindow` titled "Isla Phone" in shell.qml (lazy, like the overlay; closing it with X / your close
+   key deletes it). `PhoneStage { windowed: true }` = always the flat big pose, no scrim, no big/small button. Hyprland
+   ignores the window's own size changes, so a turn sends `hl.dsp.window.resize` (stays centred). Window rule in
+   windowrules.lua: float + center. Switching the setting reopens the Look page the new way.
 3. **Right-click on the empty desktop → small menu** (picture right-click-desktop-menu.png): *Edit Desktop*,
    *Wallpapers*, *Group themes*. Same candy card style.
 4. **Edit Desktop mode** (Edit-Desktop.png): the desktop shrinks into a framed preview; bottom tray with tabs
@@ -380,9 +382,11 @@ Keep the owner rules (§1): clean small code, measured performance, lazy-load, S
    the bottom, music, system stats… search for / invent more. Each widget has several styles.
 6. **More themes — WAIT: owner will find and pick the themes first; don't build until they say so.** Chosen in Edit Desktop → Theme: e.g. *Island*, *Edge*, *Minimal*, *Mochi* (and more). A theme
    sets the UI style (box style, colours) **and** the widget style. Presets = saved whole layouts.
-7. **Wallpaper page live preview:** while choosing, the phone shrinks into a corner showing only the image picker
-   (rotate button still works) and the desktop shows the wallpaper live — pick + see at the same time, no
-   Preview → Back → pick again. With two screens: phone stays on one screen, the other screen shows the preview.
+7. ✅ **Done 2026-10-22: Wallpaper live preview.** 👁 Preview (or Space) → the phone shrinks into the bottom-right corner
+   (`cornerScale`/`cornerMove` in PhoneStage, shared by both phones so a turn still lines up), the page hides its header,
+   the desktop on every screen follows the picked picture (220 ms after the string settles). ✕ Stop / Space / Esc / click
+   outside ends it. The old floating preview bar was removed. A windowed phone doesn't shrink.
+   Known: the upright and sideways Wallpapers pages keep their own position, so turning while previewing can jump to another picture.
 8. **New lock / login flow, one continuous motion with the phone** (owner wants it perfect and fast):
    - At boot: lock-screen wallpaper + big clock + date.
    - Any click / key → the phone slides up from the bottom, **always 3/4 of the screen height** (default), background

@@ -14,6 +14,9 @@ hl.window_rule({
     no_initial_focus  = true,         -- keep typing in the browser (Ctrl+T's new tab gets the search bar)
 })
 
+-- Isla phone as a window (Isla Settings → Look → Open as: Window)
+hl.window_rule({ match = { title = "^(Isla Phone)$" }, float = true, center = true })
+
 -- Gaming
 local gamingApps = "^(steam_app.*|gamescope)$"
 -- Which screen/workspace a game opens on is handled in config/games.lua

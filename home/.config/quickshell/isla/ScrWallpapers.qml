@@ -66,16 +66,22 @@ Item {
             wp.vel = wp.vel * 0.6 + v * 0.4; wp.swing = Math.max(-16, Math.min(16, -wp.vel * 7)) } }
     function apply() { if (cur) prefs.set(targetKey, cur.path) }
     function applyTo(key) { if (cur) prefs.set(key, cur.path) }
-    // Preview: show the picture on the desktop (the phone fades away); ← → keep browsing, Esc / Back ends it
+    // Preview: the desktop shows the picture live while you keep spinning (the phone shrinks into a corner and only
+    // the string + buttons stay); Esc / Space / click outside ends it. Waits until the string settles before loading.
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
     function preview() { if (cur) svc.wallPreview = cur.path }
-    onCurChanged: if (previewing && cur) svc.wallPreview = cur.path
+    onCurChanged: if (previewing && cur) livePick.restart()
+    Timer { id: livePick; interval: 220; onTriggered: if (wp.previewing && wp.cur) wp.svc.wallPreview = wp.cur.path }
+    // header height above the string (gone while previewing, so the string gets the room)
+    property real headH: previewing ? 0 : narrow ? 170 : 40
+    Behavior on headH { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
     // washi tape colours for the strips that hold each photo
     readonly property var tapes: [Theme.pinkSoft, Theme.seaSoft, Theme.sun, Theme.lilacSoft, Theme.peach]
 
     // header
     Flow {
         x: wp.cx; y: 16 + wp.topPad; width: wp.cw
+        opacity: wp.headH / (wp.narrow ? 170 : 40); visible: opacity > 0.01
         spacing: 10
         // back button + title (same as the other Settings pages)
         UiCandy {
@@ -105,6 +111,7 @@ Item {
     }
     Row {
         anchors.right: parent.right; anchors.rightMargin: wp.narrow ? 18 : 24; y: wp.narrow ? 16 + wp.topPad + 92 : 16; height: 36
+        opacity: wp.headH / (wp.narrow ? 170 : 40); visible: opacity > 0.01
         spacing: 10
         UiCandy {
             anchors.verticalCenter: parent.verticalCenter
@@ -156,9 +163,9 @@ Item {
         id: stage
         // drawn for an 800-wide sideways screen; on the upright phone it's scaled down to fit
         // and shrunk to fit above the name + buttons (≈ 270 design px tall), centred
-        readonly property real room: wp.height - (16 + wp.topPad + (wp.narrow ? 170 : 40)) - caption.height - caption.anchors.bottomMargin - 10
+        readonly property real room: wp.height - (16 + wp.topPad + wp.headH) - caption.height - caption.anchors.bottomMargin - 10
         scale: Math.max(0.3, Math.min(1, wp.cw / 800, room / 270)); transformOrigin: Item.TopLeft
-        x: wp.cx - stageClip.x + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + (wp.narrow ? 170 : 36 + 4); width: 800; height: room / scale
+        x: wp.cx - stageClip.x + (wp.cw - 800 * scale) / 2; y: 16 + wp.topPad + wp.headH; width: 800; height: room / scale
         // the rope runs past both sides (x -220 … 1020) so the outer photos hang from it too.
         // Quadratic curve (-220,110) → ctrl (400,-50) → (1020,110) in stage coords; the canvas sits at x -230
         Canvas {
@@ -304,7 +311,8 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 8; height: 34
             WpButton { readonly property bool done: !!wp.cur && wp.prefs.phoneBg === wp.cur.path
                 text: (done ? "✓ " : "📱 ") + "Phone"; h: 28; fill: done ? wp.accent : Theme.paper; onClicked: wp.applyTo("phoneBg") }
-            WpButton { text: wp.narrow ? "👁" : "👁 Preview"; h: 28; onClicked: wp.preview() }
+            WpButton { text: wp.previewing ? (wp.narrow ? "✕" : "✕ Stop preview") : (wp.narrow ? "👁" : "👁 Preview"); h: 28
+                fill: wp.previewing ? wp.accent : Theme.paper; onClicked: wp.previewing ? (wp.svc.wallPreview = "") : wp.preview() }
             WpButton { text: wp.narrow ? "🎲" : "🎲 Surprise me"; h: 28; onClicked: wp.surprise() }
             WpButton { text: "🗑"; h: 28; onClicked: if (wp.cur) wp.askDelete = { name: wp.cur.name, path: wp.cur.path } }
             WpButton { text: wp.svc.pasteMsg || (wp.narrow ? "📋" : "📋 Paste image"); h: 28; onClicked: wp.svc.pasteWallpaper() }

@@ -160,6 +160,59 @@ ShellRoot {
         }
     }
 
+    // ── phone as a normal app window (Settings → Look → Open as: Window): one for all screens, built on first open,
+    //    let go 3 min after it closes; closing the window (X / your close key) removes it at once ──
+    property bool phoneWinLive: false
+    property string phoneWinPending: ""
+    Timer { id: phoneWinIdle; interval: 180000; onTriggered: shell.phoneWinLive = false }
+    Connections {
+        target: shell
+        function onPhoneRequest(monitor, screen) { if (Prefs.phoneWindow && !shell.phoneWinLive) { shell.phoneWinPending = screen; shell.phoneWinLive = true } }
+    }
+    // switched Overlay ↔ Window (on the phone itself): open that page again the new way
+    Connections { target: Prefs; function onPhoneWindowChanged() { if (Prefs.ready) shell.phone("settingsQuick") } }
+    LazyLoader {
+        active: shell.phoneWinLive
+        FloatingWindow {
+            id: phoneApp
+            readonly property real sc: (screen ? screen.height : 1080) / 1080 * Prefs.size     // the screen it's on (Hyprland places it)
+            title: "Isla Phone"
+            // upright / sideways shape; Hyprland only uses it for the first size, so a turn asks it to resize (stays centred)
+            implicitWidth: (wstage.wantLand ? 1160 : 520) * sc
+            implicitHeight: (wstage.wantLand ? 640 : 920) * sc
+            Connections { target: wstage; function onWantLandChanged() { if (phoneApp.visible) Quickshell.execDetached(["hyprctl", "dispatch",
+                "hl.dsp.window.resize({ x = " + Math.round(phoneApp.implicitWidth) + ", y = " + Math.round(phoneApp.implicitHeight) + ", window = \"title:^(Isla Phone)$\" })"]) } }
+            minimumSize: Qt.size(320 * sc, 420 * sc)
+            visible: wstage.shown || wstage.visibleAmount > 0.001
+            onVisibleChanged: if (visible) phoneWinIdle.stop(); else phoneWinIdle.restart()
+            onClosed: { wstage.shown = false; shell.phoneWinLive = false }
+            color: Theme.cream
+            UiDots { anchors.fill: parent; dot: Theme.screenDot }
+            Item {
+                focus: true
+                width: phoneApp.width / phoneApp.sc; height: phoneApp.height / phoneApp.sc
+                scale: phoneApp.sc; transformOrigin: Item.TopLeft
+                PhoneStage {
+                    id: wstage
+                    anchors.fill: parent
+                    focus: true
+                    windowed: true
+                    svc: Services; prefs: Prefs; monitor: phoneApp.screen ? phoneApp.screen.name : shell.focusedName()
+                    Component.onCompleted: if (shell.phoneWinPending) { const p = shell.phoneWinPending; shell.phoneWinPending = ""; go(p) }
+                }
+            }
+            Connections {
+                target: shell
+                function onPhoneRequest(monitor, screen) {
+                    if (!Prefs.phoneWindow) { wstage.close(); return }
+                    if (wstage.shown && wstage.screen === screen) { wstage.close(); return }   // same key again = close
+                    wstage.go(screen);
+                }
+                function onPhoneClose() { wstage.close() }
+            }
+        }
+    }
+
     // From a terminal:  qs -c isla ipc call isla phone search
     IpcHandler {
         target: "isla"
@@ -522,7 +575,7 @@ ShellRoot {
                 Timer { id: phoneIdle; interval: 180000; onTriggered: scr.phoneLive = false }
                 Connections {
                     target: shell
-                    function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive) { scr.phonePending = screen; scr.phoneLive = true } }
+                    function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive && !Prefs.phoneWindow) { scr.phonePending = screen; scr.phoneLive = true } }
                 }
                 LazyLoader {
                 active: scr.phoneLive
@@ -565,7 +618,7 @@ ShellRoot {
                     Connections {
                         target: shell
                         function onPhoneRequest(monitor, screen) {
-                            if (monitor !== scr.name) { stage.close(); return }
+                            if (monitor !== scr.name || Prefs.phoneWindow) { stage.close(); return }
                             if (stage.shown && stage.screen === screen) { stage.close(); return }   // same key again = close
                             stage.go(screen);
                         }

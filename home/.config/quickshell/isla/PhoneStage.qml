@@ -18,17 +18,35 @@ Item {
     property bool shownLand: false               // was `screen` shown on the sideways phone
     property bool prevLand: false                // … and `prevScreen`
     property bool shown: false
-    readonly property bool big: !!svc && svc.phoneBig
+    // Settings → Look → Phone window: lives in a normal app window (always the flat "big" pose, no scrim, no big ↔ small)
+    property bool windowed: false
+    readonly property bool big: windowed || !!svc && svc.phoneBig
     property real flat: big && (wantLand || hand > 0.001 || turning) ? 1 : 0     // 1 = no tilt (big landscape); held while it turns away
     Behavior on flat { NumberAnimation { duration: 380 * stage.dur; easing.type: Easing.OutCubic } }
     property real flatP: big ? 1 : 0                                   // big portrait: centred, larger, upright (kept while sideways, so a turn lands on it)
     Behavior on flatP { NumberAnimation { duration: 420 * stage.dur; easing.type: Easing.OutCubic } }
     // light mode (side button ⚡, or on by itself while a game has focus): the phone face is drawn at a lower
     // sharpness, animations are about half as long and the wobble is skipped — less GPU work next to the game
-    // wallpaper preview (Wallpapers → Preview): the phone fades away, the desktop shows the picture, a small bar floats
+    // wallpaper live preview (Wallpapers → Preview): the desktop shows the picture and the phone shrinks into the
+    // bottom-right corner, still working (keep picking, turn it). A windowed phone just stays where it is.
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
-    property real pv: previewing ? 1 : 0
-    Behavior on pv { NumberAnimation { duration: 260 * stage.dur; easing.type: Easing.OutCubic } }
+    property real pv: previewing && !windowed ? 1 : 0
+    Behavior on pv { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    // corner pose: scale k about the phone's middle (o) and move that point to t; shared by both phones so a turn still lines up
+    property real cK: wantLand ? 560 / (920 * (big ? Math.min(width * 0.75 / 1012, height * 0.8 / 484) : 1.12))
+                               : 470 / (844 * (big ? Math.min(1.25, height * 0.9 / 844) : 1.1))
+    property real cOx: wantLand || big ? width / 2 : width / 2 - 45
+    property real cOy: wantLand ? height / 2 + 30 : big ? height / 2 : height       // small upright phone: keep its bottom on the screen edge
+    property real cTx: width - (wantLand ? 420 : 330)
+    property real cTy: wantLand ? height - 250 : big ? height - 270 : height
+    Behavior on cK { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    Behavior on cOx { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    Behavior on cOy { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    Behavior on cTx { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    Behavior on cTy { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
+    readonly property real cS: 1 + (cK - 1) * pv
+    Scale { id: cornerScale; origin.x: stage.cOx; origin.y: stage.cOy; xScale: stage.cS; yScale: stage.cS }
+    Translate { id: cornerMove; x: (stage.cTx - stage.cOx) * stage.pv; y: (stage.cTy - stage.cOy) * stage.pv }
     readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.calm)
     readonly property real dur: lite ? 0.45 : 1
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
@@ -67,6 +85,7 @@ Item {
     }
     // was = the sideways phone is the one showing now; land = it should be after this
     function transition(scr, land, was) {
+        if (windowed && svc) svc.phoneBig = true;      // pages leave room for the big phone's nav bar
         if (land) {
             if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toLand) }
             else if (was && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
@@ -164,8 +183,9 @@ Item {
 
     // ── scrim (click outside = close) ──
     Rectangle {
+        visible: !stage.windowed
         anchors.fill: parent; color: Theme.scrim; opacity: Math.min(1, stage.visibleAmount) * (1 - stage.pv)
-        MouseArea { anchors.fill: parent; enabled: stage.shown; onClicked: stage.close() }
+        MouseArea { anchors.fill: parent; enabled: stage.shown; onClicked: stage.previewing ? stage.svc.wallPreview = "" : stage.close() }
     }
 
     // ── portrait phone ──
@@ -175,6 +195,7 @@ Item {
     Item {
         id: portWrap
         anchors.fill: parent
+        transform: [cornerScale, cornerMove]
         layer.enabled: stage.turning
         layer.textureSize: Qt.size(width * stage.px, height * stage.px)
         opacity: stage.turning ? Math.max(0.004, stage.portAlpha) : 1     // 0.004: still drawn while the turn gets ready
@@ -189,9 +210,9 @@ Item {
             width: 390; height: 844
             // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
             readonly property real smallScale: 1.1
-            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844)
+            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844, stage.width * 0.9 / 390)
             visible: stage.r > 0.001 && (stage.hand < 1 || stage.turning)
-            opacity: (stage.turning ? 1 : 1 - stage.hand) * (1 - stage.pv)
+            opacity: stage.turning ? 1 : 1 - stage.hand
             readonly property var place: M.chain(M.T(x, y), M.about(195, 422, M.S(scale)))
             readonly property real piv: 422 * (1 - stage.lk)
             readonly property var inner: M.about(195, 422, M.chain(
@@ -252,7 +273,7 @@ Item {
                             id: navRow
                             anchors.centerIn: parent; spacing: 4
                             Repeater {
-                                model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]]
+                                model: [["back", "back"], ["home", "home"], ["quick", "sliders"], ["islands", "map"], ["lite", "bolt"], ["settings", "gear"], ["rotate", "rotate"], ["big", "full"]].slice(0, stage.windowed ? 7 : 8)
                                 delegate: UiCandy {
                                     id: nb
                                     required property var modelData
@@ -290,23 +311,24 @@ Item {
         id: rail
         readonly property bool land: stage.wantLand
         readonly property real tick: stage.r + stage.wob + stage.lk + stage.flatP + stage.hand + pHolder.scale + pHolder.y + pHolder.x
-                                     + stage.flat + stage.slideIn + stage.ringW + lHolder.scale
+                                     + stage.flat + stage.slideIn + stage.ringW + lHolder.scale + stage.cS + cornerMove.x + cornerMove.y
         readonly property point edgeTop: (tick, land ? lBody.mapToItem(stage, 920, 40) : pBody.mapToItem(stage, 390, 120))
         readonly property point edgeBot: (tick, land ? lBody.mapToItem(stage, 920, 400) : pBody.mapToItem(stage, 390, 520))
         readonly property real ang: Math.atan2(edgeBot.x - edgeTop.x, edgeBot.y - edgeTop.y) * 180 / Math.PI
         readonly property bool on: stage.shown && (land ? !stage.turning && (stage.hand > 0.5 || stage.slideIn > 0.9)
                                                         : !stage.big && stage.r > 0.6 && stage.hand < 0.5)
         visible: land ? lHolder.visible : pHolder.visible
-        opacity: (land ? 1 : 1 - stage.hand) * (1 - stage.pv)
-        x: edgeTop.x + 21; y: edgeTop.y              // a little air past the side keys
+        opacity: land ? 1 : 1 - stage.hand
+        x: edgeTop.x + 21 * scale; y: edgeTop.y      // a little air past the side keys
         rotation: -ang; transformOrigin: Item.TopLeft
+        scale: stage.cS                              // shrinks with the phone in the wallpaper preview corner
         Column {
             id: railCol
             readonly property bool isNavZone: true
             spacing: 8
             Repeater {
                 model: [["back", "back", "Back"], ["home", "home", "Home"], ["quick", "sliders", "Quick"], ["islands", "map", "Islands"],
-                        ["lite", "bolt", "Light mode"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]]
+                        ["lite", "bolt", "Light mode"], ["settings", "gear", "Settings"], ["rotate", "rotate", "Turn phone"], ["big", "full", "Big phone"]].slice(0, stage.windowed ? 7 : 8)
                 delegate: UiCandy {
                     id: rb
                     required property var modelData
@@ -347,6 +369,7 @@ Item {
     Item {
         id: landWrap
         anchors.fill: parent
+        transform: [cornerScale, cornerMove]
         layer.enabled: stage.turning
         layer.textureSize: Qt.size(width * stage.px, height * stage.px)
         opacity: stage.turning ? Math.max(0.004, stage.landAlpha) : 1     // 0.004: still drawn while the turn gets ready
@@ -357,7 +380,7 @@ Item {
             readonly property real baseScale: 1.12                     // small mode: a little larger than the design
             scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
             visible: stage.hand > 0.001 || stage.slideIn > 0.001 || stage.turning
-            opacity: (stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))) * (1 - stage.pv)
+            opacity: stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
             readonly property var inner: M.about(460, 220, stage.hand > 0.001 || stage.turning
                 ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.flat)), M.Rx(-24 * (1 - stage.flat)), M.Rz(-3 * (1 - stage.flat) + stage.ringW))
                 : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
@@ -443,7 +466,7 @@ Item {
 
     // Esc closes · Alt+← or the mouse back button goes back
     Keys.onEscapePressed: close()
-    // keyboard (keys free in your Hyprland binds): Ctrl+F big/small · Ctrl+←/→ phone screen ↔ buttons · Ctrl+1…5 jump · Alt+← / Backspace back · F1 help
+    // keyboard (keys free in your Hyprland binds): Ctrl+F big/small · Ctrl+S turn · Ctrl+←/→ phone screen ↔ buttons · Ctrl+1…5 jump · Alt+← / Backspace back · F1 help
     function zoneOf(it) { let p = it; while (p) { if (p.isNavZone === true) return p; p = p.parent } return null }
     function focusFirst(zone) {
         let n = zone;
@@ -477,7 +500,8 @@ Item {
     Keys.onPressed: e => {
         const ctrl = e.modifiers & Qt.ControlModifier, alt = e.modifiers & Qt.AltModifier;
         const i = Math.max(0, ring.indexOf(wantLand ? "settings" : screen));
-        if (ctrl && e.key === Qt.Key_F) { svc.phoneBig = !svc.phoneBig }
+        if (ctrl && e.key === Qt.Key_F) { if (!windowed) svc.phoneBig = !svc.phoneBig }
+        else if (ctrl && e.key === Qt.Key_S) { rotate() }
         else if (ctrl && (e.key === Qt.Key_Right || e.key === Qt.Key_Left)) { switchZone() }
         else if (ctrl && e.key >= Qt.Key_1 && e.key <= Qt.Key_5) { go(ring[e.key - Qt.Key_1]) }
         else if ((alt && e.key === Qt.Key_Left) || e.key === Qt.Key_Backspace) { back() }
@@ -498,7 +522,7 @@ Item {
             x: 20; y: 16; width: parent.width - 40; spacing: 6
             UiText { text: "Keyboard"; px: 22; w: 700; color: Theme.textDeep; height: 28 }
             Repeater {
-                model: [["Tab · arrows", "Move between buttons"], ["Enter · Space", "Press the button"], ["Ctrl + F", "Big / small phone"],
+                model: [["Tab · arrows", "Move between buttons"], ["Enter · Space", "Press the button"], ["Ctrl + F", "Big / small phone"], ["Ctrl + S", "Turn the phone"],
                         ["Ctrl + ← / →", "Phone screen ↔ side buttons"], ["Ctrl + 1 … 5", "Home · Quick · Islands · Clipboard · Settings"],
                         ["Alt + ← · Backspace", "Back"], ["Esc", "Close"], ["F1", "Show / hide this"]]
                 delegate: Item {
@@ -512,31 +536,4 @@ Item {
         }
     }
     MouseArea { anchors.fill: parent; z: 1000; enabled: stage.shown; acceptedButtons: Qt.BackButton; onClicked: stage.back() }
-
-    // wallpaper preview bar: the picture's name, Set as Desktop / Lockscreen, Back (← → still browse)
-    UiCandy {
-        visible: stage.pv > 0.01; opacity: stage.pv; z: 1001
-        anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 40 + (1 - stage.pv) * -30
-        width: pvRow.implicitWidth + 28; height: 64; radius: 24; bw: 3; drop: 5; hi: 0; ink: Theme.inkPhone; fill: Theme.cream
-        Row {
-            id: pvRow; anchors.centerIn: parent; spacing: 10
-            Column { anchors.verticalCenter: parent.verticalCenter; width: 200
-                UiText { width: parent.width; elide: Text.ElideMiddle; text: stage.svc ? stage.svc.wallPreview.split("/").pop() : ""; px: 13; w: 700 }
-                UiText { text: "Preview · ← → next picture · Esc back"; fam: "n"; px: 10; w: 800; color: Theme.textSoft } }
-            Repeater {
-                model: [["wallpaper", "🖥  Set as Desktop"], ["lockWallpaper", "🔒  Lockscreen"]]
-                delegate: UiCandy {
-                    required property var modelData
-                    readonly property bool done: !!stage.svc && stage.prefs[modelData[0]] === stage.svc.wallPreview
-                    anchors.verticalCenter: parent.verticalCenter; width: pt.implicitWidth + 26; height: 38; radius: 13; bw: 2.5; drop: 3; hi: 0
-                    fill: done ? Theme.gOn : Theme.paper; pressable: true
-                    onClicked: stage.prefs.set(modelData[0], stage.svc.wallPreview)
-                    UiText { id: pt; anchors.centerIn: parent; text: (parent.done ? "✓ " : "") + modelData[1]; px: 13; w: 700 }
-                }
-            }
-            UiCandy { anchors.verticalCenter: parent.verticalCenter; width: bt.implicitWidth + 26; height: 38; radius: 13; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
-                onClicked: stage.svc.wallPreview = ""
-                UiText { id: bt; anchors.centerIn: parent; text: "Back"; px: 13; w: 700; color: "#FFFFFF" } }
-        }
-    }
 }

@@ -23,7 +23,7 @@ Item {
     default property alias content: inner.data
     // empty screen space: swallow clicks (so they don't close the phone); double-click = big ↔ small phone
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: w => w.accepted = true
-        onDoubleClicked: m => { if (m.button === Qt.LeftButton) Services.phoneBig = !Services.phoneBig } }
+        onDoubleClicked: m => { if (m.button === Qt.LeftButton && !Prefs.phoneWindow) Services.phoneBig = !Services.phoneBig } }
     readonly property alias screen: inner
     readonly property real bw: landscape ? 920 : 390
     readonly property real bh: landscape ? 430 : 834

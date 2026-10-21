@@ -143,6 +143,8 @@ Item {
                     current: (sq.prefs.boxStyle || "candy").charAt(0).toUpperCase() + (sq.prefs.boxStyle || "candy").slice(1)
                     onPicked: v => sq.prefs.set("boxStyle", v.toLowerCase()) }
                 SetSeg { width: sq.cw - 40; label: "Phone"; options: ["Low", "Middle", "High"]; current: sq.prefs.phoneSpot; onPicked: v => sq.prefs.set("phoneSpot", v) }
+                SetSeg { width: sq.cw - 40; label: "Open as"; options: ["Overlay", "Window"]; current: sq.prefs.phoneWindow ? "Window" : "Overlay"
+                    onPicked: v => sq.prefs.set("phoneWindow", v === "Window") }
             }
         }
         // Bar

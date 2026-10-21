@@ -21,7 +21,7 @@ Row {
     }
     // big mode: phone grows to ~3/4 of the screen and lies flat
     UiCandy {
-        visible: !!h.svc && h.svc.phoneBig !== undefined && !h.clockOnly
+        visible: !!h.svc && h.svc.phoneBig !== undefined && !h.clockOnly && !Prefs.phoneWindow
         anchors.verticalCenter: parent.verticalCenter
         width: h.closeSize; height: h.closeSize; ink: Theme.inkPhone; drop: 3; hi: 0
         fill: h.svc && h.svc.phoneBig ? Theme.gOn : Theme.paper; pressable: true
