@@ -166,6 +166,8 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
 - Icons: theme **Isla** (candy folders) inheriting **MacTahoe** → breeze.
 - Dolphin: icon view, previews, folder tree (F7) + info panel (F11).
 - Helium browser: `~/.config/helium-browser-flags.conf` forces sRGB (fixes washed-out look/snips on the HDR screen).
+- Helium PiP: window rule `no_initial_focus = true` (windowrules.lua) — PiP opening no longer steals keyboard focus, so Ctrl+T's new tab gets the search bar (owner confirmed 2026-10-21).
+- **Super+Q = PiP toggle** (`hypr/scripts/pip-toggle.sh`, set in keybinds.json; was Isla settings — owner opens settings via Super+Space search). PiP open → focus it, close only if it really got focus, focus back. Else `hl.dsp.send_shortcut({mods="ALT", key="P", window="class:^(helium)$"})` → needs Google's "Picture-in-Picture Extension" (Alt+P) in Helium.
 
 ---
 

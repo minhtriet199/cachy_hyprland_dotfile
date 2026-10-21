@@ -11,9 +11,9 @@
  {
   "keys": "SUPER + Q",
   "action": "exec",
-  "arg": "~/.config/hypr/scripts/shell-cmd.sh settings-toggle",
+  "arg": "~/.config/hypr/scripts/pip-toggle.sh",
   "category": "Windows",
-  "desc": "Isla settings",
+  "desc": "Picture-in-Picture (open / close)",
   "locked": false,
   "repeating": false
  },
