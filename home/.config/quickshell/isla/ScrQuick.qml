@@ -31,7 +31,7 @@ Item {
                 PhoneRoundBtn { glyph: "reload"; onClicked: q.svc.reloadShell() }
                 PhoneRoundBtn { glyph: q.svc.dnd ? "bellOff" : "bell"; fill: q.svc.dnd ? Theme.gTab : Theme.gChip; hiColor: Qt.rgba(1, 1, 1, 0.5)
                     glyphColor: q.svc.dnd ? "#FFFFFF" : Theme.textDeep; glyphStroke: 2.6; onClicked: q.svc.toggle("dnd") }   // Do not disturb
-                PhoneRoundBtn { glyph: "ring"; onClicked: q.svc.tool("record")
+                PhoneRoundBtn { glyph: "ring"; onClicked: q.svc.tool("record"); onRightClicked: q.svc.tool("recordPick")
                     Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: q.svc.recording ? "#E2607F" : Theme.berry } }
             }
         }

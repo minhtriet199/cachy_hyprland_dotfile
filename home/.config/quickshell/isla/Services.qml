@@ -72,7 +72,8 @@ Singleton {
         snip:       ["sh", "-c", "exec ~/.config/hypr/scripts/snip.sh"],
         picker:     ["sh", "-c", "hyprpicker -a"],
         clipboard:  ["sh", "-c", "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"],
-        record:     ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "toggle"]   // OBS: pick screen/window, start · stop
+        record:     ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "toggle"],   // OBS: start (same pick if OBS is open, else pick) · stop
+        recordPick: ["python3", Quickshell.env("HOME") + "/.config/quickshell/isla/tools/obsctl.py", "pick"]       // right-click: always pick again
     })
     // Night light (hyprsunset) colour temperature
     property int nightTemp: 4500

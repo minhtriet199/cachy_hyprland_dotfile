@@ -2,6 +2,8 @@
 # OBS remote for Isla's record button (obs-websocket v5 on localhost; Python standard library only).
 #   obsctl.py toggle   recording → stop it · not recording → (re)open OBS in the tray so it asks which screen/app
 #                      (Isla's picker, through the screen-share portal), then start
+#                      OBS already open and still showing the last pick → just start recording (no restart)
+#   obsctl.py pick     same, but always ask again (right-click on the record button)
 #   obsctl.py status   {"rec": true/false, "ms": elapsed}
 # The picker answers in $XDG_RUNTIME_DIR/isla-share/result (tools/share-pick.sh writes "pick" or "cancel").
 import base64, fcntl, hashlib, json, os, socket, struct, subprocess, sys, time
@@ -131,7 +133,32 @@ def launch():
     return connect(wait=25)
 
 
-def start():
+def fit_and_record(o, scene, src):
+    # fit whatever was picked (screen or window, any size) into the canvas
+    v = o.req("GetVideoSettings")
+    for it in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", []):
+        if it.get("sourceName") == src:
+            o.req("SetSceneItemTransform", {"sceneName": scene, "sceneItemId": it["sceneItemId"], "sceneItemTransform": {
+                "positionX": 0, "positionY": 0, "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsAlignment": 0,
+                "boundsWidth": v["baseWidth"], "boundsHeight": v["baseHeight"]}})
+    os.makedirs(VIDEOS, exist_ok=True)
+    o.req("SetRecordDirectory", {"recordDirectory": VIDEOS})
+    o.req("StartRecord")
+    open(REC, "w").write(str(int(time.time() * 1000)))
+
+
+def live(o):
+    """(scene, source) when the current scene's capture source still has a picture (0×0 = nothing picked / stream ended)."""
+    scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
+    for it in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", []):
+        if it.get("inputKind") == KIND and it.get("sceneItemEnabled"):
+            t = o.req("GetSceneItemTransform", {"sceneName": scene, "sceneItemId": it["sceneItemId"]})["sceneItemTransform"]
+            if t.get("sourceWidth", 0) > 0:
+                return scene, it["sourceName"]
+    return None
+
+
+def start(repick=False):
     c = conf()
     if not c.get("server_enabled"):
         if obs_running():
@@ -139,6 +166,13 @@ def start():
             return
         c["server_enabled"] = True
         json.dump(c, open(CONF, "w"), indent=2)
+    o = connect() if obs_running() and not repick else None
+    hit = o and live(o)
+    if hit:
+        fit_and_record(o, *hit)
+        subprocess.Popen(["notify-send", "-a", "OBS", "-i", "com.obsproject.Studio", "-t", "3000", "Recording",
+                          "Same screen as last time · right-click the record button to pick another"])
+        return
     # OBS only asks "which screen?" for a capture source it loads at start-up (one made or reloaded through the
     # remote control waits forever). So: make sure the current scene has one, close OBS, forget the old choice,
     # open OBS again — it asks the portal → Isla's picker (tools/share-pick.sh) → we start recording.
@@ -187,17 +221,7 @@ def start():
     if not os.path.exists(RESULT) or open(RESULT).read().strip() != "pick":
         return
     time.sleep(1.2)                                   # let the new stream start before recording
-    # fit whatever was picked (screen or window, any size) into the canvas
-    v = o.req("GetVideoSettings")
-    for it in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", []):
-        if it.get("sourceName") == src:
-            o.req("SetSceneItemTransform", {"sceneName": scene, "sceneItemId": it["sceneItemId"], "sceneItemTransform": {
-                "positionX": 0, "positionY": 0, "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsAlignment": 0,
-                "boundsWidth": v["baseWidth"], "boundsHeight": v["baseHeight"]}})
-    os.makedirs(VIDEOS, exist_ok=True)
-    o.req("SetRecordDirectory", {"recordDirectory": VIDEOS})
-    o.req("StartRecord")
-    open(REC, "w").write(str(int(time.time() * 1000)))
+    fit_and_record(o, scene, src)
 
 
 def main():
@@ -206,7 +230,7 @@ def main():
         o = connect() if obs_running() else None
         st = o.req("GetRecordStatus") if o else {}
         print(json.dumps({"rec": bool(st.get("outputActive")), "ms": st.get("outputDuration", 0)}))
-    elif cmd == "toggle":
+    elif cmd in ("toggle", "pick"):
         os.makedirs(os.path.dirname(RESULT), exist_ok=True)
         lock = open(RESULT + ".lock", "w")
         try:
@@ -219,9 +243,9 @@ def main():
             open(REC, "w").write("0")
             notify("Recording saved", path)
         else:
-            start()
+            start(repick=cmd == "pick")
     else:
-        sys.exit("usage: obsctl.py toggle | status")
+        sys.exit("usage: obsctl.py toggle | pick | status")
 
 
 if __name__ == "__main__":
