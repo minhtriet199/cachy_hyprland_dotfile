@@ -15,7 +15,8 @@ hl.window_rule({
 })
 
 -- Isla phone as a window (Isla Settings → Look → Open as: Window)
-hl.window_rule({ match = { title = "^(Isla Phone)$" }, float = true, center = true })
+hl.window_rule({ match = { title = "^(Isla Phone)$" }, float = true, center = true,
+    border_size = 0, no_shadow = true, no_blur = true, rounding = 0, decorate = false })   -- see-through: only the phone shows
 
 -- Gaming
 local gamingApps = "^(steam_app.*|gamescope)$"

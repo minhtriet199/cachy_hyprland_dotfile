@@ -53,5 +53,6 @@
   "wipeAuto": [
     "#ebd6d6",
     "#dcb7b7"
-  ]
+  ],
+  "phoneWindow": true
 }

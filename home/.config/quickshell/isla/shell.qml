@@ -181,16 +181,15 @@ ShellRoot {
             readonly property real sc: (screen ? screen.height : 1080) / 1080 * Prefs.size     // the screen it's on (Hyprland places it)
             title: "Isla Phone"
             // upright / sideways shape; Hyprland only uses it for the first size, so a turn asks it to resize (stays centred)
-            implicitWidth: (wstage.wantLand ? 1160 : 520) * sc
-            implicitHeight: (wstage.wantLand ? 640 : 920) * sc
+            implicitWidth: (wstage.wantLand ? 900 : 410) * sc
+            implicitHeight: (wstage.wantLand ? 440 : 868) * sc
             Connections { target: wstage; function onWantLandChanged() { if (phoneApp.visible) Quickshell.execDetached(["hyprctl", "dispatch",
                 "hl.dsp.window.resize({ x = " + Math.round(phoneApp.implicitWidth) + ", y = " + Math.round(phoneApp.implicitHeight) + ", window = \"title:^(Isla Phone)$\" })"]) } }
             minimumSize: Qt.size(320 * sc, 420 * sc)
             visible: wstage.shown || wstage.visibleAmount > 0.001
             onVisibleChanged: if (visible) phoneWinIdle.stop(); else phoneWinIdle.restart()
             onClosed: { wstage.shown = false; shell.phoneWinLive = false }
-            color: Theme.cream
-            UiDots { anchors.fill: parent; dot: Theme.screenDot }
+            color: "transparent"          // only the phone shows; Hyprland's border / shadow / blur are off for it (windowrules.lua)
             Item {
                 focus: true
                 width: phoneApp.width / phoneApp.sc; height: phoneApp.height / phoneApp.sc

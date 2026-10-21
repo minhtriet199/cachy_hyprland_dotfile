@@ -210,7 +210,8 @@ Item {
             width: 390; height: 844
             // small upright phone is drawn 10% bigger; it eases back to 1 while turning so it still lands on the sideways phone
             readonly property real smallScale: 1.1
-            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * Math.min(1.25, stage.height * 0.9 / 844, stage.width * 0.9 / 390)
+            scale: (1 - stage.flatP) * (1 + (smallScale - 1) * (1 - stage.lk)) + stage.flatP * (stage.windowed ? Math.min(1.25, (stage.height - 24) / 844, (stage.width - 24) / 390)   /* window: hugs the phone */
+                                                                                  : Math.min(1.25, stage.height * 0.9 / 844))
             visible: stage.r > 0.001 && (stage.hand < 1 || stage.turning)
             opacity: stage.turning ? 1 : 1 - stage.hand
             readonly property var place: M.chain(M.T(x, y), M.about(195, 422, M.S(scale)))
@@ -375,10 +376,12 @@ Item {
         opacity: stage.turning ? Math.max(0.004, stage.landAlpha) : 1     // 0.004: still drawn while the turn gets ready
         Item {
             id: lHolder
-            x: stage.width / 2 - 460; y: stage.height / 2 - 190
+            // window: a little left / up so the side buttons fit next to it
+            x: stage.width / 2 - 460 - (stage.windowed ? 40 : 0); y: stage.height / 2 - 190 - (stage.windowed ? 48 : 0)
             width: 920; height: 440
             readonly property real baseScale: 1.12                     // small mode: a little larger than the design
-            scale: baseScale + stage.flat * (Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484) - baseScale)
+            scale: baseScale + stage.flat * ((stage.windowed ? Math.min((stage.width - 104) / 1012, (stage.height - 60) / 484)
+                                                              : Math.min(stage.width * 0.75 / 1012, stage.height * 0.8 / 484)) - baseScale)
             visible: stage.hand > 0.001 || stage.slideIn > 0.001 || stage.turning
             opacity: stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
             readonly property var inner: M.about(460, 220, stage.hand > 0.001 || stage.turning
