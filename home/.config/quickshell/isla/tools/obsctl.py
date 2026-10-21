@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # OBS remote for Isla's record button (obs-websocket v5 on localhost; Python standard library only).
-#   obsctl.py toggle   recording → stop it · not recording → (re)open OBS in the tray so it asks which screen/app
+#   obsctl.py toggle   recording → stop it · not recording → open OBS (or reload its scenes) so it asks which screen/app
 #                      (Isla's picker, through the screen-share portal), then start
 #                      OBS already open and still showing the last pick → just start recording (no restart)
 #   obsctl.py pick     same, but always ask again (right-click on the record button)
@@ -11,6 +11,7 @@ import base64, fcntl, hashlib, json, os, socket, struct, subprocess, sys, time
 CONF = os.path.expanduser("~/.config/obs-studio/plugin_config/obs-websocket/config.json")
 KIND = "pipewire-screen-capture-source"
 NAME = "Isla capture"
+SPARE = "Isla swap"                                   # empty scene collection, switched to and back to reload the capture
 RESULT = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "isla-share", "result")
 REC = os.path.join(os.path.dirname(RESULT), "rec")          # "<start ms>" while recording, "0" after: Isla's bar timer watches it
 VIDEOS = os.path.expanduser("~/Videos")
@@ -119,14 +120,6 @@ def collection():
     return os.path.expanduser("~/.config/obs-studio/basic/scenes/" + name)
 
 
-def quit_obs():
-    subprocess.run(["pkill", "-TERM", "-x", "obs"])
-    for _ in range(40):
-        if not obs_running():
-            return
-        time.sleep(0.25)
-
-
 def launch():
     subprocess.Popen(["obs", "--minimize-to-tray", "--disable-shutdown-check"], stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
@@ -158,6 +151,18 @@ def live(o):
     return None
 
 
+def forget_pick(f):
+    """Clear the saved screen choice in the scene-collection file so OBS asks again."""
+    try:
+        d = json.load(open(f))
+        for x in d.get("sources", []):
+            if x.get("id") == KIND:
+                x.setdefault("settings", {})["RestoreToken"] = ""
+        json.dump(d, open(f, "w"))
+    except (OSError, ValueError):
+        pass
+
+
 def start(repick=False):
     c = conf()
     if not c.get("server_enabled"):
@@ -166,24 +171,36 @@ def start(repick=False):
             return
         c["server_enabled"] = True
         json.dump(c, open(CONF, "w"), indent=2)
-    o = connect() if obs_running() and not repick else None
-    hit = o and live(o)
-    if hit:
+    o = connect() if obs_running() else None
+    hit = o and not repick and live(o)
+    if hit:                                           # still showing the last pick: just record
         fit_and_record(o, *hit)
         subprocess.Popen(["notify-send", "-a", "OBS", "-i", "com.obsproject.Studio", "-t", "3000", "Recording",
                           "Same screen as last time · right-click the record button to pick another"])
         return
-    # OBS only asks "which screen?" for a capture source it loads at start-up (one made or reloaded through the
-    # remote control waits forever). So: make sure the current scene has one, close OBS, forget the old choice,
-    # open OBS again — it asks the portal → Isla's picker (tools/share-pick.sh) → we start recording.
-    subprocess.Popen(["notify-send", "-a", "OBS", "-i", "com.obsproject.Studio", "-t", "3000", "Getting OBS ready…", "The picker opens in a moment"])
+    # OBS only asks "which screen?" for a capture source it LOADS (start-up or switching scene collection); one made or
+    # reloaded through the remote control waits forever. So: make sure the scene has one, switch to a spare collection
+    # and back (OBS saves + reloads it — no restart), forget the old choice in between → Isla's picker → record.
     f = collection()
+    os.makedirs(os.path.dirname(RESULT), exist_ok=True)
+    try:
+        os.remove(RESULT)
+    except FileNotFoundError:
+        pass
     try:
         saved = next((x["name"] for x in json.load(open(f)).get("sources", []) if x.get("id") == KIND), None)
     except (OSError, ValueError):
         saved = None
-    if obs_running() or not saved:                  # (OBS closed with a capture source saved: skip straight to the restart)
-        o = connect() if obs_running() else launch()
+    if not o and saved:                               # OBS closed with a capture source saved: opening it asks
+        forget_pick(f)
+        o = launch()
+        if not o:
+            notify("OBS didn't answer", "Try again in a moment")
+            return
+        scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
+        src = saved
+    else:
+        o = o or launch()
         if not o:
             notify("OBS didn't answer", "Try again in a moment")
             return
@@ -194,27 +211,17 @@ def start(repick=False):
             o.req("CreateInput", {"sceneName": scene, "inputName": src, "inputKind": KIND, "inputSettings": {"ShowCursor": True}})
         elif not any(i.get("sourceName") == src for i in o.req("GetSceneItemList", {"sceneName": scene}).get("sceneItems", [])):
             o.req("CreateSceneItem", {"sceneName": scene, "sourceName": src})
-        quit_obs()
-    else:
-        src = saved
-    try:
-        d = json.load(open(f))
-        for x in d.get("sources", []):
-            if x.get("id") == KIND:
-                x.setdefault("settings", {})["RestoreToken"] = ""
-        json.dump(d, open(f, "w"))
-    except (OSError, ValueError):
-        pass
-    os.makedirs(os.path.dirname(RESULT), exist_ok=True)
-    try:
-        os.remove(RESULT)
-    except FileNotFoundError:
-        pass
-    o = launch()
-    if not o:
-        notify("OBS didn't answer", "Try again in a moment")
-        return
-    scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
+        name = o.req("GetSceneCollectionList")["currentSceneCollectionName"]
+        if name == SPARE:
+            notify("OBS is on the spare scene collection", "Switch OBS back to your own collection first")
+            return
+        if SPARE in o.req("GetSceneCollectionList")["sceneCollections"]:
+            o.req("SetCurrentSceneCollection", {"sceneCollectionName": SPARE})
+        else:
+            o.req("CreateSceneCollection", {"sceneCollectionName": SPARE})
+        forget_pick(f)
+        o.req("SetCurrentSceneCollection", {"sceneCollectionName": name})
+        scene = o.req("GetCurrentProgramScene")["currentProgramSceneName"]
     end = time.time() + 120
     while not os.path.exists(RESULT) and time.time() < end:
         time.sleep(0.2)
