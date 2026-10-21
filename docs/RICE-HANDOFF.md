@@ -156,7 +156,7 @@ Clipboard pins: `Prefs.clipPins` holds the cliphist preview text (so re-copying 
 pin button next to ✕ on each row; `clipWipe` keeps pinned items.
 Pins keep their own copy in `~/.local/share/isla/clip-pins/<md5 of key>` (shown from there if cliphist dropped it); only
 unpin / ✕ removes one. `tools/clip-prune.sh` (from clip-store.sh, max once an hour) deletes unpinned items older than
-`Prefs.clipDays` (30) + stale preview PNGs. Delete key on the list deletes the item (it used to type an invisible char into search).
+`Prefs.clipDays` (15) + stale preview PNGs. Delete key on the list deletes the item (it used to type an invisible char into search).
 Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / High) lifts the small upright phone (`pHolder.spot` in PhoneStage.qml; off while big/sideways).
 | `timelang.py`, `apps.py`, `inuse.py`, `storage.py`, `diskmap.py`, `wifi-info.py`, `setbind.py`, `addbind.py` | data for their pages |
 
@@ -318,11 +318,9 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
    Saved in prefs (`gameMode`). ON = Hyprland animations off (state file `~/.local/state/hypr/gamemode`, read at the end
    of `animations.lua` so it survives reloads; applied live with `hyprctl eval`), phone light mode, bar visualizer (cava)
    + spinning record paused (`Services.calm` = gameMode || gaming). Blur and power profile untouched (owner sets those).
-4. **SekaiPop-style widgets** (weather/calendar/palette/profile cards): owner was asked A (restyle cards) / B (+palette
-   from wallpaper) / C (desktop widgets) — no answer yet.
-5. Verified by the owner 2026-10-21 (on-screen checks all OK).
-6. Leftover `.pacnew` files in /etc (pacman.conf, resolv.conf, mirrorlists) are old/plain-Arch — **keep the current files**.
-7. Owner declined keyring auto-unlock — don't add it.
+4. Verified by the owner 2026-10-21 (on-screen checks all OK).
+5. Leftover `.pacnew` files in /etc (pacman.conf, resolv.conf, mirrorlists) are old/plain-Arch — **keep the current files**.
+6. Owner declined keyring auto-unlock — don't add it.
 
 ---
 7. **Left over from 2026-10-20 (start here next time):**
@@ -342,10 +340,62 @@ Phone position: `Prefs.phoneSpot` (Settings → Look → Phone: Low / Middle / H
      Hyprland; rings verified via IPC; owner still to confirm the full double-tap shows them.
    - **Screen-share hang:** after sharing a single *window*, xdg-desktop-portal-hyprland can freeze ("tried scheduling on
      already scheduled cb"). Fix: `systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal`, then restart OBS.
-   - **Log noise (old, harmless?):** `Services.qml … Unable to assign [undefined] to bool` (the `gaming` binding) and
-     `Unable to assign [undefined] to QDateTime` right after a reload.
    - **Owner rule broken this session:** OBS remote control was turned on (localhost, password), `xdph.conf` changed and
      the portal services restarted without asking first. Ask before system changes next time.
+
+8. **System facts to keep in mind** (owner dropped the cleanup to-do list 2026-10-21 — don't re-suggest it unasked):
+   - Owner keeps: firewalld, all game launchers, btop, kcalc, LibreOffice, Wine, netctl, corepack, rustup, all coding tools.
+   - Look like orphans (`pacman -Qdtq`) but Isla/Hyprland use them — never remove: corepack rustup adw-gtk-theme ddcutil
+     gnome-text-editor qview nwg-look swash xorg-xhost, and hyprland kitty uwsm xdg-desktop-portal-hyprland wl-clipboard grim
+     slurp brightnessctl gnome-keyring hyprpicker qt6ct. Noctalia, ufw, firefox, alacritty, htop, glances are already removed.
+   - The running kernel line is a debug one (`loglevel=7 …`) that is NOT in /etc/default/grub (that says loglevel=3) —
+     probably hand-edited grub.cfg; regenerating grub.cfg would change it. Plymouth is in the initramfs but off.
+   - On AC the laptop was once found in Quiet (asusctl) + power-saver + EPP power although asusctl's AC profile is
+     Performance — if games feel slow, check that first.
+   - Docker is socket-activated (a `docker` command wakes it, ~150 MB RAM).
+
+## 8b. Future to-do (owner's wish list, 2026-10-21 — not started)
+
+Pictures from the owner: `Md_File/todo-refs/` (right-click-desktop-menu.png, widget-sheet-examples.png). Designs:
+`~/Downloads/isla-handoff/design/png/Edit-Desktop.png`, `Widgets.png`, `Lock.png`, `Wallpapers.png`.
+**This overrides the old "no desktop widgets" taste** — the owner now wants desktop widgets via Edit Desktop.
+Keep the owner rules (§1): clean small code, measured performance, lazy-load, SekaiPop look; recheck old features after each step.
+
+1. **Ctrl+S rotates the phone** while the phone is open (same as the rotate button / `ipc call isla rotate`).
+2. **Phone as a real window.** A mode that turns the phone into a normal floating app window (not a layer-shell
+   overlay): stays open while using other apps, can be moved, focused, minimised to a workspace and closed like any
+   app (own title, shows in the task list / window rules).
+3. **Right-click on the empty desktop → small menu** (picture right-click-desktop-menu.png): *Edit Desktop*,
+   *Wallpapers*, *Group themes*. Same candy card style.
+4. **Edit Desktop mode** (Edit-Desktop.png): the desktop shrinks into a framed preview; bottom tray with tabs
+   **Widgets / Bar / Theme / Presets**; "Left click: add / edit · Right click: remove · Drag: move, snaps to guides"
+   (CENTER line, SAME WIDTH guides); a picked widget shows handles + "editing · style 1/3"; **Lock all** and **Done**.
+   - Widgets can be added, moved and removed anywhere — e.g. move the date/time.
+   - Positions saved per monitor; everything flexible (position, size, style).
+   - **Bar tab:** edit the top bar the same way — add/remove/reorder bar pieces; also design **more bar widgets**.
+5. **More widgets** (examples in widget-sheet-examples.png + Widgets.png): clock (several styles), date/time,
+   user card (uptime/shell/desktop), weather (humidity/wind/UV/forecast), calendar, **to-do list**, visualizer along
+   the bottom, music, system stats… search for / invent more. Each widget has several styles.
+6. **More themes — WAIT: owner will find and pick the themes first; don't build until they say so.** Chosen in Edit Desktop → Theme: e.g. *Island*, *Edge*, *Minimal*, *Mochi* (and more). A theme
+   sets the UI style (box style, colours) **and** the widget style. Presets = saved whole layouts.
+7. **Wallpaper page live preview:** while choosing, the phone shrinks into a corner showing only the image picker
+   (rotate button still works) and the desktop shows the wallpaper live — pick + see at the same time, no
+   Preview → Back → pick again. With two screens: phone stays on one screen, the other screen shows the preview.
+8. **New lock / login flow, one continuous motion with the phone** (owner wants it perfect and fast):
+   - At boot: lock-screen wallpaper + big clock + date.
+   - Any click / key → the phone slides up from the bottom, **always 3/4 of the screen height** (default), background
+     gets a window-style **blur** while typing.
+   - Phone (redesign this UI): **user select box**, **password** input, **Restart** and **Shut down** buttons.
+   - After the password is accepted: phone slides back down, play the transition (iris wipe), then normal Hyprland/Isla.
+   - Applies to both the greeter (`~/.config/quickshell/isla-greeter`) and Isla's own lock screen.
+   - **Decided with the owner:** keep greetd + isla-greeter at boot (NO auto-login) and Isla's WlSessionLock for
+     lock/unlock. Build the phone lock UI **once** and share it between both, so they look identical. Lock = smooth (same
+     Hyprland). Boot = unavoidable short hand-over (greeter Hyprland exits → user Hyprland starts): make it soft —
+     greeter ends on the wallpaper's main colour, set Hyprland `misc` background colour to match + logo off, Isla's
+     first frame matches, then iris opens. Greeter runs as user `greeter` → wallpaper/prefs via `isla-greeter-sync`.
+   - **Security rules:** blur only the wallpaper image, never live desktop content; password check stays PAM
+     (greetd / Quickshell PAM); `misc.allow_session_lock_restore` already on. Disk is NOT encrypted (no LUKS) —
+     told the owner; only matters if the laptop is stolen.
 
 ## 9. Quick commands
 

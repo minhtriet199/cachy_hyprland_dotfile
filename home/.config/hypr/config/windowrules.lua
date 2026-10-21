@@ -11,6 +11,7 @@ hl.window_rule({
     size              = { "max(monitor_w, monitor_h)*0.28", "min(monitor_w, monitor_h)*0.28" },
     center            = true,
     pin               = true,         -- stays on top, even over a fullscreen game
+    no_initial_focus  = true,         -- keep typing in the browser (Ctrl+T's new tab gets the search bar)
 })
 
 -- Gaming
