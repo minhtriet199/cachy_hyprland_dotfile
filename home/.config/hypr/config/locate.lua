@@ -13,5 +13,5 @@ local function tap()
     hl.timer(function() armed = false end, { timeout = 400, type = "oneshot" })
 end
 for _, key in ipairs({ "Control_L", "Control_R" }) do
-    hl.bind(key, tap, { release = true, non_consuming = true, description = "Find the mouse (double-tap Ctrl)" })
+    hl.bind("CTRL + " .. key, tap, { release = true, non_consuming = true, description = "Find the mouse (double-tap Ctrl)" })
 end
