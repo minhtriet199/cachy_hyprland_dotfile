@@ -19,6 +19,7 @@ ShellRoot {
         property bool busy: false
         property bool failed: false
         property bool phoneUp: false               // phone slid up (LockScreen)
+        property bool leaving: false               // right password: phone pulled down before the scene change
         property string user: Svc.profile.user     // who logs in (phone's user pick)
         property date lockedAt: new Date()
         property string lockWipe: "full"           // opens from the cream cover, like Isla's own boot
@@ -53,11 +54,11 @@ ShellRoot {
         // first frame: cover + leaf (same colour as this Hyprland's background), then the iris opens onto the clock
         Timer { running: true; interval: 450; onTriggered: { lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; openAnim.restart() } }
         NumberAnimation { id: openAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
-        // right password: the phone slides down, the iris closes to the cover + leaf, the desktop's Isla opens from the same cover
+        // right password: the phone is pulled down and gone, the iris closes to the cover + leaf, the desktop's Isla opens from the same cover
         SequentialAnimation {
             id: closeAnim
-            ScriptAction { script: lockCtl.phoneUp = false }
-            PauseAnimation { duration: 420 }
+            ScriptAction { script: lockCtl.leaving = true }
+            PauseAnimation { duration: 560 }          // phone gone
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: lockCtl.lockWipe = "full" }

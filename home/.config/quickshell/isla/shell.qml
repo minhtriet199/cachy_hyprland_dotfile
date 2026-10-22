@@ -41,6 +41,7 @@ ShellRoot {
         property bool busy: false
         property bool failed: false
         property bool phoneUp: false                    // lock phone slid up (LockScreen)
+        property bool leaving: false                    // right password: phone pulled down before the scene change
         property string user: ""                        // lock: always you (only the login screen picks)
         property date lockedAt: new Date()
         // scene change (circle iris + leaf): desk* plays on the desktop (overlay window), lock* on the lock screen; together they look like one change
@@ -59,14 +60,14 @@ ShellRoot {
             ScriptAction { script: lockCtl.lockWipe = "none" }
         }
         SequentialAnimation {
-            id: toDeskAnim                                   // lock → desktop: phone slides down, close on the lock screen, open on the desktop
-            ScriptAction { script: lockCtl.phoneUp = false }
-            PauseAnimation { duration: 420 }
+            id: toDeskAnim                                   // lock → desktop: phone pulled down and gone, then close on the lock screen, open on the desktop
+            ScriptAction { script: lockCtl.leaving = true }
+            PauseAnimation { duration: 560 }          // phone gone
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: lockCtl.deskWipe = "full" }
             PauseAnimation { duration: 120 }          // let the desktop cover appear under the lock screen first
-            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = "" } }
+            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false } }
             PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
@@ -94,7 +95,7 @@ ShellRoot {
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
         function lockTest() { lockNow(); lockTestTimer.restart() }
-        function lockNow() { if (sessionLock.locked || toLockAnim.running) return; shell.phoneClose(); password = ""; failed = false; phoneUp = false; lockedAt = new Date(); toLockAnim.restart() }
+        function lockNow() { if (sessionLock.locked || toLockAnim.running) return; shell.phoneClose(); password = ""; failed = false; phoneUp = false; leaving = false; lockedAt = new Date(); toLockAnim.restart() }
         function tryUnlock() { if (busy || password === "") return; busy = true; failed = false; if (!pam.start()) { busy = false; failed = true } }
         PamContext {
             id: pam

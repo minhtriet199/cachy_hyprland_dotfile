@@ -142,7 +142,7 @@ real settings are not touched.
   Phone: avatar/name, "Locked since" / "Welcome back", user pick (greeter, >1 user), password dots, Unlock/Log in,
   song (lock), Restart/Shut down (4 s countdown, other button = Cancel). Esc: cancel → clear → hide. 30 s idle → hides.
 - Shared state in the lock controller (`lockCtl` in isla/shell.qml and isla-greeter/shell.qml): `phoneUp`, `user`.
-  Success: phone slides down (420 ms) → iris cover → desktop. `PhoneBody { canBig: false }` on the lock.
+  Success (`leaving`): phone is pulled down off screen (InBack, blur + hidden clock stay) → iris cover → desktop. `PhoneBody { canBig: false }` on the lock.
 - Boot colour hand-over: Isla `Prefs` writes `~/.local/state/hypr/cover` (wipe colour); `misc.lua` and greeter.lua
   use it as Hyprland's background; Prefs loads with `blockLoading` so Isla's first frame already has it.
 - Test IPC only in scratch copies (tlock/tup/tpw/tenter/tok were added to the nested copy, not the real shell).

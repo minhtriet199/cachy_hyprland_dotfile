@@ -23,6 +23,9 @@ Item {
     // 0 = clock, 1 = phone up; the blur, clock and phone all follow it
     property real upT: ls.lock.phoneUp ? 1 : 0
     Behavior on upT { NumberAnimation { duration: 460; easing.type: Easing.OutCubic } }
+    // right password: the phone is pulled down off the screen (blur and hidden clock stay), then the scene change runs
+    property real dropT: ls.lock.leaving ? 1 : 0
+    Behavior on dropT { NumberAnimation { duration: 480; easing.type: Easing.InBack } }
     function raise() { ls.lock.phoneUp = true; idle.restart(); ls.forceActiveFocus() }
     // phone goes back down after 30 s with nothing typed
     Timer { id: idle; interval: 30000; running: ls.main && ls.lock.phoneUp; onTriggered: if (!ls.lock.busy && !ls.pwArmed) { ls.lock.password = ""; ls.lock.phoneUp = false } }
@@ -84,11 +87,11 @@ Item {
         // ── the phone ──
         PhoneBody {
             id: phone
-            visible: ls.main && ls.upT > 0
+            visible: ls.main && ls.upT > 0 && ls.dropT < 1
             canBig: false
             scale: 810 / 844; transformOrigin: Item.TopLeft
             x: (stage.width - width * scale) / 2
-            y: 1100 - (1100 - 135) * ls.upT
+            y: 1100 - (1100 - 135) * ls.upT + 1000 * ls.dropT
             readonly property real sw: screen.width          // 360 × 804 screen
 
             // status: time · battery
