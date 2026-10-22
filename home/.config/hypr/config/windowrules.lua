@@ -2,6 +2,9 @@
 
 -- Generic floating position
 hl.window_rule({ match = { float = true }, persistent_size = true })
+-- New floating windows open in the middle of their screen (X11 apps like Steam's updater otherwise
+-- centre themselves on both screens together). Untitled X11 popups/menus are left alone.
+hl.window_rule({ match = { float = true, title = "negative:^$" }, center = true })
 
 -- Picture-in-Picture
 hl.window_rule({
@@ -65,10 +68,7 @@ hl.window_rule({
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.50", "min(monitor_w, monitor_h)*0.55" },
-    move = {
-        "max(20, min(cursor_x - (window_w*0.50), monitor_w - window_w + 20))", -- X axis clamping
-        "max(20, min(cursor_y - 50, monitor_h - window_h + 20))" -- Y axis clamping
-    },
+    center = true,
 })
 
 -- Opacity: every window follows Isla Settings → Windows (focused / not focused, Dark / Light backdrop).
