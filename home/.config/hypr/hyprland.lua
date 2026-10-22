@@ -17,4 +17,5 @@ require("config.misc")
 require("config.monitors")
 require("config.windowrules")
 require("config.games")
+require("config.launch")     -- Isla search: apps open on the screen you launched from
 require("config.workspaces")

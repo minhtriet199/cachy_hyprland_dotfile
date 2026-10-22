@@ -805,7 +805,7 @@ Singleton {
     // ── apps + search ──
     readonly property var entries: DesktopEntries.applications.values.filter(e => !e.noDisplay)
     function launch(a) { if (a.entry) { launchEntry(a); return } if (a.internal) return; if (a.toggle) toggle(a.toggle); else if (a.cmd) app(a.cmd) }
-    function launchEntry(a) { if (a.entry) { if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
+    function launchEntry(a) { if (a.entry) { if (lua && Hyprland.focusedMonitor) run(["hyprctl", "eval", "if IslaLaunch then IslaLaunch(" + JSON.stringify(Hyprland.focusedMonitor.name) + ") end"]); if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
     function runAction(a) { if (a.toggle) toggle(a.toggle); else if (a.tool) tool(a.tool); else if (a.cmd) run(a.cmd) }
     function score(text, q) { const t = (text || "").toLowerCase(); if (t.startsWith(q)) return 3; if (t.includes(" " + q)) return 2; if (t.includes(q)) return 1; return 0 }
     function math(q) {
