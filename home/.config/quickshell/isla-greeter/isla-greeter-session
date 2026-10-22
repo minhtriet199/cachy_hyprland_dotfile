@@ -10,14 +10,8 @@ mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 rm -f "$XDG_RUNTIME_DIR/isla-greeter-ok"
 unset WAYLAND_DISPLAY DISPLAY
 
-# The text console behind the greeter (shown for a moment between this Hyprland closing and yours starting, with boot
-# and uwsm text on it): every colour = the boot cover colour, cleared, no cursor — so it looks like the cover, not black.
-vt="/dev/tty${XDG_VTNR:-}"
-paint() { [ "$(id -un)" = greeter ] && [ -w "$vt" ] && printf "$1" >"$vt" 2>/dev/null; }
-cover=$(tr -d '#\n' <"$ISLA_GREETER_DATA/cover" 2>/dev/null)
-echo "$cover" | grep -qE '^[0-9A-Fa-f]{6}$' || cover=FFF4E0
-pal=""; for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F; do pal="$pal\033]P$i$cover"; done
-paint "$pal\033[?25l\033[2J\033[H"
+# the text console behind the greeter: cover colour, no text, no cursor (see paint-vt)
+[ "$(id -un)" = greeter ] && "$share/paint-vt" "$ISLA_GREETER_DATA/cover"
 log="$HOME/greeter.log"
 mv -f "$log" "$log.old" 2>/dev/null
 
@@ -28,6 +22,6 @@ else
 fi
 
 [ -e "$XDG_RUNTIME_DIR/isla-greeter-ok" ] && exit 0
-paint "\033]R\033[?25h\033[2J\033[H"     # text login: normal colours back
+[ "$(id -un)" = greeter ] && "$share/paint-vt" reset     # text login: normal colours back
 echo "Isla login screen did not start (log: $log). Text login:"
-exec agreety --cmd "uwsm start -e -D Hyprland hyprland.desktop"
+exec agreety --cmd "$share/isla-session"

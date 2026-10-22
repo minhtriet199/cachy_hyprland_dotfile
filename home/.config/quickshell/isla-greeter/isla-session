@@ -1,0 +1,7 @@
+#!/bin/sh
+# Your session (greetd starts it after the Isla login screen). The console was reset to black when the login screen
+# closed, so paint it again in the cover colour, then start Hyprland (uwsm's messages go to a log, not the screen).
+here="$(dirname "$0")"
+"$here/paint-vt" "$HOME/.local/state/hypr/cover"
+mkdir -p "$HOME/.local/state/isla"
+exec uwsm start -e -D Hyprland hyprland.desktop >"$HOME/.local/state/isla/session.log" 2>&1

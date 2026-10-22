@@ -1,0 +1,11 @@
+#!/bin/sh
+# Paint this login's text console (/dev/ttyN) so the moment between the login screen and your desktop isn't black with
+# boot / uwsm text: all 16 console colours = the cover colour (text becomes invisible), cleared, no cursor.
+# Usage: paint-vt <file with "#rrggbb">   ·   paint-vt reset  (normal colours, for the text login)
+vt="/dev/tty${XDG_VTNR:-}"
+[ -w "$vt" ] || exit 0
+if [ "$1" = reset ]; then printf '\033]R\033[?25h\033[2J\033[H' >"$vt"; exit 0; fi
+cover=$(tr -d '#\n' <"$1" 2>/dev/null)
+echo "$cover" | grep -qE '^[0-9A-Fa-f]{6}$' || cover=FFF4E0
+pal=""; for i in 0 1 2 3 4 5 6 7 8 9 A B C D E F; do pal="$pal\033]P$i$cover"; done
+printf "$pal\033[?25l\033[2J\033[H" >"$vt"

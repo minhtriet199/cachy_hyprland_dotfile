@@ -65,7 +65,7 @@ if grep -E "ERROR|is not a type|unavailable|ReferenceError|TypeError" "$rt/isla-
     bad "Quickshell errors:"; head -5 "$work/err" | sed 's/^/        /'
 elif [ -s "$rt/isla-greeter-qs.log" ]; then ok "Quickshell loaded the login screen, no errors"
 else bad "Quickshell did not start (no log)"; fi
-python3 -I - "$work/greetd.json" <<'PY' && ok "wrong password refused, right one logged in, session = uwsm Hyprland" || bad "greetd talk not as expected"
+python3 -I - "$work/greetd.json" <<'PY' && ok "wrong password refused, right one logged in, session = isla-session (→ uwsm Hyprland)" || bad "greetd talk not as expected"
 import json, sys
 got = json.load(open(sys.argv[1]))
 types = [g["type"] for g in got]
@@ -73,7 +73,7 @@ resp = [g.get("response") for g in got if g["type"] == "post_auth_message_respon
 start = [g for g in got if g["type"] == "start_session"]
 print("        greetd saw:", " → ".join(types))
 ok = resp[:1] == ["wrong-pass"] and resp[-1:] == ["isla-test"] and len(start) == 1 \
-     and start[0]["cmd"] == ["uwsm", "start", "-e", "-D", "Hyprland", "hyprland.desktop"]
+     and len(start[0]["cmd"]) == 1 and start[0]["cmd"][0].endswith("/isla-session")
 sys.exit(0 if ok else 1)
 PY
 [ -e "$rt/isla-greeter-ok" ] && ok "login marker written (no text-login fallback)" || bad "login marker missing (boot would fall back to text login)"

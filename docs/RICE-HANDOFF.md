@@ -145,8 +145,9 @@ real settings are not touched.
   Success (`leaving`): phone is pulled down off screen (InBack, blur + hidden clock stay) → iris cover → desktop. `PhoneBody { canBig: false }` on the lock.
 - Boot colour hand-over: Isla `Prefs` writes `~/.local/state/hypr/cover` (wipe colour); `misc.lua` and greeter.lua
   use it as Hyprland's background; Prefs loads with `blockLoading` so Isla's first frame already has it.
-- Gap between greeter Hyprland and your session = VT1 text console: `isla-greeter-session` paints all 16 console colours
-  = cover colour, clears it, hides the cursor (so boot/uwsm text is invisible); text-login fallback resets them (`\e]R`).
+- Gap between greeter Hyprland and your session = VT1 text console. logind resets it to black when the greeter session
+  closes, so greetd's session command is `isla-session`, which runs `paint-vt` (all 16 console colours = cover colour,
+  clear, no cursor) then `uwsm start` (output → `~/.local/state/isla/session.log`). The greeter also paints at start.
 - Test IPC only in scratch copies (tlock/tup/tpw/tenter/tok were added to the nested copy, not the real shell).
 
 ### Login screen (isla-greeter, installed and working)

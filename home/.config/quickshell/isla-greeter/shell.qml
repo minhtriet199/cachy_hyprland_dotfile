@@ -11,7 +11,7 @@ import Quickshell.Services.Pam
 ShellRoot {
     id: root
     readonly property bool real: Greetd.available
-    readonly property var session: ["uwsm", "start", "-e", "-D", "Hyprland", "hyprland.desktop"]
+    readonly property var session: [(Quickshell.env("ISLA_GREETER_SHARE") || "/usr/local/share/isla-greeter") + "/isla-session"]   // paints the console, then uwsm Hyprland
 
     Scope {
         id: lockCtl

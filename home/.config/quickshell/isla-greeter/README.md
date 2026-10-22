@@ -10,6 +10,7 @@ auto-login + Isla locking itself.
 | `greeter.lua` | tiny Hyprland config for the greeter (screen layout from the data folder, no HDR) |
 | `run-greeter` | runs `qs -p` then exits that Hyprland |
 | `isla-greeter-session` | greetd `default_session`. Falls back to `agreety` (text login) if the greeter dies without logging in |
+| `isla-session` / `paint-vt` | your session command (paints the text console in the cover colour, then `uwsm start … Hyprland`; uwsm log → `~/.local/state/isla/session.log`) / the painter, also used by the greeter |
 | `build.sh` | copies (never links) the needed Isla files + these into one folder |
 | `isla-greeter-sync` | copies prefs.json, lock wallpaper, screens, name → `/var/lib/isla-greeter` (run by `isla-greeter-sync.path`) |
 | `install.sh` / `uninstall.sh` | `sudo` — install to `/usr/local/share/isla-greeter`, switch greetd (backup `config.toml.before-isla`) / undo |

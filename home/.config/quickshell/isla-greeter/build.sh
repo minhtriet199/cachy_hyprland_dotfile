@@ -11,4 +11,4 @@ for f in LockScreen.qml PhoneBody.qml Theme.qml UiCandy.qml UiText.qml UiStrokeT
 done
 cp "$isla"/fonts/*.ttf "$out/fonts/"
 cp "$here/shell.qml" "$here/Prefs.qml" "$here/Svc.qml" "$here/greeter.lua" "$out/"
-install -m 755 "$here/run-greeter" "$here/isla-greeter-session" "$out/"
+install -m 755 "$here/run-greeter" "$here/isla-greeter-session" "$here/isla-session" "$here/paint-vt" "$out/"
