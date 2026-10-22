@@ -75,15 +75,6 @@ Item {
             width: hintT.implicitWidth + 44; height: 46; bw: 2.5; ink: Theme.inkPhone; drop: 4; hi: 0; fill: "#2C4A54"
             UiText { id: hintT; anchors.centerIn: parent; text: ls.greeter ? "Press any key to log in" : "Press any key to unlock"; px: 16; w: 700; color: "#FFFFFF" }
         }
-        // battery
-        UiCandy {
-            visible: ls.main
-            x: parent.width - 158; y: 40; width: 110; height: 48; bw: 3; ink: Theme.inkPhone; drop: 4; hi: 3; fill: Theme.gLeaf
-            Row { anchors.centerIn: parent; spacing: 6
-                BarBattery { size: 20; level: ls.svc.battery.percent / 100; charging: ls.svc.battery.charging; anchors.verticalCenter: parent.verticalCenter }
-                UiText { text: ls.svc.battery.percent + "%"; px: 17; w: 700; anchors.verticalCenter: parent.verticalCenter } }
-        }
-
         // ── the phone ──
         PhoneBody {
             id: phone
