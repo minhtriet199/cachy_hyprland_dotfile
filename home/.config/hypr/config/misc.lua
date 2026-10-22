@@ -1,3 +1,13 @@
+-- boot background = Isla's scene-change cover colour (Isla writes it to ~/.local/state/hypr/cover), so the login screen,
+-- this Hyprland and Isla's first frame are one colour
+local cover = 0xFFF4E0
+local cf = io.open(os.getenv("HOME") .. "/.local/state/hypr/cover")
+if cf then
+    local hex = (cf:read("l") or ""):match("^#(%x%x%x%x%x%x)$")
+    if hex then cover = tonumber(hex, 16) end
+    cf:close()
+end
+
 hl.config({
     dwindle = {
         preserve_split = true,
@@ -17,7 +27,7 @@ hl.config({
         vrr = 3,
         disable_hyprland_logo = true,      -- no Hyprland mascot wallpaper before Isla draws its own
         disable_splash_rendering = true,
-        background_color = 0xFFF4E0,       -- Isla cream, same as the scene-change cover
+        background_color = cover,          -- same as Isla's scene-change cover
         allow_session_lock_restore = true, -- if the lock screen (Isla) crashes, a new one can take over instead of a stuck red screen
     },
     render = {

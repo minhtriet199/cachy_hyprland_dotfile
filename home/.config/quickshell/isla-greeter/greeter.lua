@@ -3,12 +3,20 @@
 local share = os.getenv("ISLA_GREETER_SHARE") or "/usr/local/share/isla-greeter"
 local data  = os.getenv("ISLA_GREETER_DATA") or "/var/lib/isla-greeter"
 
+local cover = 0xFFF4E0
+local cf = io.open(data .. "/cover")
+if cf then
+    local hex = (cf:read("l") or ""):match("^#(%x%x%x%x%x%x)$")
+    if hex then cover = tonumber(hex, 16) end
+    cf:close()
+end
+
 hl.config({
     ecosystem = { no_update_news = true, no_donation_nag = true },
     misc = {
         disable_hyprland_logo = true,
         disable_splash_rendering = true,
-        background_color = 0xFFF4E0,   -- Isla cream, same as the scene-change cover
+        background_color = cover,      -- Isla's scene-change cover colour (copied by isla-greeter-sync)
         disable_watchdog_warning = true, -- plain Hyprland on purpose: a crash must end it so isla-greeter-session falls back to the text login
     },
     input = { accel_profile = "flat" },

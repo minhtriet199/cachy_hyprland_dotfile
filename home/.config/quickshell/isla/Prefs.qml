@@ -67,6 +67,7 @@ Singleton {
     FileView {
         id: file
         path: p.dir + "/prefs.json"
+        blockLoading: true                  // first frame (boot cover) already has your colours
         printErrors: false
         onLoaded: {
             try { const o = JSON.parse(text()); for (const k of p.keys) if (o[k] !== undefined) p[k] = o[k] } catch (e) {}
@@ -74,6 +75,10 @@ Singleton {
         }
         onLoadFailed: { p.ready = true; p.borrow() }
     }
+    // scene-change cover colour for Hyprland's background (misc.lua) and the login screen: boot goes greeter → Hyprland → Isla in one colour
+    onWipeColorsChanged: if (ready) coverFile.setText(wipeColors[0] + "\n")
+    onReadyChanged: if (ready) coverFile.setText(wipeColors[0] + "\n")
+    FileView { id: coverFile; path: p.dir + "/../hypr/cover"; printErrors: false }
     // First run: borrow the wallpaper end-4 (illogical-impulse) was using.
     property string iiWall: ""
     function borrow() {

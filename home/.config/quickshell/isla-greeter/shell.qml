@@ -18,14 +18,16 @@ ShellRoot {
         property string password: ""
         property bool busy: false
         property bool failed: false
+        property bool phoneUp: false               // phone slid up (LockScreen)
+        property string user: Svc.profile.user     // who logs in (phone's user pick)
         property date lockedAt: new Date()
         property string lockWipe: "full"           // opens from the cream cover, like Isla's own boot
         property real lockT: 0
 
         function tryUnlock() {
-            if (busy || password === "" || !Svc.profile.user) return;
+            if (busy || password === "" || !user) return;
             busy = true; failed = false;
-            if (root.real) Greetd.createSession(Svc.profile.user);
+            if (root.real) Greetd.createSession(user);
             else if (!pam.start()) fail();
         }
         function fail() { busy = false; failed = true; password = "" }
@@ -42,18 +44,20 @@ ShellRoot {
         PamContext {
             id: pam
             config: "login"
-            user: Svc.profile.user
+            user: lockCtl.user
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => { if (result === PamResult.Success) closeAnim.restart(); else lockCtl.fail() }
             onError: err => lockCtl.fail()
         }
 
-        // first frame: cream + leaf, then the iris opens onto the login screen
-        Timer { running: true; interval: 700; onTriggered: { lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; openAnim.restart() } }
+        // first frame: cover + leaf (same colour as this Hyprland's background), then the iris opens onto the clock
+        Timer { running: true; interval: 450; onTriggered: { lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; openAnim.restart() } }
         NumberAnimation { id: openAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
-        // right password: the iris closes to cream + leaf, the desktop's Isla opens from the same cover
+        // right password: the phone slides down, the iris closes to the cover + leaf, the desktop's Isla opens from the same cover
         SequentialAnimation {
             id: closeAnim
+            ScriptAction { script: lockCtl.phoneUp = false }
+            PauseAnimation { duration: 420 }
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: lockCtl.lockWipe = "full" }

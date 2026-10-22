@@ -136,6 +136,17 @@ real settings are not touched.
 - Palette button in the bar → `PaletteCard` (+ `ipc palette get|wallpaper|music|random|shuffle|apply|undo`).
 - Transition colour "Wallpaper": `SvcPalette` keeps `Prefs.wipeAuto` fresh (greeter needs `sudo …/isla-greeter/install.sh` to follow).
 
+### Lock / login (one `LockScreen.qml` for both, 2026-10-22)
+- Rest = lock wallpaper (or sky) + date + big sticker clock + "Press any key". Any key/click → `PhoneBody` slides up
+  (810 of 1080 design px), only the background Item is blurred (`MultiEffect` on a layer, so the desktop never shows).
+  Phone: avatar/name, "Locked since" / "Welcome back", user pick (greeter, >1 user), password dots, Unlock/Log in,
+  song (lock), Restart/Shut down (4 s countdown, other button = Cancel). Esc: cancel → clear → hide. 30 s idle → hides.
+- Shared state in the lock controller (`lockCtl` in isla/shell.qml and isla-greeter/shell.qml): `phoneUp`, `user`.
+  Success: phone slides down (420 ms) → iris cover → desktop. `PhoneBody { canBig: false }` on the lock.
+- Boot colour hand-over: Isla `Prefs` writes `~/.local/state/hypr/cover` (wipe colour); `misc.lua` and greeter.lua
+  use it as Hyprland's background; Prefs loads with `blockLoading` so Isla's first frame already has it.
+- Test IPC only in scratch copies (tlock/tup/tpw/tenter/tok were added to the nested copy, not the real shell).
+
 ### Login screen (isla-greeter, installed and working)
 - Code `~/.config/quickshell/isla-greeter/` (README). Installed copy `/usr/local/share/isla-greeter`, data `/var/lib/isla-greeter`
   (kept fresh by user unit `isla-greeter-sync.path`). Falls back to `agreety` if it dies.
@@ -210,11 +221,7 @@ The owner now **wants desktop widgets** (through Edit Desktop). Done so far: Ctr
 3. **More widgets** (after 2): clocks, date, user card, weather, calendar, to-do list, bottom visualizer, music, stats —
    several styles each. Also from widget-sheet-examples.png: "Started recording this monitor" pill, "Mic in use by … — click to mute" pill.
 4. **More themes — WAIT until the owner picks them.** A theme sets UI style + widget style; Presets = saved layouts.
-5. **New lock / login flow** (perfect + fast): boot shows lock wallpaper + big clock; any key/click → phone slides up
-   (3/4 screen height), wallpaper-only blur behind it; phone has user select, password, Restart, Shut down; on success it
-   slides down → iris wipe → desktop. **Same phone UI shared** by isla-greeter (boot) and Isla's WlSessionLock (lock).
-   Soft hand-over at boot: greeter ends on the wallpaper colour, Hyprland `misc` background matches, logo off, Isla's first
-   frame matches. Security: blur only the wallpaper picture, PAM stays the password check. Disk is not encrypted (owner knows).
+5. ~~New lock / login flow~~ **done 2026-10-22** (see §5 "Lock / login").
 
 ## 9. Quick commands
 

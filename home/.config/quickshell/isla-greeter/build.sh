@@ -6,7 +6,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 isla="${ISLA_DIR:-$HOME/.config/quickshell/isla}"
 out="$1"
 mkdir -p "$out/fonts"
-for f in LockScreen.qml Theme.qml UiCandy.qml UiText.qml UiStrokeText.qml UiDots.qml UiTag.qml UiDashed.qml Glyph.qml Glyphs.js BarBattery.qml IrisWipe.qml WipeIcon.qml; do
+for f in LockScreen.qml PhoneBody.qml Theme.qml UiCandy.qml UiText.qml UiStrokeText.qml UiDots.qml UiTag.qml UiDashed.qml Glyph.qml Glyphs.js BarBattery.qml IrisWipe.qml WipeIcon.qml; do
     cp "$isla/$f" "$out/$f"
 done
 cp "$isla"/fonts/*.ttf "$out/fonts/"

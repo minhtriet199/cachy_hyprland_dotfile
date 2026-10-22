@@ -4,6 +4,7 @@ Description=Keep the Isla login screen's copy of your look up to date
 [Path]
 PathChanged=%h/.local/state/isla/prefs.json
 PathChanged=%h/.local/state/hypr/screens
+PathChanged=%h/.local/state/hypr/cover
 
 [Install]
 WantedBy=default.target

@@ -9,6 +9,7 @@ Item {
     property bool landscape: false
     readonly property bool isNavZone: true    // keyboard: Tab / arrows stay inside the phone screen
     property bool showKeys: true          // flat side keys (hidden in 3D, the side wall shows them)
+    property bool canBig: true            // double-click = big ↔ small (off on the lock screen)
     property color ink: Theme.inkPhone
     property color shadowColor: ink
     property var bodyColors: [Theme.phoneA, Theme.phoneB]
@@ -23,7 +24,7 @@ Item {
     default property alias content: inner.data
     // empty screen space: swallow clicks (so they don't close the phone); double-click = big ↔ small phone
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: w => w.accepted = true
-        onDoubleClicked: m => { if (m.button === Qt.LeftButton && !Prefs.phoneWindow) Services.phoneBig = !Services.phoneBig } }
+        onDoubleClicked: m => { if (m.button === Qt.LeftButton && f.canBig && !Prefs.phoneWindow) Services.phoneBig = !Services.phoneBig } }
     readonly property alias screen: inner
     readonly property real bw: landscape ? 920 : 390
     readonly property real bh: landscape ? 430 : 834

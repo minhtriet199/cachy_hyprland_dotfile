@@ -40,6 +40,8 @@ ShellRoot {
         property string password: ""
         property bool busy: false
         property bool failed: false
+        property bool phoneUp: false                    // lock phone slid up (LockScreen)
+        property string user: ""                        // lock: always you (only the login screen picks)
         property date lockedAt: new Date()
         // scene change (circle iris + leaf): desk* plays on the desktop (overlay window), lock* on the lock screen; together they look like one change
         property string deskWipe: "none"
@@ -57,7 +59,9 @@ ShellRoot {
             ScriptAction { script: lockCtl.lockWipe = "none" }
         }
         SequentialAnimation {
-            id: toDeskAnim                                   // lock → desktop: close on the lock screen, open on the desktop
+            id: toDeskAnim                                   // lock → desktop: phone slides down, close on the lock screen, open on the desktop
+            ScriptAction { script: lockCtl.phoneUp = false }
+            PauseAnimation { duration: 420 }
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: lockCtl.deskWipe = "full" }
@@ -66,7 +70,7 @@ ShellRoot {
             PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
-            ScriptAction { script: lockCtl.deskWipe = "none" }
+            ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false } }
         }
         // first start: if greetd auto-logs in (initial_session) and the Hyprland session is brand new (< 90 s), Isla starts
         // LOCKED — the lock screen acts as the login screen. With the real Isla login screen (isla-greeter, no auto-login)
@@ -88,18 +92,17 @@ ShellRoot {
         NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.deskWipe = "none" }
         Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "full"; sessionAge.running = true }   // covered from the first frame
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
-        Timer { id: lockTestTimer; interval: 30000; onTriggered: sessionLock.locked = false }
+        Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
         function lockTest() { lockNow(); lockTestTimer.restart() }
-        function lockNow() { if (sessionLock.locked || toLockAnim.running) return; shell.phoneClose(); password = ""; failed = false; lockedAt = new Date(); toLockAnim.restart() }
+        function lockNow() { if (sessionLock.locked || toLockAnim.running) return; shell.phoneClose(); password = ""; failed = false; phoneUp = false; lockedAt = new Date(); toLockAnim.restart() }
         function tryUnlock() { if (busy || password === "") return; busy = true; failed = false; if (!pam.start()) { busy = false; failed = true } }
         PamContext {
             id: pam
             config: "hyprlock"                       // /etc/pam.d/hyprlock → login
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => {
-                lockCtl.busy = false;
-                if (result === PamResult.Success) { lockTestTimer.stop(); toDeskAnim.restart() }
-                else { lockCtl.failed = true; lockCtl.password = "" }
+                if (result === PamResult.Success) { lockTestTimer.stop(); toDeskAnim.restart() }      // busy until the desktop is back
+                else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
             }
             onError: err => { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
         }

@@ -24,13 +24,14 @@ Singleton {
         } }
     }
     Timer { interval: 30000; running: true; repeat: true; triggeredOnStart: true; onTriggered: batP.running = true }
-    // user.json: { "user": "gamer", "full": "…" } written by isla-greeter-sync
+    // user.json: { "user": "gamer", "full": "…", "users": [{ user, full }, …] } written by isla-greeter-sync
     property var profile: ({ user: "", full: "" })
+    property var users: []
     function loadProfile() {}
     FileView {
         path: Prefs.dir + "/user.json"
         printErrors: false
-        onLoaded: { try { const o = JSON.parse(text()); s.profile = { user: o.user || "", full: o.full || "" } } catch (e) {} }
+        onLoaded: { try { const o = JSON.parse(text()); s.profile = { user: o.user || "", full: o.full || "" }; s.users = (o.users || []).length ? o.users : [s.profile] } catch (e) {} }
     }
     function power(what) {
         if (what === "reboot") Quickshell.execDetached(["systemctl", "reboot"]);
