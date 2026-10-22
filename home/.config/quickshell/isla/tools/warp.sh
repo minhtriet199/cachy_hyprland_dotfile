@@ -1,6 +1,6 @@
 #!/bin/sh
 # Cloudflare WARP on demand: the warp-svc service (≈110 MB) only runs while WARP is on.
-#   warp.sh on   start the service if needed, wait for it, connect
+#   warp.sh on   start the service if needed, wait for it, register (first time only), connect
 #   warp.sh off  disconnect, then stop the service
 # Starting/stopping warp-svc without a password needs tools/warp-ondemand-setup.sh (polkit rule, run once with sudo).
 case "$1" in
@@ -10,6 +10,7 @@ on)
     until warp-cli --accept-tos status >/dev/null 2>&1; do
         i=$((i + 1)); [ "$i" -gt 40 ] && exit 1; sleep 0.25
     done
+    warp-cli --accept-tos registration show >/dev/null 2>&1 || warp-cli --accept-tos registration new >/dev/null || exit 1   # first time
     warp-cli --accept-tos connect
     ;;
 off)
