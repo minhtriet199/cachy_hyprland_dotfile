@@ -147,7 +147,7 @@ real settings are not touched.
   use it as Hyprland's background; Prefs loads with `blockLoading` so Isla's first frame already has it.
 - Gap between greeter Hyprland and your session = VT1 text console. logind resets it to black when the greeter session
   closes, so greetd's session command is `isla-session`, which runs `paint-vt` (all 16 console colours = cover colour,
-  clear, no cursor) then `uwsm start` (output → `~/.local/state/isla/session.log`). The greeter also paints at start.
+  clear, no cursor; console = `/sys/class/tty/tty0/active`, XDG_VTNR isn't set) then `uwsm start` (output → `~/.local/state/isla/session.log`). The greeter also paints at start.
 - Test IPC only in scratch copies (tlock/tup/tpw/tenter/tok were added to the nested copy, not the real shell).
 
 ### Login screen (isla-greeter, installed and working)
@@ -171,6 +171,7 @@ real settings are not touched.
 - Isla doesn't watch prefs.json; to apply an outside edit, change a QML file's content.
 - PyGObject can't implement `Gcr.Prompt` → talk D-Bus directly.
 - `pkill -f <pattern>` in a tool shell can kill that shell — kill by PID.
+- Hyprland colours in Lua are strings: `background_color = "rgb(ebd6d6)"`. A bare `0xEBD6D6` is accepted but means alpha 0 → black.
 
 ---
 

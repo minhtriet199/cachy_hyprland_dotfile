@@ -3,11 +3,12 @@
 local share = os.getenv("ISLA_GREETER_SHARE") or "/usr/local/share/isla-greeter"
 local data  = os.getenv("ISLA_GREETER_DATA") or "/var/lib/isla-greeter"
 
-local cover = 0xFFF4E0
+-- a colour string: a bare number like 0xFFF4E0 means alpha 0 = transparent = black
+local cover = "rgb(fff4e0)"
 local cf = io.open(data .. "/cover")
 if cf then
     local hex = (cf:read("l") or ""):match("^#(%x%x%x%x%x%x)$")
-    if hex then cover = tonumber(hex, 16) end
+    if hex then cover = "rgb(" .. hex .. ")" end
     cf:close()
 end
 

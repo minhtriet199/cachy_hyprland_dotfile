@@ -1,10 +1,11 @@
 -- boot background = Isla's scene-change cover colour (Isla writes it to ~/.local/state/hypr/cover), so the login screen,
 -- this Hyprland and Isla's first frame are one colour
-local cover = 0xFFF4E0
+-- a colour string: a bare number like 0xFFF4E0 means alpha 0 = transparent = black
+local cover = "rgb(fff4e0)"
 local cf = io.open(os.getenv("HOME") .. "/.local/state/hypr/cover")
 if cf then
     local hex = (cf:read("l") or ""):match("^#(%x%x%x%x%x%x)$")
-    if hex then cover = tonumber(hex, 16) end
+    if hex then cover = "rgb(" .. hex .. ")" end
     cf:close()
 end
 
