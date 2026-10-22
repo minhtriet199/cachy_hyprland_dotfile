@@ -27,7 +27,9 @@ echo "   Hyprland $(Hyprland --version 2>/dev/null | head -1 | cut -c1-40) · $(
 echo "2. greetd setup"
 if grep -q "isla-greeter-session" /etc/greetd/config.toml 2>/dev/null; then ok "greetd uses the Isla login screen"
 else warn "greetd does not use the Isla login screen (not installed?)"; fi
-grep -q '^\[initial_session\]' /etc/greetd/config.toml 2>/dev/null && warn "auto-login is still on" || ok "no auto-login"
+if grep -q 'isla-session autologin' /etc/greetd/config.toml 2>/dev/null; then ok "auto-login into a locked session (install.sh autologin)"
+elif grep -q '^\[initial_session\]' /etc/greetd/config.toml 2>/dev/null; then warn "auto-login without the Isla lock (old config?)"
+else ok "no auto-login"; fi
 [ -x "$share/isla-greeter-session" ] && ok "installed" || bad "not installed: sudo $here/install.sh"
 
 echo "3. installed copy is up to date"

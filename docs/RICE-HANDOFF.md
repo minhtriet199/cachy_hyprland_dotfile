@@ -61,7 +61,7 @@ real settings are not touched.
 | GPU | RX 6700S (card1, drives both screens — MUX "Ultimate") + Radeon 680M (card0) |
 | Screens | ASUS VG27AQ5A **HDMI-A-1** (left, 2560×1440@120, **HDR on**) · laptop **eDP-1** (right, 2560×1600@120, scale 1.25) |
 | OS | CachyOS, kernels `linux-cachyos` 7.2.11 + `linux-cachyos-lts` 6.18 (backup) |
-| Desktop | **Hyprland 0.56, Lua config** · login: greetd + **isla-greeter** (no auto-login) |
+| Desktop | **Hyprland 0.56, Lua config** · login: greetd + **isla-greeter** (`install.sh autologin` = boot into locked session, see isla-greeter README) |
 | Shell | **Isla**, own Quickshell config (`qs -c isla`) |
 | Input | fcitx5 + bamboo (EN/VI, Ctrl+Shift) |
 | Bluetooth | MediaTek MT7922 — **headset-mode mic broken** (§8) |

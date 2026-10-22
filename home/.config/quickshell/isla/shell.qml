@@ -73,16 +73,17 @@ ShellRoot {
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
             ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false } }
         }
-        // first start: if greetd auto-logs in (initial_session) and the Hyprland session is brand new (< 90 s), Isla starts
-        // LOCKED — the lock screen acts as the login screen. With the real Isla login screen (isla-greeter, no auto-login)
-        // you already typed your password, so it only plays the reveal, same as a later restart of Isla.
+        // first start: if greetd auto-logged in (isla-greeter `isla-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin
+        // until the first unlock), Isla starts LOCKED — the lock screen is the login screen, and that unlock runs
+        // hypr scripts/after-unlock.sh (shortcuts on, startup apps). After the Isla login screen you already typed your
+        // password, so it only plays the reveal, same as a later restart of Isla.
         PersistentProperties { id: lockPersist; reloadableId: "islaLockPersist"; property bool started: false }
+        property bool bootLock: false
         Process {
             id: sessionAge
-            command: ["sh", "-c", "grep -q '^\\[initial_session\\]' /etc/greetd/config.toml 2>/dev/null || { echo 99999; exit; }; ps -o etimes= -p $(pgrep -xo Hyprland || echo 1) | tr -d ' '"]
+            command: ["sh", "-c", "[ -e \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin\" ] && echo lock"]
             stdout: StdioCollector { onStreamFinished: {
-                const age = parseInt(this.text) || 99999;
-                if (age < 90) { lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "full"; sessionLock.locked = true; bootReveal.start() }
+                if (this.text.trim() === "lock") { lockCtl.bootLock = true; lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "full"; sessionLock.locked = true; bootReveal.start() }
                 else startWipe.start()
             } }
         }
@@ -102,7 +103,10 @@ ShellRoot {
             config: "hyprlock"                       // /etc/pam.d/hyprlock → login
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => {
-                if (result === PamResult.Success) { lockTestTimer.stop(); toDeskAnim.restart() }      // busy until the desktop is back
+                if (result === PamResult.Success) {
+                    lockTestTimer.stop(); toDeskAnim.restart()      // busy until the desktop is back
+                    if (lockCtl.bootLock) { lockCtl.bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) }
+                }
                 else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
             }
             onError: err => { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }

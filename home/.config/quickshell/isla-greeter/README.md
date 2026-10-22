@@ -15,6 +15,14 @@ auto-login + Isla locking itself.
 | `isla-greeter-sync` | copies prefs.json, lock wallpaper, screens, name → `/var/lib/isla-greeter` (run by `isla-greeter-sync.path`) |
 | `install.sh` / `uninstall.sh` | `sudo` — install to `/usr/local/share/isla-greeter`, switch greetd (backup `config.toml.before-isla`) / undo |
 
+**Auto-login mode** (`sudo ./install.sh autologin`): greetd boots straight into your Hyprland (`isla-session autologin`,
+one Hyprland → no black switch after the password). It leaves `$XDG_RUNTIME_DIR/isla-autologin` = "not logged in yet":
+Isla starts locked (its lock screen is the login), Hyprland starts in the empty `bootlock` submap (hypr
+`config/autostart.lua`) and holds startup apps (`config/startup_isla.lua`). The first unlock runs hypr
+`scripts/after-unlock.sh` (removes the mark, shortcuts back, startup apps). If Isla isn't running, hypr
+`scripts/boot-lock-guard.sh` locks with hyprlock (`~/.config/hypr/hyprlock.conf`); if that fails 3× it ends the session →
+this login screen. After log out you always get this login screen. Back to login-screen-only: `sudo ./install.sh`.
+
 **After `pacman -Syu` (Hyprland/quickshell updates) or Isla lock-screen changes, before rebooting:** `./check.sh`
 (installed copy) or `./check.sh --fresh` (current Isla files). It logs in by itself against `fake-greetd.py`
 (password `isla-test`, env `ISLA_GREETER_TEST=1`) and tests the text-login fallback.
