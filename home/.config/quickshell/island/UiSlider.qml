@@ -27,7 +27,7 @@ Item {
         Rectangle { width: parent.width * Math.max(0, Math.min(1, l.shown / l.max)); height: parent.height; radius: 5; color: l.color } }
     Rectangle { x: Math.max(0, Math.min(l.width - width, l.width * l.shown / l.max - width / 2)); anchors.verticalCenter: parent.verticalCenter
         width: 20; height: 20; radius: 10; color: Theme.paper; border.width: l.armed ? 3.5 : 2.5; border.color: l.armed ? Theme.sunDeep : Theme.ink }
-    UiTag { visible: l.tip !== "" && (ma.containsMouse || ma.pressed); z: 5; text: l.tip; px: 11; tilt: 0
+    UiTag { visible: l.tip !== "" && (ma.containsMouse || ma.pressed); z: 5; text: l.tip; px: 11; tilt: -4
         fill: Theme.paper; ink: Theme.ink; textColor: Theme.textDeep
         x: Math.max(-6, Math.min(l.width - width + 6, l.width * l.shown / l.max - width / 2)); y: -height - 6 }
     MouseArea {

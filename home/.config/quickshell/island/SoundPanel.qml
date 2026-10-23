@@ -58,7 +58,11 @@ Item {
                     UiCandy { id: muteB; anchors.right: parent.right; y: -1; width: 22; height: 22; radius: 11; bw: 2; drop: 0; hi: 0
                         fill: ap.off ? Theme.pinkSoft : Theme.paper; pressable: true
                         onClicked: ap.modelData.audio.muted = !ap.off
-                        Glyph { anchors.centerIn: parent; name: ap.off ? "mute" : "volume"; size: 12; stroke: 2.4 } }
+                        Glyph { anchors.centerIn: parent; name: ap.off ? "mute" : "volume"; size: 12; stroke: 2.4 }
+                        // hover: the app's volume as a sticker tooltip
+                        UiTag { visible: muteB.hovered; z: 5; anchors.right: parent.right; y: -height - 6; tilt: -4; px: 11
+                            text: ap.off ? "muted" : Math.round((ap.modelData.audio.volume || 0) * 100) + "%"
+                            fill: ap.off ? Theme.pinkSoft : Theme.paper; ink: Theme.ink; textColor: Theme.textDeep } }
                     UiSlider { x: 30; y: 24; width: parent.width - 30; height: 12; max: 1.0; color: ap.off ? Theme.sand : Theme.sea
                         tip: ap.off ? "muted" : Math.round(shown * 100) + "%"
                         value: ap.modelData.audio.volume || 0
