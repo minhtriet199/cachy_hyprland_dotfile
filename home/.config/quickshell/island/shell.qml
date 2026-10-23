@@ -323,7 +323,7 @@ ShellRoot {
         function drop(which: string): void { shell.dropRequest(shell.focusedName(), which) }
         // snip editor (hypr/scripts/snip.sh): "crop.png|screen.ppm|MONITOR|x|y|w|h|scale" (logical px on that screen)
         // screen-share picker (tools/share-pick.sh, for OBS / Discord / browser): shows on the screen you're on
-        function sharePick(listFile: string): void { shell.shareList = listFile; shareL.active = false; shareL.active = true }
+        function sharePick(listFile: string): void { Services.busyDone("rec"); shell.shareList = listFile; shareL.active = false; shareL.active = true }
         function shareClose(): void { shareL.active = false }
         function snip(req: string): void { const f = req.split("|"); shell.snipReq = { crop: f[0], shot: f[1], mon: f[2],
             sel: Qt.rect(+f[3], +f[4], +f[5], +f[6]), dpr: +f[7] || 1 }; snipL.active = true }
@@ -672,6 +672,26 @@ ShellRoot {
                         WlrLayershell.layer: WlrLayer.Overlay
                         WlrLayershell.namespace: "island-bluetooth"
                         BtPairDialog { id: pairBox; x: 10; svc: Services; scale: scr.sc; transformOrigin: Item.TopLeft }
+                    }
+                }
+
+                // ── an app is opening: a spinner next to the pointer (click-through, only while Services.launching) ──
+                PanelWindow {
+                    id: spinWin
+                    readonly property point at: Qt.point(Services.cursor.x - scr.modelData.x, Services.cursor.y - scr.modelData.y)
+                    visible: Services.launching && at.x >= 0 && at.y >= 0 && at.x < scr.modelData.width && at.y < scr.modelData.height
+                    screen: scr.modelData
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    exclusionMode: ExclusionMode.Ignore
+                    color: "transparent"
+                    mask: Region {}
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    WlrLayershell.namespace: "island-launch-spinner"
+                    UiCandy {
+                        x: spinWin.at.x + 16; y: spinWin.at.y + 16; width: 24; height: 24; radius: 12; bw: 2; drop: 2; hi: 0; fill: Theme.paper
+                        Glyph { anchors.centerIn: parent; name: "reload"; size: 14; stroke: 2.6
+                            RotationAnimator on rotation { from: 0; to: 360; duration: 800; loops: Animation.Infinite; running: Services.launching } }
                     }
                 }
 
