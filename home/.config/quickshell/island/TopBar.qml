@@ -14,7 +14,7 @@ Item {
     signal openDropdown(string which, real x)
     property real k: 1                       // design px → screen px (for tooltips in their own windows)
     property bool tipUp: false               // bar at the bottom: tooltips go above
-    TrayMenu { id: trayMenu; k: bar.k; up: bar.tipUp }
+    TrayMenu { id: trayMenu; monitor: bar.monitor; k: bar.k; up: bar.tipUp }
     signal openPower()
     function drop(which, pill) { openDropdown(which, pill.mapToItem(bar, pill.width / 2, 0).x) }
     height: 50
@@ -228,7 +228,7 @@ Item {
                     Component.onCompleted: popIn.start()
                     NumberAnimation { id: popIn; target: ti; property: "popT"; from: 0; to: 1; duration: 420; easing.type: Easing.OutBack; easing.overshoot: 2 }
                     scale: popT; opacity: Math.min(1, popT * 1.5)
-                    function menu() { if (modelData.hasMenu) trayMenu.open(ti, modelData.menu) }   // Island-style menu (TrayMenu.qml)
+                    function menu() { if (modelData.hasMenu) trayMenu.toggle(ti, modelData.menu) }   // Island-style menu (TrayMenu.qml); again = close
                     IconImage { anchors.fill: parent; asynchronous: true
                         // Steam's tray icon is a pale mono glyph; its normal app icon reads better on the light pill
                         source: ti.modelData.id === "steam" ? (Quickshell.iconPath("steam", true) || ti.modelData.icon) : ti.modelData.icon
