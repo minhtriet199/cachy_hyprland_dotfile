@@ -78,8 +78,8 @@ Item {
                                         id: fi
                                         required property string modelData
                                         sourceComponent: ({ img: cImg, video: cVideo, file: cLink })[b.todo.kind(modelData)]
-                                        Component { id: cImg; Image { height: 70 * b.k; width: Math.max(70 * b.k, Math.min(160 * b.k, height * implicitWidth / Math.max(1, implicitHeight)))   // tall pictures: centre crop
-                                            source: "file://" + fi.modelData; sourceSize.height: 160; fillMode: Image.PreserveAspectCrop; asynchronous: true } }
+                                        Component { id: cImg; Image { height: 70 * b.k; width: Math.max(70 * b.k, Math.min(160 * b.k, height * implicitWidth / Math.max(1, implicitHeight)))
+                                            source: "file://" + fi.modelData; sourceSize.height: 160; fillMode: Image.PreserveAspectFit; asynchronous: true } }   // whole picture, odd shapes too
                                         Component { id: cVideo; VideoThumb { file: fi.modelData } }
                                         Component { id: cLink; UiText { text: "📄 " + fi.modelData.split("/").pop(); fam: "n"; px: 12 * b.k; w: 800
                                             color: Theme.seaDeep; font.underline: true; elide: Text.ElideMiddle; width: Math.min(implicitWidth, inner.width) } }
