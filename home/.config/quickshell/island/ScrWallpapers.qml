@@ -350,6 +350,6 @@ Item {
     Keys.onLeftPressed: step(-1)
     Keys.onRightPressed: step(1)
     Keys.onReturnPressed: apply()
-    Keys.onEscapePressed: previewing ? (svc.wallPreview = "") : close()
+    Keys.onEscapePressed: { if (previewing) svc.wallPreview = ""; else svc.phoneEsc() }   // overlay: close · window: back
     Keys.onSpacePressed: previewing ? (svc.wallPreview = "") : preview()      // Space = preview on / off
 }

@@ -64,7 +64,7 @@ Item {
                 Keys.onReturnPressed: c.copy()
                 Keys.onEnterPressed: c.copy()
                 Keys.onDeletePressed: if (c.cur) c.svc.clipDelete(c.cur)
-                Keys.onEscapePressed: { if (text) text = ""; else c.done() }
+                Keys.onEscapePressed: { if (text) text = ""; else c.svc.phoneEsc() }   // overlay: close · window: back
                 UiText { visible: !field.text; text: "Search clipboard…"; px: 18; w: 600; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
             }
             UiCandy { visible: field.text !== ""; x: parent.width - 38; anchors.verticalCenter: parent.verticalCenter; width: 26; height: 26; bw: 0; drop: 0; hi: 0; fill: "transparent"; pressable: true

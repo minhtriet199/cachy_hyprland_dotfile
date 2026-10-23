@@ -30,7 +30,7 @@
     "sleep",
     "sleep"
   ],
-  "h24": true,
+  "h24": false,
   "location": false,
   "weatherAuto": true,
   "city": "Ho Chi Minh City",

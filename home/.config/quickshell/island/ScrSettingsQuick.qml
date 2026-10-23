@@ -204,5 +204,5 @@ Item {
     }
     }
     focus: true
-    Keys.onEscapePressed: sq.close()
+    Keys.onEscapePressed: sq.svc.phoneEsc()          // overlay: close · window: back
 }

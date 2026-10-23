@@ -699,6 +699,8 @@ Singleton {
     function trashFile(p) { run(["gio", "trash", p]) }
     signal phoneRotate()
     function rotatePhone() { phoneRotate() }
+    // Esc on a phone screen (with nothing left to clear): the shown phone closes, or as a window goes back
+    signal phoneEsc()
     // Wallpapers → Paste image (clipboard picture or a copied image link)
     property string pasteMsg: ""
     signal pastedWallpaper(string path)

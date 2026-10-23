@@ -59,7 +59,7 @@ Item {
                     Keys.onReturnPressed: s.webMode ? s.openWeb() : s.activate(s.sel)
                     Keys.onEnterPressed: s.webMode ? s.openWeb() : s.activate(s.sel)
                     Keys.onTabPressed: e => { if (s.webMode) { s.eng = (s.eng + 1) % s.engines.length; e.accepted = true } else e.accepted = false }
-                    Keys.onEscapePressed: { if (s.query !== "") s.query = ""; else s.done() }
+                    Keys.onEscapePressed: { if (s.query !== "") s.query = ""; else s.svc.phoneEsc() }   // overlay: close · window: back
                     UiText { visible: field.text === ""; text: "Type to search…"; px: 18; w: 600; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
                 }
                 PhoneKeycap { anchors.right: parent.right; anchors.rightMargin: 8 + 3; anchors.verticalCenter: parent.verticalCenter

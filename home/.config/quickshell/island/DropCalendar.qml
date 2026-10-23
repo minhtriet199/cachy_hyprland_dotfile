@@ -51,8 +51,13 @@ DropCard {
         MouseArea { anchors.fill: parent; cursorShape: d.zoom !== "years" || d.day ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: { if (d.day) d.day = ""; else if (d.zoom === "month") d.zoom = "year"; else d.zoom = "years" } }
     }
-    // back to this month (small chip in the corner, so the title keeps its room)
-    UiCandy { visible: !d.day && (d.offset !== 0 || d.zoom !== "month"); x: d.width - width - 24; y: 15; width: tl.implicitWidth + 16; height: 20; radius: 10
+    // date & time settings (small chip in the corner, so nothing grows)
+    signal settings()
+    UiCandy { id: gearC; x: d.width - width - 24; y: 15; width: 20; height: 20; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+        onClicked: d.settings()
+        Glyph { anchors.centerIn: parent; name: "gear"; size: 12; stroke: 2.4 } }
+    // back to this month (small chip next to it, so the title keeps its room)
+    UiCandy { visible: !d.day && (d.offset !== 0 || d.zoom !== "month"); x: gearC.x - width - 6; y: 15; width: tl.implicitWidth + 16; height: 20; radius: 10
         bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true; onClicked: { d.offset = 0; d.zoom = "month" }
         UiText { id: tl; anchors.centerIn: parent; text: "Today"; px: 11; w: 700 } }
     Row {

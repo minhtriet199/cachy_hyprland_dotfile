@@ -94,5 +94,5 @@ Item {
     }
     }
     focus: true
-    Keys.onEscapePressed: st.close()
+    Keys.onEscapePressed: st.svc.phoneEsc()          // overlay: close · window: back
 }

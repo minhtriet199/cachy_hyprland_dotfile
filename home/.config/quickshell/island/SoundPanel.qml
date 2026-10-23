@@ -52,9 +52,15 @@ Item {
                     width: parent.width; height: 42
                     IconImage { x: 0; y: 2; implicitSize: 22; asynchronous: true
                         source: Quickshell.iconPath(ap.modelData.properties["application.icon-name"] || (ap.modelData.properties["application.process.binary"] || "").toLowerCase(), "audio-x-generic") }
-                    UiText { x: 30; y: 0; width: parent.width - 30 - 34; height: 20; text: snd.appName(ap.modelData); px: 13; w: 700 }
-                    UiText { anchors.right: parent.right; y: 0; height: 20; text: Math.round((ap.modelData.audio.volume || 0) * 100) + "%"; fam: "n"; px: 11; w: 900; color: Theme.textSoft }
-                    UiSlider { x: 30; y: 24; width: parent.width - 30; height: 12; max: 1.0; color: Theme.sea
+                    readonly property bool off: !!ap.modelData.audio.muted
+                    UiText { x: 30; y: 0; width: parent.width - 30 - 34 - 26; height: 20; text: snd.appName(ap.modelData); px: 13; w: 700 }
+                    UiText { anchors.right: muteB.left; anchors.rightMargin: 6; y: 0; height: 20; text: ap.off ? "muted" : Math.round((ap.modelData.audio.volume || 0) * 100) + "%"; fam: "n"; px: 11; w: 900; color: ap.off ? Theme.berry : Theme.textSoft }
+                    // mute just this app
+                    UiCandy { id: muteB; anchors.right: parent.right; y: -1; width: 22; height: 22; radius: 11; bw: 2; drop: 0; hi: 0
+                        fill: ap.off ? Theme.pinkSoft : Theme.paper; pressable: true
+                        onClicked: ap.modelData.audio.muted = !ap.off
+                        Glyph { anchors.centerIn: parent; name: ap.off ? "mute" : "volume"; size: 12; stroke: 2.4 } }
+                    UiSlider { x: 30; y: 24; width: parent.width - 30; height: 12; max: 1.0; color: ap.off ? Theme.sand : Theme.sea
                         value: ap.modelData.audio.volume || 0
                         onPicked: v => { ap.modelData.audio.muted = false; ap.modelData.audio.volume = v } }
                 }

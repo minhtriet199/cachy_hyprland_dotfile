@@ -80,5 +80,5 @@ Item {
     Component { id: crecovery; RecoveryPanel { svc: pg.svc } }
 
     focus: true
-    Keys.onEscapePressed: pg.close()
+    Keys.onEscapePressed: pg.svc.phoneEsc()          // overlay: close · window: back
 }

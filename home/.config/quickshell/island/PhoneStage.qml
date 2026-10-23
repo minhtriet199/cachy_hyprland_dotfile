@@ -114,7 +114,8 @@ Item {
         orient = was ? "portrait" : "landscape";
         transition(screen, !was, was);
     }
-    Connections { target: stage.svc; function onPhoneRotate() { stage.rotate() } }
+    Connections { target: stage.svc; function onPhoneRotate() { stage.rotate() }
+        function onPhoneEsc() { if (stage.shown) stage.dismiss() } }
     signal closed()
     signal soon(string what)
 
@@ -159,8 +160,10 @@ Item {
         if (history.length) { const h = history.slice(); const p = h.pop(); history = h; open(p) }
         else if (screen.startsWith("settings") && screen !== "settings" || screen === "wallpapers") open("settings")
         else if (screen !== "home") open("home")
-        else close();
+        else if (!windowed) close();             // as a window it stays open on home, like any app
     }
+    // Esc: closes the overlay phone; as a window it only goes back (close it like a window: ✕ / Super+W)
+    function dismiss() { if (windowed) back(); else close() }
     function riseUp() { riseAnim.from = rise; riseAnim.to = 1; riseAnim.easing.type = Easing.OutBack; riseAnim.restart(); if (lite) wobT = 1; else { wobT = 0; wobAnim.restart() } }
     function close() {
         if (!shown) return;
@@ -517,8 +520,8 @@ Item {
         onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back() } }
     Component { id: cWallpapers; ScrWallpapers { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
 
-    // Esc closes · Alt+← or the mouse back button goes back
-    Keys.onEscapePressed: close()
+    // Esc closes (window: goes back) · Alt+← or the mouse back button goes back
+    Keys.onEscapePressed: dismiss()
     // keyboard (keys free in your Hyprland binds): Ctrl+F big/small · Ctrl+S turn · Ctrl+←/→ phone screen ↔ buttons · Ctrl+1…5 jump · Alt+← / Backspace back · F1 help
     function zoneOf(it) { let p = it; while (p) { if (p.isNavZone === true) return p; p = p.parent } return null }
     function focusFirst(zone) {

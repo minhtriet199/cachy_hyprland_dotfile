@@ -420,8 +420,8 @@ ShellRoot {
                                 scr.dropX = scr.dw / 2; scr.drop = scr.drop === which ? "" : which
                             }
                         }
-                        Component { id: cBattery; DropBattery { svc: Services } }
-                        Component { id: cCalendar; DropCalendar { svc: Services } }
+                        Component { id: cBattery; DropBattery { svc: Services; onSettings: { scr.drop = ""; shell.phoneRequest(scr.name, "settingsPower") } } }
+                        Component { id: cCalendar; DropCalendar { svc: Services; onSettings: { scr.drop = ""; shell.phoneRequest(scr.name, "settingsTimeLang") } } }
                         Component { id: cWeather; DropWeather { svc: Services } }
                         Component { id: cNotifs; DropNotifs { svc: Services } }
                         Component { id: cPanel; DropPanel { svc: Services; kind: scr.drop } }

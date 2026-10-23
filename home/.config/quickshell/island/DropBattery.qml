@@ -49,6 +49,12 @@ DropCard {
 
     // power mode
     UiText { x: 20; y: 168; text: "POWER MODE"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
+    // power settings (in the label row's empty right side, so nothing grows)
+    signal settings()
+    UiCandy { x: d.width - width - 20; y: 165; width: gt.implicitWidth + 30; height: 20; radius: 10; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+        onClicked: d.settings()
+        Glyph { x: 6; anchors.verticalCenter: parent.verticalCenter; name: "gear"; size: 11; stroke: 2.4 }
+        UiText { id: gt; x: 21; anchors.verticalCenter: parent.verticalCenter; text: "Settings"; fam: "n"; px: 10.5; w: 900 } }
     Row {
         x: 20; y: 190; spacing: 8
         Repeater {

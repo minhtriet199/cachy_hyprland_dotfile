@@ -76,7 +76,7 @@ Item {
                 Keys.onDownPressed: home.sel = Math.min(home.pickable.length - 1, home.sel + 1)
                 Keys.onReturnPressed: e => home.activate(home.selRow, e.modifiers & Qt.ShiftModifier)
                 Keys.onEnterPressed: home.activate(home.selRow, false)
-                Keys.onEscapePressed: e => { if (text) text = ""; else e.accepted = false }
+                Keys.onEscapePressed: { if (text) text = ""; else home.svc.phoneEsc() }   // overlay: close · window: back
                 Keys.onTabPressed: home.tabKey(true)
                 Keys.onBacktabPressed: home.tabKey(false)
                 UiText { visible: !field.text; anchors.verticalCenter: parent.verticalCenter; fam: "n"; w: 800; px: 14; color: Theme.textSoft
