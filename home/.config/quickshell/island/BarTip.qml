@@ -15,10 +15,10 @@ PopupWindow {
     anchor.edges: up ? Edges.Top : Edges.Bottom
     anchor.gravity: up ? Edges.Top : Edges.Bottom
     implicitWidth: Math.ceil((tag.width + 16) * k)
-    implicitHeight: Math.ceil((tag.height + 24) * k)
+    implicitHeight: Math.ceil((tag.height + 28) * k)
     Item {
-        width: tag.width + 16; height: tag.height + 24
+        width: tag.width + 16; height: tag.height + 28
         scale: tp.k; transformOrigin: Item.TopLeft
-        UiTag { id: tag; x: 8; y: tp.up ? 4 : 12; text: tp.text; px: 16; padX: 14; tilt: -4; fill: Theme.paper; ink: Theme.ink; textColor: Theme.textDeep }
+        UiTag { id: tag; x: 8; y: tp.up ? 4 : 12; text: tp.text; px: 20; padX: 16; tilt: -4; fill: Theme.paper; ink: Theme.ink; textColor: Theme.textDeep }
     }
 }
