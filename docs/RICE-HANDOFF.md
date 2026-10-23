@@ -233,6 +233,8 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] More themes (wait until I pick them): a theme sets UI style + widget style; Presets = saved layouts
 - [x] New lock / login flow
 - [ ] Making Phone app and for this system to connect them light weight when running in the background  connect phone notification to this system  connect let me control this system one the phone
+- [ ] check update diskmap currently it kinda bad
+- [ ] Adding a website display image wallpaper
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):

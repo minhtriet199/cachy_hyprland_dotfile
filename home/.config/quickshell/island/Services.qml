@@ -938,6 +938,8 @@ Singleton {
     property var busyIds: []
     function busy(id) { if (!busyIds.includes(id)) busyIds = busyIds.concat([id]); busyEnd.restart() }
     function busyDone(id) { busyIds = busyIds.filter(x => x !== id) }
+    // move the pointer onto its own spot: Hyprland then gives it back to the surface under it (after a layer opened)
+    function pointerNudge() { run(["sh", "-c", 'sleep 0.12; p=$(hyprctl cursorpos); hyprctl dispatch "hl.dsp.cursor.move({ x = ${p%%,*}, y = ${p##* } })" >/dev/null']) }
     readonly property bool recStarting: busyIds.includes("rec")
     readonly property bool launching: busyIds.length > 0
     property point cursor: Qt.point(-1000, -1000)

@@ -363,7 +363,9 @@ ShellRoot {
                 readonly property real band: 50 + barPad * 2                         // bar strip height (design px)
                 property string drop: ""                                            // open bar dropdown
                 readonly property bool dropPinned: drop === "todo" && Services.todo.pinned   // stays up, clicks go through around it
-                onDropChanged: { console.log("DEBUG drop", name, JSON.stringify(drop), Date.now() % 100000); if (drop !== "todo") Services.todo.pinned = false }
+                // a card opening takes the pointer from the bar until it moves (a 2nd click on the pill did nothing) →
+                // put the pointer back on its own spot, so a click on the same pill closes the card at once
+                onDropChanged: { if (drop !== "todo") Services.todo.pinned = false; if (drop !== "") Services.pointerNudge() }
                 property real dropX: 0
 
                 // ── scene change overlay (lock / unlock / first start / preview) ──
@@ -410,7 +412,7 @@ ShellRoot {
                             svc: Services; monitor: scr.name; k: scr.sc; tipUp: !scr.barTop
                             x: 18; width: parent.width - 36; y: scr.barPad
                             onOpenPhone: s => { scr.drop = ""; shell.phoneRequest(scr.name, s) }
-                            onOpenDropdown: (w, cx) => { console.log("DEBUG pill", w, "was", JSON.stringify(scr.drop)); scr.dropX = 18 + cx; scr.drop = scr.drop === w ? "" : w }
+                            onOpenDropdown: (w, cx) => { scr.dropX = 18 + cx; scr.drop = scr.drop === w ? "" : w }
                             onOpenPower: { scr.drop = ""; shell.powerRequest(scr.name) }
                         }
                     }
