@@ -175,7 +175,30 @@ DropCard {
         }
     }
 
-    // ── writing a note for the picked hour: minutes, text, picture, Add ──
+    // number box for the hour / minutes: select-all on focus, Enter adds, Esc closes, Tab / Shift+Tab move on
+    component TimeBox: UiCandy {
+        id: tb
+        property alias field: ti
+        property int maxv: 59
+        property int value: 0
+        property Item next: null
+        property Item prev: null
+        signal typed(int v)
+        width: 46; height: 28; radius: 8; bw: 2; drop: 0; hi: 0; fill: ti.activeFocus ? Theme.cream : Theme.paper
+        TextInput { id: ti; anchors.centerIn: parent; width: parent.width - 10; horizontalAlignment: TextInput.AlignHCenter
+            font.family: Theme.display; font.weight: 700; font.pixelSize: 15; color: Theme.textDeep; selectByMouse: true
+            validator: IntValidator { bottom: 0; top: tb.maxv }
+            maximumLength: 2
+            onTextEdited: tb.typed(Math.min(tb.maxv, parseInt(text) || 0))
+            onEditingFinished: text = d.two(tb.value)
+            onActiveFocusChanged: if (activeFocus) selectAll()
+            KeyNavigation.tab: tb.next
+            KeyNavigation.backtab: tb.prev
+            Keys.onReturnPressed: compose.add()
+            Keys.onEscapePressed: compose.hour = -1 }
+    }
+
+    // ── writing a note for the picked hour: hour, minutes, text, picture, Add ──
     UiCandy {
         id: compose
         property int hour: -1
@@ -183,7 +206,7 @@ DropCard {
         property string image: ""
         property string editId: ""                   // changing this note instead of adding one
         function open(h, note) { hour = h; editId = note ? note.id : ""; min = note ? note.min : 0; image = note ? note.image : ""
-            noteIn.text = note ? note.text : ""; minIn.text = d.two(min); noteIn.forceActiveFocus(); noteIn.cursorPosition = noteIn.length }
+            noteIn.text = note ? note.text : ""; hourBox.field.text = d.two(hour); minBox.field.text = d.two(min); hourBox.field.forceActiveFocus() }
         function add() { if (hour < 0) return
             if (editId) d.sch.update(editId, hour, min, noteIn.text, image); else d.sch.add(d.day, hour, min, noteIn.text, image)
             hour = -1; editId = "" }
@@ -196,19 +219,10 @@ DropCard {
             x: 10; y: 10; width: parent.width - 20; spacing: 8
             Row {
                 spacing: 4
-                UiText { text: d.two(compose.hour) + " :"; px: 16; w: 700; color: Theme.textDeep; anchors.verticalCenter: parent.verticalCenter }
-                // minutes: type 0–59
-                UiCandy {
-                    width: 46; height: 28; radius: 8; bw: 2; drop: 0; hi: 0; fill: minIn.activeFocus ? Theme.cream : Theme.paper
-                    TextInput { id: minIn; anchors.centerIn: parent; width: parent.width - 10; horizontalAlignment: TextInput.AlignHCenter
-                        font.family: Theme.display; font.weight: 700; font.pixelSize: 15; color: Theme.textDeep; selectByMouse: true
-                        validator: IntValidator { bottom: 0; top: 59 }
-                        maximumLength: 2
-                        onTextEdited: compose.min = Math.min(59, parseInt(text) || 0)
-                        onEditingFinished: text = d.two(compose.min)
-                        onActiveFocusChanged: if (activeFocus) selectAll()
-                        Keys.onReturnPressed: compose.add()
-                        Keys.onEscapePressed: compose.hour = -1 } }
+                // hour : minutes — opening puts the cursor in the hour; Tab → minutes → note → buttons (Shift+Tab back)
+                TimeBox { id: hourBox; maxv: 23; value: compose.hour; onTyped: v => compose.hour = v; next: minBox.field }
+                UiText { text: ":"; px: 16; w: 700; color: Theme.textDeep; anchors.verticalCenter: parent.verticalCenter }
+                TimeBox { id: minBox; maxv: 59; value: compose.min; onTyped: v => compose.min = v; prev: hourBox.field; next: noteIn }
                 UiText { text: compose.editId ? "editing" : "min"; fam: "n"; px: 11; w: 800; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter; leftPadding: 4 }
             }
             UiCandy {
@@ -217,9 +231,10 @@ DropCard {
                     font.family: Theme.body; font.weight: 800; font.pixelSize: 13; color: Theme.text
                     Keys.onReturnPressed: e => { if (e.modifiers & Qt.ShiftModifier) e.accepted = false; else compose.add() }
                     Keys.onEscapePressed: compose.hour = -1
+                    KeyNavigation.backtab: minBox.field
                     // Ctrl+V: a picture on the clipboard is attached; text still pastes as text
                     Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_V) d.sch.pasteImage(); e.accepted = false }
-                    UiText { visible: !noteIn.text; text: "What's happening? (Ctrl+V a picture · Shift+Enter = new line)"; fam: "n"; px: 12; w: 800; color: Theme.textSoft } }
+                    UiText { visible: !noteIn.text; width: parent.width; elide: Text.ElideRight; text: "What's happening? (Ctrl+V a picture · Shift+Enter = new line)"; fam: "n"; px: 12; w: 800; color: Theme.textSoft } }
             }
             Row {
                 spacing: 6

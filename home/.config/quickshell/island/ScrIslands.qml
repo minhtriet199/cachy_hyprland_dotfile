@@ -46,7 +46,7 @@ Item {
                 Glyph { anchors.centerIn: parent; name: "back"; size: 22; stroke: 2.8 } }
             Column { x: 58; y: 8
                 UiText { text: "Islands"; px: 25; w: 700; height: 27.5 }
-                UiText { text: "Hold & drag to swap · Super + Tab"; fam: "n"; w: 800; px: 12; color: Theme.textSoft } }
+                UiText { text: "Drag to swap · Super + Tab"; fam: "n"; w: 800; px: 12; color: Theme.textSoft } }
             UiTag { anchors.right: parent.right; y: 18; text: is.tiles.length + " open"; px: 12; padX: 10; tilt: 6; fill: Theme.peach; ink: Theme.ink; drop: 3; height: 24; radius: 10 }
         }
         // monitor tabs
@@ -131,16 +131,24 @@ Item {
                                               names: is.svc.windowsOn(tileBox.modelData.id).map(w => is.nameFor(w.cls)) }
                         Glyph { anchors.centerIn: parent; name: "close"; size: 10; stroke: 2.8 }
                     }
-                    // hold + drag to swap
+                    // drag to swap: starts as soon as the pointer moves ~8 px while pressed (or after a short hold)
                     MouseArea {
                         anchors.fill: parent; z: -1
                         enabled: !tileBox.add
-                        pressAndHoldInterval: 300
+                        pressAndHoldInterval: 150
+                        preventStealing: true                                   // the row must not take the drag as a scroll
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: if (is.dragFrom < 0) tileBox.tap()          // a normal click (no hold) still works
+                        property point p0
+                        property bool moved: false
+                        onPressed: m => { p0 = Qt.point(m.x, m.y); moved = false }
+                        onClicked: if (!moved && is.dragFrom < 0) tileBox.tap()  // a normal click still works
                         onPressAndHold: is.dragFrom = tileBox.modelData.id
                         onPositionChanged: m => {
-                            if (is.dragFrom < 0) return;
+                            if (is.dragFrom < 0) {
+                                if (Math.hypot(m.x - p0.x, m.y - p0.y) < 8) return;
+                                is.dragFrom = tileBox.modelData.id
+                            }
+                            moved = true;
                             const p = mapToItem(is, m.x, m.y); ghost.x = p.x - ghost.width / 2; ghost.y = p.y - ghost.height / 2;
                             const q = mapToItem(row.contentItem, m.x, m.y), i = row.indexAt(q.x, q.y);
                             const t = i >= 0 ? row.model[i] : null; is.dragOver = t && t.kind !== "add" ? t.id : -1;
