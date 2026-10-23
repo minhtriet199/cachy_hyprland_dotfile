@@ -675,6 +675,20 @@ ShellRoot {
                     }
                 }
 
+                // ── overlay phone open on ANOTHER screen: a see-through catcher here, a click closes the phone
+                //    (the phone keeps the keyboard, so without this this screen could be clicked but not typed in) ──
+                PanelWindow {
+                    visible: shell.phoneOpen && !Prefs.phoneWindow && shell.phoneMon !== "" && shell.phoneMon !== scr.name
+                    screen: scr.modelData
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    exclusionMode: ExclusionMode.Ignore
+                    color: "transparent"
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    WlrLayershell.namespace: "island-phone-away"
+                    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onPressed: shell.phoneClose() }
+                }
+
                 // ── the phone: built on first open (only on that screen), removed 3 min after it closes ──
                 // (≈ 120 MB per screen while it exists; the first open after removal takes ≈ 0.15–0.45 s)
                 property bool phoneLive: false
