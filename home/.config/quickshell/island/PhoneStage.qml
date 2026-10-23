@@ -99,14 +99,14 @@ Item {
     readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.calm)
     readonly property real dur: lite ? 0.45 : 1
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
-    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap"]
+    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
     // A fresh phone opens upright.
     property string orient: "portrait"
     function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
     readonly property var allScreens: ["home", "quick", "islands", "clipboard", "clipHidden", "profile", "calc", "settings", "settingsQuick", "wallpapers",
-                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap"]
+                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
     readonly property var tallScreens: ["quick", "clipboard", "clipHidden", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
     function rotate() {
         if (!shown) return;
@@ -513,7 +513,7 @@ Item {
     Component { id: cSettingsQuick; ScrSettingsQuick { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     // Wi-Fi / Bluetooth / Sound / Power pages (kind comes from the screen name: settingsWifi → wifi)
     Component { id: cSetPage; ScrSetPage { svc: stage.svc; prefs: stage.prefs
-        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
+        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap", settingsRecovery: "recovery" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
         onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back() } }
     Component { id: cWallpapers; ScrWallpapers { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
 

@@ -842,6 +842,7 @@ Singleton {
         ["Apps", "settingsApps", "box", "#F7A982", "apps default browser open with files video music pdf startup autostart login"],
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
         ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
+        ["Recovery", "settingsRecovery", "undo", "#7C83F0", "recovery snapshot backup restore rollback roll back undo"],
         ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale"],
         ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
