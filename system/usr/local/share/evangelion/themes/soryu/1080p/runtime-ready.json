@@ -1,0 +1,49 @@
+{
+  "theme": "soryu",
+  "profile": "1080p",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "ready": true,
+  "readiness": "runtime-tested",
+  "fonts": {
+    "menu": "Evangelion soryu-1080p-menu Regular 38",
+    "selected": "Evangelion soryu-1080p-selected Regular 54",
+    "index": "Evangelion soryu-1080p-index Regular 44",
+    "timer": "Evangelion soryu-1080p-timer Regular 88"
+  },
+  "menu_type": "horizontal_cards",
+  "sha256": {
+    "README.md": "c5faace02edd97452e799d4b7a16248e76ea3db190211215337c16d48eceba11",
+    "background.png": "f66435c4a684f536fcc8d70356095bf1ac6cd2dcf4c48e19217359b294aaddbe",
+    "cards.cfg": "b9bf1bc8c5e6cb28d6c2cad7e1fd3acf5f15d4160152f104f6eeee4bf65d5c77",
+    "desktop.png": "5475d0390d2438ff7433e92da41d0301b67bb26332b933c9b2ad59b8eb16b0d5",
+    "fonts/soryu-1080p-index.pf2": "347c92137006e3b63278c1453fb4f16cb4397f9e31d8e46e884c6a4aee0c1e4c",
+    "fonts/soryu-1080p-menu.pf2": "52faee267710294485d317cc942b5e5027a294dfa442e863b4da1698b143628c",
+    "fonts/soryu-1080p-selected.pf2": "b0781349419eef9ab9a8a5feeedf76e63051c32ced0bc505958c5726510d01fa",
+    "fonts/soryu-1080p-timer.pf2": "ccfe6f55e4465e9bf4baed69b5cd040d1a3293ecbcec98348146ab0d5b32a7da",
+    "fonts/terminal.pf2": "3044b6c932fda23803570fe1d2c0a8ea4538800c29d162d6101b351260635dce",
+    "modules/i386-pc/evangelion_cards.mod": "242dd1ef0c04dc773e3286fb7ed1f41e163b55929508b7cd71e62adc0c964a77",
+    "modules/x86_64-efi/evangelion_cards.mod": "c7f25cb67de8bc507922dc94a02a5b7de738a15d4492d5eff06a11d1de3bd484",
+    "progress/timer-caption.png": "7a2222e3728d684a922c054a6c1a4e6317a8355a2ec27832b9a13da00a8d66af",
+    "progress/transparent.png": "c2153f77e11087fcb078ae38527fa83bef29791e3700e30cc87fec4405a66d0f",
+    "theme.txt": "26664867c674dc0903d364ab02714b262e63a1d447d4c43354c5c2caa3cec80c"
+  },
+  "verification": {
+    "date": "2026-09-19",
+    "environment": "QEMU TCG / OVMF / stock GRUB 2.14; Soryu horizontal navigation also checked with GRUB 2.12 and SeaBIOS",
+    "scenarios": [
+      "auto",
+      "horizontal",
+      "manual",
+      "navigate",
+      "submenu",
+      "three"
+    ],
+    "graphics_modes": [
+      "1920x1080"
+    ],
+    "boot_handoff": "Shared installer and console helper; visible Linux boot messages; no added delay."
+  }
+}

@@ -21,12 +21,16 @@ say "3/5  Copying your config, scripts and app launchers into \$HOME"
 rsync -a "$REPO/home/" "$HOME/"
 chmod +x "$HOME"/.config/hypr/scripts/*.sh "$HOME"/.config/hypr/scripts/*.py 2>/dev/null
 
-say "4/5  Installing system files (DNS hardening, SSH toggle helper, firewall service)"
+say "4/5  Installing system files (DNS hardening, SSH toggle helper, firewall service, GRUB theme)"
 sudo install -Dm644 "$REPO/system/etc/systemd/resolved.conf.d/no-llmnr.conf"   /etc/systemd/resolved.conf.d/no-llmnr.conf
 sudo install -Dm644 "$REPO/system/etc/systemd/resolved.conf.d/dns-over-tls.conf" /etc/systemd/resolved.conf.d/dns-over-tls.conf
 sudo install -Dm755 -o root -g root "$REPO/system/usr/local/bin/ssh-toggle"    /usr/local/bin/ssh-toggle
 sudo install -Dm440 "$REPO/system/etc/sudoers.d/ssh-toggle"                    /etc/sudoers.d/ssh-toggle
 sudo install -Dm644 "$REPO/system/etc/firewalld/services/steam-remote-play.xml" /etc/firewalld/services/steam-remote-play.xml
+# GRUB theme: Evangelion (by Aleph1-9012, Apache-2.0), Soryu at 1440p on the 2560x1600 laptop panel
+sudo rm -rf /usr/local/share/evangelion && sudo cp -r "$REPO/system/usr/local/share/evangelion" /usr/local/share/
+sudo install -Dm755 /usr/local/share/evangelion/bin/eva /usr/local/bin/eva
+sudo eva set soryu 1440p --gfxmode 2560x1600
 
 say "5/5  Enabling services"
 systemctl --user daemon-reload

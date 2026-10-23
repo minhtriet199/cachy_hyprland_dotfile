@@ -64,6 +64,9 @@ done
 pacman -Qqen > packages-native.txt
 pacman -Qqem > packages-aur.txt
 
+# --- GRUB theme package (Evangelion, chosen with `sudo eva`); install.sh puts it back and re-selects Soryu 1440p ---
+mkdir -p system/usr/local/share && rsync -a --delete /usr/local/share/evangelion/ system/usr/local/share/evangelion/
+
 # --- also publish Island to its own repo (github.com/minhtriet199/Cachy-OS-Hyprland-Island) ---
 [ -x "$HOME/island-repo/island-sync" ] && "$HOME/island-repo/island-sync" "$MSG"
 

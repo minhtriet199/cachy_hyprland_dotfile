@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Process generated GRUB entries using Bash, awk and core utilities.
+set -Eeuo pipefail
+ORIGINAL_LC_ALL=${LC_ALL-} ORIGINAL_LC_ALL_SET=${LC_ALL+x}
+export LC_ALL=C
+HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+die() { printf 'eva: Console menu generation failed: %s\n' "$*" >&2; exit 1; }
+
+bytes() { od -An -v -tu1 -j "$2" -N "$3" -- "$1"; }
+uint() {
+    local file=$1 offset=$2 count=$3 b value=0 factor=1
+    local -a data=()
+    read -r -a data <<< "$(bytes "$file" "$offset" "$count")"
+    ((${#data[@]} == count)) || die 'Truncated PE section table.'
+    for b in "${data[@]}"; do value=$((value+b*factor)); factor=$((factor*256)); done
+    printf '%s' "$value"
+}
+
+uki_info() {
+    local root=$1 image=$2 candidate mount file='' count=0 pe sections optional offset i name size raw_size position cmdline='' linux=0 found=0 state=unknown
+    local -a secure=()
+    local -A seen=()
+    [[ $image != \(*\)* ]] || image=${image#*)}
+    [[ $image == /* && ${image,,} == *.efi ]] || return 0
+    [[ /${image#/}/ != */../* ]] || die 'A chainloaded EFI path contains a parent-directory traversal.'
+    for mount in boot boot/efi efi ''; do
+        candidate=${root%/}/${mount:+$mount/}${image#/}
+        [[ -f $candidate ]] || continue
+        candidate=$(realpath -e -- "$candidate")
+        if [[ ! -v seen[$candidate] ]]; then seen["$candidate"]=1;file=$candidate;count=$((count+1));fi
+    done
+    ((count==1)) || return 0
+    [[ $(stat -c %s -- "$file") -ge 64 ]] || return 0
+    [[ $(od -An -tx1 -N2 -- "$file" | tr -d ' \n') == 4d5a ]] || return 0
+    pe=$(uint "$file" 60 4)
+    [[ $(stat -c %s -- "$file") -ge $((pe+24)) ]] || return 0
+    [[ $(od -An -tx1 -j "$pe" -N4 -- "$file" | tr -d ' \n') == 50450000 ]] || return 0
+    sections=$(uint "$file" "$((pe+6))" 2);optional=$(uint "$file" "$((pe+20))" 2)
+    ((sections<=128)) || die 'Unexpected PE section count.'
+    offset=$((pe+24+optional))
+    [[ $(stat -c %s -- "$file") -ge $((offset+sections*40)) ]] || die 'Truncated PE section table.'
+    for ((i=0;i<sections;i++)); do
+        position=$((offset+i*40))
+        name=$(dd if="$file" bs=1 skip="$position" count=8 status=none | tr -d '\000')
+        [[ $name != .linux ]] || linux=1
+        if [[ $name == .cmdline ]]; then
+            found=1;size=$(uint "$file" "$((position+8))" 4);raw_size=$(uint "$file" "$((position+16))" 4);position=$(uint "$file" "$((position+20))" 4)
+            ((size<=1048576)) || die 'Unexpected embedded command-line size.'
+            ((size<=raw_size)) || size=$raw_size
+            cmdline=$(dd if="$file" bs=1 skip="$position" count="$size" status=none | tr -d '\000')
+        fi
+    done
+    ((linux && found)) || return 0
+    shopt -s nullglob
+    secure=("${root%/}"/sys/firmware/efi/efivars/SecureBoot-*)
+    if ((${#secure[@]}==1)) && [[ -r ${secure[0]} && $(stat -c %s -- "${secure[0]}") -ge 5 ]]; then
+        state=$(uint "${secure[0]}" 4 1)
+    fi
+    if [[ $state != 0 ]]; then printf 'blocked\n'; else printf 'override\n%s\n' "$cmdline"; fi
+}
+
+if [[ ${1:-} == uki-info ]]; then
+    (($#==3)) || die 'Invalid EFI inspection arguments.'
+    uki_info "$2" "$3"
+    exit
+fi
+
+(($#>=2)) || die 'Usage: boot-console filter|generate PATH [--root DIRECTORY] [--numbered]'
+action=$1 input=$2;shift 2
+root=/ numbered=${EVANGELION_NUMBERED_MENU:-0}
+while (($#)); do
+    case $1 in
+        --root) (($#>=2)) || die '--root requires a directory';root=$2;shift 2;;
+        --numbered) numbered=1;shift;;
+        *) die "Unknown option: $1";;
+    esac
+done
+filter() { awk -f "$HERE/boot-console.awk" -- "$root" "$numbered" "$HERE/boot-console" < "$1"; }
+case $action in
+    filter) filter "$input";;
+    generate)
+        [[ -d $input && $(realpath -e -- "$input") != "$(realpath -m -- "$HERE/grub.d")" ]] || die 'Invalid original GRUB generator directory.'
+        temp=$(mktemp "${TMPDIR:-/tmp}/eva-menu-XXXXXXXX")
+        trap 'rm -f -- "$temp"' EXIT
+        for script in "$input"/*; do
+            [[ -f $script && -x $script ]] || continue
+            name=${script##*/}
+            case $name in *~|\#*\#|*.dpkg-*|*.rpmsave|*.rpmnew|*.sig|README*) continue;; esac
+            printf '\n### BEGIN %s ###\n' "$script" >> "$temp"
+            if [[ -n $ORIGINAL_LC_ALL_SET ]]; then
+                LC_ALL=$ORIGINAL_LC_ALL "$script" >> "$temp" || die "Generator failed: $script"
+            else
+                (unset LC_ALL; "$script") >> "$temp" || die "Generator failed: $script"
+            fi
+            printf '\n### END %s ###\n' "$script" >> "$temp"
+        done
+        filter "$temp";;
+    *) die "Unknown action: $action";;
+esac
