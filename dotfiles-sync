@@ -64,6 +64,10 @@ done
 pacman -Qqen > packages-native.txt
 pacman -Qqem > packages-aur.txt
 
+# --- default apps (pictures → qView, browser → Helium, …) + qView's fit settings (not its recent-files list) ---
+cp -a "$HOME/.config/mimeapps.list" home/.config/
+mkdir -p home/.config/qView && awk '/^\[/{p=($0=="[options]")} p' "$HOME/.config/qView/qView.conf" > home/.config/qView/qView.conf
+
 # --- GRUB theme package (Evangelion, chosen with `sudo eva`); install.sh puts it back and re-selects Soryu 1440p ---
 mkdir -p system/usr/local/share && rsync -a --delete /usr/local/share/evangelion/ system/usr/local/share/evangelion/
 

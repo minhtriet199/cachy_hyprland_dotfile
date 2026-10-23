@@ -151,6 +151,9 @@ Item {
                     visible: !!c.cur && c.cur.kind === "IMG"
                     x: 14; y: 22; width: parent.width - 28; height: parent.height - 22 - 52
                     source: c.svc.clipImage; fillMode: Image.PreserveAspectFit; asynchronous: true; cache: false
+                    // click → open it in the picture viewer
+                    MouseArea { anchors.fill: parent; enabled: c.svc.clipImage !== ""; cursorShape: Qt.PointingHandCursor
+                        onClicked: { c.svc.clipOpen(); c.done() } }
                 }
                 UiText { visible: !c.cur; anchors.centerIn: parent; text: c.hidden ? "Nothing saved yet" : c.pinsOnly ? "Nothing pinned yet" : "Nothing copied yet"; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
                 UiText { x: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; height: 22

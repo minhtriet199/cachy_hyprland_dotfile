@@ -21,6 +21,13 @@ hl.window_rule({
 hl.window_rule({ match = { title = "^(Island Phone)$" }, float = true, center = true,
     border_size = 0, no_shadow = true, no_blur = true, rounding = 0, decorate = false })   -- see-through: only the phone shows
 
+-- qView (default picture viewer): floating, centred, 70% of the screen; the picture is fitted into it
+hl.window_rule({ match = { class = "^(com\\.interversehq\\.qView)$" }, float = true, center = true,
+    size = { "monitor_w*0.7", "monitor_h*0.7" } })
+
+-- Nested Hyprland test window (class aquamarine): solid, so the windows behind don't show through
+hl.window_rule({ match = { class = "^(aquamarine)$" }, opaque = true, no_blur = true })
+
 -- Gaming
 local gamingApps = "^(steam_app.*|gamescope)$"
 -- Which screen/workspace a game opens on is handled in config/games.lua

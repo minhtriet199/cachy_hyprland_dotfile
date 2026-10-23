@@ -628,6 +628,8 @@ Singleton {
         property string want: ""
         stdout: StdioCollector { id: clipDecOut }
         onExited: code => { if (code !== 0) return; if (clipDec.want.endsWith(".png")) s.clipImage = "file://" + clipDec.want + "?" + Date.now(); else s.clipFull = clipDecOut.text } }
+    // open the previewed image in the default picture viewer (copied to the runtime dir: pins have no .png name)
+    function clipOpen() { if (clipImage) run(["sh", "-c", "f=\"$XDG_RUNTIME_DIR/island-clip.png\"; cp \"$0\" \"$f\" && xdg-open \"$f\"", clipImage.replace(/^file:\/\//, "").replace(/\?.*$/, "")]) }
     function clipPreview(c) {
         clipFull = ""; clipImage = ""; if (!c) return;
         clipDec.running = false;
