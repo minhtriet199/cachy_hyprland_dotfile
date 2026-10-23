@@ -68,7 +68,7 @@ Item {
                             // text, or a box to change it
                             UiText { visible: b.editing !== row.index; width: parent.width; text: row.modelData.text || " "; wrapMode: Text.Wrap; elide: Text.ElideNone
                                 fam: "n"; px: 13 * b.k; w: 800; font.strikeout: row.modelData.done; color: row.modelData.done ? Theme.textSoft : Theme.text
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.IBeamCursor; onClicked: { b.editing = row.index; ed.text = row.modelData.text; ed.forceActiveFocus(); ed.cursorPosition = ed.length } } }
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.IBeamCursor; onClicked: m => { b.editing = row.index; ed.text = row.modelData.text; ed.forceActiveFocus(); ed.cursorPosition = ed.positionAt(m.x, m.y) } } }   // cursor where you clicked
                             // editing: same font, size and line breaks as the text, so the row keeps its look · Enter saves, Esc cancels
                             TextEdit { id: ed; visible: b.editing === row.index; width: parent.width; wrapMode: TextEdit.Wrap
                                 font.family: Theme.body; font.weight: 800; font.pixelSize: 13 * b.k; color: Theme.text; selectByMouse: true
