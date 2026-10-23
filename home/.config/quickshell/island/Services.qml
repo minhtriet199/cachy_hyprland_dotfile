@@ -734,7 +734,7 @@ Singleton {
     function toggle(what) {
         if (what === "wifi") run(["nmcli", "radio", "wifi", wifi.on ? "off" : "on"]);
         else if (what === "bt") run(["bluetoothctl", "power", bluetooth.on ? "off" : "on"]);
-        else if (what === "warp") run(["sh", Quickshell.shellDir + "/tools/warp.sh", warp.connected ? "off" : "on"]);
+        else if (what === "warp") { _warpFrom = warp.connected; busy("warp"); run(["sh", Quickshell.shellDir + "/tools/warp.sh", warp.connected ? "off" : "on"]) }
         else if (what === "ime") { imeVi = !imeVi; run(["fcitx5-remote", "-t"]) }
         else if (what === "dnd") dnd = !dnd;
         else if (what === "airplane") { airplane = !airplane; run(["rfkill", airplane ? "block" : "unblock", "all"]) }
@@ -751,7 +751,7 @@ Singleton {
     function setBrightness(v) { brightness = v; run(["brightnessctl", "set", Math.round(Math.max(0.02, v) * 100) + "%"]) }
     function setGamma(v) { gamma = Math.max(0.5, v) }
     function tool(name) {
-        if ((name === "record" || name === "recordPick") && !recording) busy("rec", "⏺ Starting the recorder…");
+        if ((name === "record" || name === "recordPick") && !recording) busy("rec");
         if (name === "fullscreen") hypr("hl.dsp.window.fullscreen()", "fullscreen");
         else if (tools[name]) run(tools[name]);
     }
@@ -841,7 +841,7 @@ Singleton {
     // ── apps + search ──
     readonly property var entries: DesktopEntries.applications.values.filter(e => !e.noDisplay)
     function launch(a) { if (a.entry) { launchEntry(a); return } if (a.internal) return; if (a.toggle) toggle(a.toggle); else if (a.cmd) app(a.cmd) }
-    function launchEntry(a) { if (a.entry) { busy("app", "Opening " + (a.name || a.entry.name || "app") + "…"); if (lua && Hyprland.focusedMonitor) run(["hyprctl", "eval", "if IslandLaunch then IslandLaunch(" + JSON.stringify(Hyprland.focusedMonitor.name) + ") end"]); if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
+    function launchEntry(a) { if (a.entry) { busy("app"); if (lua && Hyprland.focusedMonitor) run(["hyprctl", "eval", "if IslandLaunch then IslandLaunch(" + JSON.stringify(Hyprland.focusedMonitor.name) + ") end"]); if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
     function runAction(a) { if (a.toggle) toggle(a.toggle); else if (a.tool) tool(a.tool); else if (a.cmd) run(a.cmd) }
     function score(text, q) { const t = (text || "").toLowerCase(); if (t.startsWith(q)) return 3; if (t.includes(" " + q)) return 2; if (t.includes(q)) return 1; return 0 }
     function math(q) {
@@ -933,18 +933,21 @@ Singleton {
     property bool toastHover: false
     property int _toastKey: 0
     function pushToast(item) { toastQueue = toastQueue.concat([item]); pumpToasts() }
-    // "it's working" bubble for slow starts (recorder, apps): shown at once, gone when the thing appears (or after 20 s)
-    function busy(id, text) { busyDone(id); pushToast({ busyId: id, app: text, body: "", tint: Theme.lilacSoft, pinned: true }); busyEnd.restart() }
-    function busyDone(id) { toasts = toasts.filter(t => t.busyId !== id); toastQueue = toastQueue.filter(t => t.busyId !== id); pumpToasts() }
-    readonly property bool recStarting: toasts.some(t => t.busyId === "rec")
-    // an app is opening: a spinner follows the pointer (shell.qml) — the pointer is only polled during that
-    readonly property bool launching: toasts.some(t => t.busyId === "app")
+    // slow starts (an app opening, the recorder, WARP): a spinner follows the pointer (shell.qml) until the thing is up,
+    // or 20 s at most if it is stuck or failed — no bubble. The pointer is only polled while something is starting.
+    property var busyIds: []
+    function busy(id) { if (!busyIds.includes(id)) busyIds = busyIds.concat([id]); busyEnd.restart() }
+    function busyDone(id) { busyIds = busyIds.filter(x => x !== id) }
+    readonly property bool recStarting: busyIds.includes("rec")
+    readonly property bool launching: busyIds.length > 0
     property point cursor: Qt.point(-1000, -1000)
     Process { id: cursorP; command: ["hyprctl", "-j", "cursorpos"]
         stdout: StdioCollector { onStreamFinished: { try { const c = JSON.parse(this.text); s.cursor = Qt.point(c.x, c.y) } catch (e) {} } } }
     Timer { interval: 50; repeat: true; triggeredOnStart: true; running: s.launching; onTriggered: if (!cursorP.running) cursorP.running = true }
-    Timer { id: busyEnd; interval: 20000; onTriggered: { s.busyDone("rec"); s.busyDone("app") } }
+    Timer { id: busyEnd; interval: 20000; onTriggered: s.busyIds = [] }
     onRecordingChanged: if (recording) busyDone("rec")
+    property bool _warpFrom: false                // WARP's state when its switch was clicked: spinner until it flips
+    onWarpChanged: if (warp.connected !== _warpFrom) busyDone("warp")
     function pumpToasts() {
         let on = toasts.slice(), q = toastQueue.slice();
         while (on.length < 3 && q.length) { const it = q.shift(); on = [Object.assign({}, it, { key: ++_toastKey, until: Date.now() + 4000 })].concat(on) }
