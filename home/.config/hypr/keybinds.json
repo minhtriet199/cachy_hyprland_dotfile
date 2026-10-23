@@ -612,6 +612,15 @@
   "repeating": false
  },
  {
+  "keys": "SUPER + N",
+  "action": "exec",
+  "arg": "qs -c island ipc call island drop todo",
+  "category": "Utilities",
+  "desc": "To-do notes",
+  "locked": false,
+  "repeating": false
+ },
+ {
   "keys": "SUPER + V",
   "action": "exec",
   "arg": "~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard",

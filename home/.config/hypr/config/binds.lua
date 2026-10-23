@@ -109,6 +109,7 @@ hl.bind("Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh screenshot
 hl.bind("SUPER + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/snip.sh"), { description = "Snip to clipboard" })
 hl.bind("SUPER + Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh screenshot-fullscreen"), { description = "Screenshot full screen" })
 hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle wallpaper"), { description = "Wallpaper picker" })
+hl.bind("SUPER + N", hl.dsp.exec_cmd("qs -c island ipc call island drop todo"), { description = "To-do notes" })
 hl.bind("SUPER + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard"), { description = "Clipboard history" })
 hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/quickshell/island/tools/clip-hide.sh"), { description = "Quick save" })
 
