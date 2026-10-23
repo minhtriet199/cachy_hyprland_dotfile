@@ -18,7 +18,8 @@ Item {
     function load() { if (hidden) svc.loadHidden(); else svc.loadClips() }
     Component.onCompleted: load()
     // the screen stays loaded between openings → refresh every time it shows, and while open
-    onVisibleChanged: { if (visible) { load(); sel = 0 } else { field.text = ""; _shown = "" } }   // search starts empty next time
+    // showing: preview the picked item now (the shared preview may still hold the other clipboard screen's item)
+    onVisibleChanged: { if (visible) { load(); sel = 0; _shown = cur ? cur.key : ""; svc.clipPreview(cur) } else { field.text = ""; _shown = "" } }   // search starts empty next time
     // the list refreshes every 1.5 s with new objects: only reload the preview when a different item is picked (else it flickers)
     property string _shown: ""
     // (keyed by text: pins kept as files have no cliphist id; only while shown: both clipboard screens share the preview)
