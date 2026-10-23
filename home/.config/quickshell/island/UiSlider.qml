@@ -16,6 +16,7 @@ Item {
     property real local: value
     property bool busy: false
     property bool armed: false
+    property string tip: ""                  // e.g. "97%": a bubble over the knob while hovered / dragged
     readonly property real shown: busy ? local : value
     Timer { id: settle; interval: 500; onTriggered: l.busy = false }
     function set(v) { local = Math.max(0, Math.min(l.max, v)); busy = true; settle.restart(); l.picked(local) }
@@ -26,7 +27,11 @@ Item {
         Rectangle { width: parent.width * Math.max(0, Math.min(1, l.shown / l.max)); height: parent.height; radius: 5; color: l.color } }
     Rectangle { x: Math.max(0, Math.min(l.width - width, l.width * l.shown / l.max - width / 2)); anchors.verticalCenter: parent.verticalCenter
         width: 20; height: 20; radius: 10; color: Theme.paper; border.width: l.armed ? 3.5 : 2.5; border.color: l.armed ? Theme.sunDeep : Theme.ink }
+    UiTag { visible: l.tip !== "" && (ma.containsMouse || ma.pressed); z: 5; text: l.tip; px: 11; tilt: 0
+        fill: Theme.paper; ink: Theme.ink; textColor: Theme.textDeep
+        x: Math.max(-6, Math.min(l.width - width + 6, l.width * l.shown / l.max - width / 2)); y: -height - 6 }
     MouseArea {
+        id: ma
         anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
         onExited: l.armed = false
