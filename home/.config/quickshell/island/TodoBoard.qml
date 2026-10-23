@@ -11,6 +11,7 @@ Item {
     property var todo
     property real k: 1
     property real listH: 300
+    property bool fill: false                     // big window: the list takes the room left, the writing box stays at the bottom
     property int editing: -1
     property var pending: []                      // files for the item being written
     implicitHeight: col.implicitHeight
@@ -45,6 +46,7 @@ Item {
 
         // filter: All · Done · To do
         Row {
+            id: filterRow
             visible: b.todo.items.length > 0; spacing: 6 * b.k
             Repeater {
                 model: [["all", "All"], ["done", "Done"], ["todo", "To do"]]
@@ -60,7 +62,9 @@ Item {
             }
         }
         Flickable {
-            width: parent.width; height: Math.min(b.listH, items.implicitHeight); contentHeight: items.implicitHeight
+            width: parent.width
+            height: b.fill ? Math.max(0, b.height - (filterRow.visible ? filterRow.height + col.spacing : 0) - writeBox.height - col.spacing)
+                           : Math.min(b.listH, items.implicitHeight); contentHeight: items.implicitHeight
             clip: true; boundsBehavior: Flickable.StopAtBounds
             Column {
                 id: items
@@ -135,6 +139,7 @@ Item {
 
         // write a new item
         UiCandy {
+            id: writeBox
             width: parent.width; height: cc.implicitHeight + 20 * b.k; radius: 14 * b.k; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream
             Column {
                 id: cc

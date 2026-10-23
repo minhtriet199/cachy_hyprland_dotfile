@@ -248,15 +248,17 @@ ShellRoot {
             color: Theme.paper
             visible: true
             onClosed: Services.todo.bigOpen = false
-            Flickable {
-                anchors.fill: parent; anchors.margins: 28; contentHeight: bigCol.implicitHeight; clip: true; boundsBehavior: Flickable.StopAtBounds
-                Column {
-                    id: bigCol
-                    width: parent.width; spacing: 18
-                    UiText { text: Services.todo.done + " / " + Services.todo.items.length + " done"; fam: "n"; px: 16; w: 900; track: 1; color: Theme.textSoft }
-                    UiStrokeText { text: Services.todo.name; px: 44; weight: 700; strokeW: 7; strokeColor: Theme.ink }
-                    TodoBoard { width: parent.width; todo: Services.todo; k: 1.6; listH: 100000 }
+            // title + progress stay at the top, the writing box at the bottom; only the list scrolls
+            Item {
+                anchors.fill: parent; anchors.margins: 28
+                Row {
+                    id: bigHead
+                    width: parent.width; spacing: 16
+                    UiStrokeText { id: bigTitle; text: Services.todo.name; px: 44; weight: 700; strokeW: 7; strokeColor: Theme.ink }
+                    UiText { anchors.verticalCenter: bigTitle.verticalCenter; text: Services.todo.done + " / " + Services.todo.items.length + " done"
+                        fam: "n"; px: 18; w: 900; track: 1; color: Theme.textSoft }
                 }
+                TodoBoard { y: bigHead.height + 18; width: parent.width; height: parent.height - y; todo: Services.todo; k: 1.6; fill: true }
             }
         }
     }
