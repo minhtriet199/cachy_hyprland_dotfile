@@ -286,6 +286,7 @@ Singleton {
                 const mins = e.length === 4 && e[3] > 0 ? Math.round((chg ? e[1] - e[0] : e[0]) / e[3] * 60) : -1;
                 s.battery = { percent: parseInt(v.bat) || 0, charging: chg || v.batst === "Full", plugged: v.ac === "1", status: v.batst || "",
                               minutes: (chg || dis) ? mins : -1, health: e.length >= 3 && e[2] > 0 ? Math.round(e[1] / e[2] * 100) : 100 };
+                s.checkBattery();
             }
             s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
             s.nightLight = v.night === "on"; s.easyEffects = v.fx === "on"; s.obsUp = v.obs === "on";
@@ -757,6 +758,20 @@ Singleton {
     // ── palette card: colours from the wallpaper / song cover / random → Custom theme (SvcPalette.qml) ──
     SvcPalette { id: palettePart; wallpaper: Prefs.wallpaper; art: s.media ? s.media.art : "" }
     readonly property alias palette: palettePart
+
+    // ── low battery: a bubble at 20 %, one that stays until clicked at 10 % — on battery, once per level until plugged in
+    //    (shown even in Do not disturb) ──
+    property int _batWarned: 101
+    function checkBattery() {
+        const b = battery;
+        if (b.plugged || b.charging) { _batWarned = 101; return }
+        for (const lvl of [10, 20]) if (b.percent <= lvl && _batWarned > lvl) {
+            _batWarned = lvl;
+            pushToast({ app: "🔋 Battery low", body: b.percent + "% left" + (b.minutes > 0 ? " · about " + (b.minutes >= 60 ? Math.floor(b.minutes / 60) + " h " : "") + b.minutes % 60 + " min" : "") + " — plug in soon",
+                        tint: lvl <= 10 ? Theme.berry : Theme.sun, pinned: lvl <= 10 });
+            break;
+        }
+    }
 
     // ── calendar notes (SvcSchedule.qml): at their time a bubble that stays until clicked ──
     // Do not disturb holds them (they're not in the notification list, so they'd be lost) → shown when it ends
