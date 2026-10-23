@@ -12,6 +12,8 @@ Item {
     property string monitor: ""
     signal openPhone(string screen)
     signal openDropdown(string which, real x)
+    property real k: 1                       // design px → screen px (for tooltips in their own windows)
+    property bool tipUp: false               // bar at the bottom: tooltips go above
     signal openPower()
     function drop(which, pill) { openDropdown(which, pill.mapToItem(bar, pill.width / 2, 0).x) }
     height: 50
@@ -286,10 +288,9 @@ Item {
                 pulse: bar.svc.btState === "searching" }
             // sound: muted · low · medium · loud (live)
             // hover + scroll = volume (smooth, follows how far you scroll)
-            // hover = volume % (left of the icon, so the icon stays under the cursor as the pill grows)
-            UiText { visible: sndI.hovered; height: 13; fam: "n"; px: 12; w: 900; color: Theme.seaDeep
-                text: bar.svc.liveMuted ? "Muted" : Math.round(bar.svc.liveVol * 100) + "%" }
-            BarIcon { id: sndI; name: bar.svc.volIcon; onClicked: bar.drop("sound", sndI); onWheel: dy => bar.svc.nudgeVolume(dy / 120 * 0.05) }
+            // hover = volume % as a sticker tooltip under the icon (the pill keeps its size)
+            BarIcon { id: sndI; name: bar.svc.volIcon; onClicked: bar.drop("sound", sndI); onWheel: dy => bar.svc.nudgeVolume(dy / 120 * 0.05)
+                BarTip { target: sndI; k: bar.k; up: bar.tipUp; text: bar.svc.liveMuted ? "Muted" : Math.round(bar.svc.liveVol * 100) + "%" } }
         }
         BarPill {
             id: batPill

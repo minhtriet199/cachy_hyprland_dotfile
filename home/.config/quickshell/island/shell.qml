@@ -361,7 +361,7 @@ ShellRoot {
                 readonly property real band: 50 + barPad * 2                         // bar strip height (design px)
                 property string drop: ""                                            // open bar dropdown
                 readonly property bool dropPinned: drop === "todo" && Services.todo.pinned   // stays up, clicks go through around it
-                onDropChanged: if (drop !== "todo") Services.todo.pinned = false
+                onDropChanged: { console.log("DEBUG drop", name, JSON.stringify(drop), Date.now() % 100000); if (drop !== "todo") Services.todo.pinned = false }
                 property real dropX: 0
 
                 // ── scene change overlay (lock / unlock / first start / preview) ──
@@ -405,10 +405,10 @@ ShellRoot {
                         Rectangle { visible: Prefs.barStyle === "Straight"; width: parent.width; height: scr.band - 4; y: scr.barTop ? 0 : 4; color: Theme.ink
                             Rectangle { x: 0; y: scr.barTop ? 0 : 3; width: parent.width; height: parent.height - 3; color: Theme.cream } }
                         TopBar {
-                            svc: Services; monitor: scr.name
+                            svc: Services; monitor: scr.name; k: scr.sc; tipUp: !scr.barTop
                             x: 18; width: parent.width - 36; y: scr.barPad
                             onOpenPhone: s => { scr.drop = ""; shell.phoneRequest(scr.name, s) }
-                            onOpenDropdown: (w, cx) => { scr.dropX = 18 + cx; scr.drop = scr.drop === w ? "" : w }
+                            onOpenDropdown: (w, cx) => { console.log("DEBUG pill", w, "was", JSON.stringify(scr.drop)); scr.dropX = 18 + cx; scr.drop = scr.drop === w ? "" : w }
                             onOpenPower: { scr.drop = ""; shell.powerRequest(scr.name) }
                         }
                     }

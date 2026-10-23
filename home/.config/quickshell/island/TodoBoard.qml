@@ -18,8 +18,14 @@ Item {
     function addNow() { todo.add(field.text, pending); field.text = ""; pending = [] }
     Connections { target: b.todo; function onPicked(f) { b.pending = b.pending.concat(f) } }
     property string sure: ""                      // what waits for the second click
+    property string sureAtPress: ""               // what was waiting when this click started
     Timer { id: sureT; interval: 3000; onTriggered: b.sure = "" }
-    function ask(key, act) { if (sure === key) { sure = ""; act() } else { sure = key; sureT.restart() } }
+    function ask(key, act) { if (sureAtPress === key) { sure = ""; act() } else { sure = key; sureT.restart() } }
+    // on top of everything, passive: sees every press first, clears the question, lets the click go on to its button
+    Item { anchors.fill: parent; z: 100
+        // PointHandler only watches (a TapHandler here swallowed every click — checked with qmltestrunner)
+        PointHandler { acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onActiveChanged: if (active) { b.sureAtPress = b.sure; b.sure = "" } } }
 
     // video: a frame made once with ffmpegthumbnailer (~/.cache/island/todo-thumbs)
     component VideoThumb: Image {
@@ -62,10 +68,12 @@ Item {
                             // text, or a box to change it
                             UiText { visible: b.editing !== row.index; width: parent.width; text: row.modelData.text || " "; wrapMode: Text.Wrap; elide: Text.ElideNone
                                 fam: "n"; px: 13 * b.k; w: 800; font.strikeout: row.modelData.done; color: row.modelData.done ? Theme.textSoft : Theme.text
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.IBeamCursor; onClicked: { b.editing = row.index; ed.text = row.modelData.text; ed.forceActiveFocus() } } }
-                            TextInput { id: ed; visible: b.editing === row.index; width: parent.width; clip: true
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.IBeamCursor; onClicked: { b.editing = row.index; ed.text = row.modelData.text; ed.forceActiveFocus(); ed.cursorPosition = ed.length } } }
+                            // editing: same font, size and line breaks as the text, so the row keeps its look · Enter saves, Esc cancels
+                            TextEdit { id: ed; visible: b.editing === row.index; width: parent.width; wrapMode: TextEdit.Wrap
                                 font.family: Theme.body; font.weight: 800; font.pixelSize: 13 * b.k; color: Theme.text; selectByMouse: true
-                                onAccepted: { b.todo.edit(row.index, text); b.editing = -1 }
+                                Keys.onReturnPressed: { b.todo.edit(row.index, text); b.editing = -1 }
+                                Keys.onEnterPressed: { b.todo.edit(row.index, text); b.editing = -1 }
                                 onActiveFocusChanged: if (!activeFocus && b.editing === row.index) b.editing = -1
                                 Keys.onEscapePressed: b.editing = -1 }
                             // pictures / videos (thumbnails) and files (links)
