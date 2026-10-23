@@ -423,7 +423,7 @@
   "repeating": false
  },
  {
-  "keys": "SUPER + C",
+  "keys": "SUPER + X",
   "action": "exec",
   "arg": "~/.config/hypr/scripts/shell-cmd.sh media toggle",
   "category": "Media & hardware",
@@ -621,20 +621,11 @@
   "repeating": false
  },
  {
-  "keys": "SUPER + SHIFT + C",
+  "keys": "SUPER + C",
   "action": "exec",
   "arg": "~/.config/quickshell/isla/tools/clip-hide.sh",
   "category": "Utilities",
   "desc": "Quick save",
-  "locked": false,
-  "repeating": false
- },
- {
-  "keys": "SUPER + SHIFT + V",
-  "action": "exec",
-  "arg": "qs -c isla ipc call isla phone clipHidden",
-  "category": "Utilities",
-  "desc": "Quick saves",
   "locked": false,
   "repeating": false
  },

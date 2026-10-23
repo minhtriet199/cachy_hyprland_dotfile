@@ -84,7 +84,7 @@ hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh 
 hl.bind("SUPER + K", hl.dsp.exec_cmd("qs -c isla ipc call isla phone settingsKeys"), { description = "Keyboard shortcuts (Isla phone)" })
 
 -- Media & hardware
-hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh media toggle"), { locked = true, description = "Play / pause" })
+hl.bind("SUPER + X", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh media toggle"), { locked = true, description = "Play / pause" })
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh volume-up"), { locked = true, repeating = true, description = "Volume up" })
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh volume-down"), { locked = true, repeating = true, description = "Volume down" })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh volume-mute"), { locked = true, description = "Mute" })
@@ -110,8 +110,7 @@ hl.bind("SUPER + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/snip.sh"), { descri
 hl.bind("SUPER + Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh screenshot-fullscreen"), { description = "Screenshot full screen" })
 hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle wallpaper"), { description = "Wallpaper picker" })
 hl.bind("SUPER + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard"), { description = "Clipboard history" })
-hl.bind("SUPER + SHIFT + C", hl.dsp.exec_cmd("~/.config/quickshell/isla/tools/clip-hide.sh"), { description = "Quick save" })
-hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("qs -c isla ipc call isla phone clipHidden"), { description = "Quick saves" })
+hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/quickshell/isla/tools/clip-hide.sh"), { description = "Quick save" })
 
 -- Mouse
 hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { description = "Drag window" })

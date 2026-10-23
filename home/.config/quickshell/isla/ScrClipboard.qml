@@ -8,7 +8,7 @@ Item {
     property string query: ""
     property int sel: 0
     property bool pinsOnly: false
-    property bool hidden: false        // hidden pins (Super+Shift+V): own list, no tabs, no pin button
+    property bool hidden: false        // hidden pins (Ctrl ×3 here): own list, no tabs, no pin button
     signal go(string screen)
     signal done()
     readonly property var list: { const q = query.toLowerCase(); return (hidden ? svc.hiddenClips : svc.clips).filter(x => (!pinsOnly || x.pinned) && (!q || x.text.toLowerCase().includes(q) || x.kind.toLowerCase() === q)) }
@@ -26,8 +26,18 @@ Item {
     onQueryChanged: sel = 0
     onPinsOnlyChanged: sel = 0
     function copy() { if (!cur) return; svc.clipCopy(cur); c.done() }
+    // Ctrl tapped 3 times in a row (nothing else between, within 0.8 s) → hidden pins ↔ clipboard
+    property int _taps: 0
+    property real _tapAt: 0
+    function ctrlTap(e) {
+        if (e.isAutoRepeat) return;
+        if (e.key !== Qt.Key_Control) { _taps = 0; return }
+        const now = Date.now(); _taps = now - _tapAt < 800 ? _taps + 1 : 1; _tapAt = now;
+        if (_taps === 3) { _taps = 0; c.go(c.hidden ? "clipboard" : "clipHidden") }
+    }
     // typing while on the list goes to the search box (letters, numbers, Backspace)
     Keys.onPressed: e => {
+        c.ctrlTap(e);
         if (field.activeFocus || (e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) return;
         if (e.key === Qt.Key_Delete) { if (c.cur) c.svc.clipDelete(c.cur); e.accepted = true }   // (its text is an invisible char: typed into the search it emptied the list)
         else if (e.key === Qt.Key_Backspace) { field.forceActiveFocus(); field.text = field.text.slice(0, -1); e.accepted = true }
@@ -47,6 +57,7 @@ Item {
                 x: 46; width: parent.width - 46 - 44; anchors.verticalCenter: parent.verticalCenter; clip: true
                 font.family: Theme.display; font.weight: 600; font.pixelSize: 18; color: Theme.text
                 onTextChanged: c.query = text
+                Keys.onPressed: e => c.ctrlTap(e)
                 Keys.onUpPressed: c.sel = Math.max(0, c.sel - 1)
                 Keys.onDownPressed: c.sel = Math.min(c.list.length - 1, c.sel + 1)
                 Keys.onReturnPressed: c.copy()
@@ -140,7 +151,7 @@ Item {
                     x: 14; y: 22; width: parent.width - 28; height: parent.height - 22 - 52
                     source: c.svc.clipImage; fillMode: Image.PreserveAspectFit; asynchronous: true; cache: false
                 }
-                UiText { visible: !c.cur; anchors.centerIn: parent; text: c.hidden ? "Nothing hidden yet · Super+Shift+C" : c.pinsOnly ? "Nothing pinned yet" : "Nothing copied yet"; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
+                UiText { visible: !c.cur; anchors.centerIn: parent; text: c.hidden ? "Nothing saved yet" : c.pinsOnly ? "Nothing pinned yet" : "Nothing copied yet"; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
                 UiText { x: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; height: 22
                     text: !c.cur ? "" : c.cur.kind === "IMG" ? c.cur.info : (c.svc.clipFull.length + " characters · " + (c.svc.clipFull.split("\n").length) + " line" + (c.svc.clipFull.split("\n").length > 1 ? "s" : ""))
                     fam: "n"; px: 11; w: 800; color: Theme.textSoft }

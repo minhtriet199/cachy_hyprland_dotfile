@@ -1,6 +1,6 @@
 #!/bin/sh
-# Super+Shift+C: presses copy in the focused app (Ctrl+C, Ctrl+Shift+C in terminals), saves what it copied as a hidden
-# pin in the dot-folder ~/.local/share/isla/.k (only Super+Shift+V shows them), then takes it back out of the history
+# Super+C: presses copy in the focused app (Ctrl+C, Ctrl+Shift+C in terminals), saves what it copied as a hidden
+# pin in the dot-folder ~/.local/share/isla/.k (only shown by Ctrl ×3 on the Super+V clipboard), then takes it back out of the history
 # and puts the old clipboard back. Silent: no notification, so it looks like nothing happened. Nothing selected → nothing saved.
 # (The selection itself can't be read: misc.lua has middle_click_paste = false, which turns the primary selection off.)
 d="$HOME/.local/share/isla/.k"

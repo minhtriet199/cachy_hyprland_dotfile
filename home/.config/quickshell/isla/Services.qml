@@ -610,7 +610,7 @@ Singleton {
         Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key]))
         clips = c.pinned && !c.id ? clips.filter(x => x.key !== c.key)      // show it now, no reload
               : clips.map(x => x.key === c.key ? Object.assign({}, x, { pinned: !c.pinned, file: c.pinned ? "" : f }) : x) }
-    // ── hidden pins: Super+Shift+C (tools/clip-hide.sh) saves one file each; only Super+Shift+V (screen clipHidden) shows them ──
+    // ── hidden pins: Super+C (tools/clip-hide.sh) saves one file each; only Ctrl ×3 on the clipboard screen (screen clipHidden) shows them ──
     property var hiddenClips: []
     Process { id: hidList; command: ["sh", "-c", "cd \"$0\" 2>/dev/null || exit 0; for f in $(ls -r); do printf '%s\\t' \"$f\"; case $f in *.txt) head -c 300 \"$f\" | tr '\\n\\t' '  ' ;; esac; echo; done",
                                      Quickshell.env("HOME") + "/.local/share/isla/.k"]
