@@ -50,7 +50,7 @@ Item {
             Glyph { anchors.fill: parent; name: parent.w === "none" ? "wifiArcs" : parent.w; size: 14; stroke: 2.4; color: icons.ic; opacity: parent.w === "none" ? 0.4 : 1 }
         }
         Glyph { name: st.svc ? st.svc.volIcon : "volume"; size: 14; stroke: 2.4; color: icons.ic; anchors.verticalCenter: parent.verticalCenter }
-        BarBattery { size: 17; level: st.svc ? st.svc.battery.percent / 100 : 0; charging: !!st.svc && st.svc.battery.charging; color: icons.ic; anchors.verticalCenter: parent.verticalCenter }
+        BarBattery { size: 17; level: st.svc ? st.svc.battery.percent / 100 : 0; charging: !!st.svc && st.svc.battery.charging; plugged: !!st.svc && st.svc.battery.plugged; color: icons.ic; anchors.verticalCenter: parent.verticalCenter }
         UiText { text: st.svc ? st.svc.battery.percent + "%" : ""; px: 12; w: 700; color: icons.ic; anchors.verticalCenter: parent.verticalCenter }
     }
     UiText { visible: st.right2 !== ""; anchors.right: parent.right; anchors.rightMargin: 6; y: 20; text: st.right2; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft

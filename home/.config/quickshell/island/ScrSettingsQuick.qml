@@ -144,7 +144,9 @@ Item {
                     onPicked: v => sq.prefs.set("boxStyle", v.toLowerCase()) }
                 SetSeg { width: sq.cw - 40; label: "Phone"; options: ["Low", "Middle", "High"]; current: sq.prefs.phoneSpot; onPicked: v => sq.prefs.set("phoneSpot", v) }
                 SetSeg { width: sq.cw - 40; label: "Open as"; options: ["Overlay", "Window"]; current: sq.prefs.phoneWindow ? "Window" : "Overlay"
-                    onPicked: v => sq.prefs.set("phoneWindow", v === "Window") }
+                    onPicked: v => sq.prefs.phoneWindow = v === "Window" }      // this phone only (not saved)
+                SetSeg { width: sq.cw - 40; label: "Reopen"; options: ["Fresh", "As I left it"]; current: sq.prefs.phoneRemember ? "As I left it" : "Fresh"
+                    onPicked: v => { sq.prefs.set("phoneRemember", v !== "Fresh"); sq.prefs.set("phoneWinLast", sq.prefs.phoneWindow) } }
             }
         }
         // Bar

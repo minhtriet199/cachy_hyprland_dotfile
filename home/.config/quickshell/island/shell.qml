@@ -17,7 +17,14 @@ ShellRoot {
     signal dropRequest(string monitor, string which)
     signal powerRequest(string monitor)
     function focusedName() { return Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : (Quickshell.screens.length ? Quickshell.screens[0].name : "") }
-    function phone(screen) { phoneRequest(focusedName(), screen || "home") }
+    // a closed phone opens as the overlay (or the way it was left, Settings → Shell → Reopen), as a window with
+    // asWindow (Super+Z); an open phone keeps its mode
+    function phone(screen, asWindow) {
+        const w = asWindow !== undefined ? !!asWindow : Prefs.phoneRemember && Prefs.phoneWinLast;
+        if (!phoneOpen && Prefs.phoneWindow !== w) { _quietMode = true; Prefs.phoneWindow = w; _quietMode = false }
+        phoneRequest(focusedName(), screen || "home")
+    }
+    property bool _quietMode: false
 
     // Keybinds — in Hyprland (Lua):  hl.bind("SUPER + space", hl.dsp.global("quickshell:islandPhone"))
     GlobalShortcut { name: "islandPhone";      description: "Island: phone";       onPressed: shell.phone("home") }
@@ -194,7 +201,7 @@ ShellRoot {
     signal phoneSwapDone(bool toWin)                                     // the phone that handed over goes
     function winSize(land) { return land ? Qt.size(900, 440) : Qt.size(410, 868) }     // a fresh phone window (design px)
     function scFor(s) { return s.height / 1080 * Prefs.size }
-    Connections { target: Prefs; function onPhoneWindowChanged() { if (!Prefs.ready) return; if (shell.phoneOpen) swapProbe.running = true; else shell.phone("home") } }
+    Connections { target: Prefs; function onPhoneWindowChanged() { if (!Prefs.ready) return; if (Prefs.phoneRemember) Prefs.set("phoneWinLast", Prefs.phoneWindow); if (shell._quietMode) return; if (shell.phoneOpen) swapProbe.running = true; else shell.phone("home", Prefs.phoneWindow) } }
     Process {
         id: swapProbe
         command: ["sh", "-c", "hyprctl -j monitors; echo @; hyprctl -j clients"]
@@ -232,6 +239,27 @@ ShellRoot {
     Timer { id: swapShow; interval: 60; onTriggered: { shell.phoneGhost = false; swapGone.restart() } }
     Timer { id: swapGone; interval: 50; onTriggered: { swapSafety.stop(); shell.phoneSwapDone(true) } }
     Timer { id: swapSafety; interval: 3000; onTriggered: if (shell.phoneGhost) { shell.phoneGhost = false; shell.phoneSwapDone(true) } }   // never stay hidden
+    // ── to-do board as a big window (⤢ on the to-do card): same board, bigger text ──
+    LazyLoader {
+        active: Services.todo.bigOpen
+        FloatingWindow {
+            title: "Island Todo"
+            implicitWidth: 760; implicitHeight: 900
+            color: Theme.paper
+            visible: true
+            onClosed: Services.todo.bigOpen = false
+            Flickable {
+                anchors.fill: parent; anchors.margins: 28; contentHeight: bigCol.implicitHeight; clip: true; boundsBehavior: Flickable.StopAtBounds
+                Column {
+                    id: bigCol
+                    width: parent.width; spacing: 18
+                    UiText { text: Services.todo.done + " / " + Services.todo.items.length + " done"; fam: "n"; px: 16; w: 900; track: 1; color: Theme.textSoft }
+                    UiStrokeText { text: Services.todo.name; px: 44; weight: 700; strokeW: 7; strokeColor: Theme.ink }
+                    TodoBoard { width: parent.width; todo: Services.todo; k: 1.6; listH: 100000 }
+                }
+            }
+        }
+    }
     LazyLoader {
         active: shell.phoneWinLive
         FloatingWindow {
@@ -285,7 +313,8 @@ ShellRoot {
         target: "island"
         function phone(screen: string): void { shell.phone(screen) }
         function close(): void { shell.phoneClose() }
-        function phonemode(): void { if (!shell.phoneGhost && !swapProbe.running) Prefs.flip("phoneWindow") }    // phone: overlay ↔ window (Super+Z)
+        // Super+Z: open phone → overlay ↔ window; closed phone → opens as a window
+        function phonemode(): void { if (shell.phoneGhost || swapProbe.running) return; if (shell.phoneOpen) Prefs.phoneWindow = !Prefs.phoneWindow; else shell.phone("home", true) }
         function lid(state: string): void { Services.lid(state === "closed") }
         function wallpaper(path: string): void { Prefs.set("wallpaper", path) }
         function bar(): void { Prefs.flip("bar") }
@@ -331,6 +360,8 @@ ShellRoot {
                 readonly property real barPad: 6                                    // gap above/below the bar (design px)
                 readonly property real band: 50 + barPad * 2                         // bar strip height (design px)
                 property string drop: ""                                            // open bar dropdown
+                readonly property bool dropPinned: drop === "todo" && Services.todo.pinned   // stays up, clicks go through around it
+                onDropChanged: if (drop !== "todo") Services.todo.pinned = false
                 property real dropX: 0
 
                 // ── scene change overlay (lock / unlock / first start / preview) ──
@@ -369,7 +400,7 @@ ShellRoot {
                         width: scr.dw; height: scr.band
                         scale: scr.sc; transformOrigin: Item.TopLeft
                         // empty bar space closes an open card, like clicking anywhere else (the pills sit on top)
-                        MouseArea { anchors.fill: parent; enabled: scr.drop !== ""; acceptedButtons: Qt.AllButtons; onClicked: scr.drop = "" }
+                        MouseArea { anchors.fill: parent; enabled: scr.drop !== "" && !scr.dropPinned; acceptedButtons: Qt.AllButtons; onClicked: scr.drop = "" }
                         UiCandy { visible: Prefs.barStyle === "Float"; x: 8; y: scr.barPad - 6; width: parent.width - 16; height: 62; radius: 26; fill: Theme.cream; drop: 0; hi: 3 }
                         Rectangle { visible: Prefs.barStyle === "Straight"; width: parent.width; height: scr.band - 4; y: scr.barTop ? 0 : 4; color: Theme.ink
                             Rectangle { x: 0; y: scr.barTop ? 0 : 3; width: parent.width; height: parent.height - 3; color: Theme.cream } }
@@ -396,7 +427,9 @@ ShellRoot {
                     // leave the bar uncovered so another pill can be clicked straight away
                     margins.top: scr.barTop && Prefs.bar ? Math.ceil(scr.band * scr.sc) : 0
                     margins.bottom: !scr.barTop && Prefs.bar ? Math.ceil(scr.band * scr.sc) : 0
+                    mask: Region { item: scr.dropPinned ? dropLoader : dropRoot }
                     Item {
+                        id: dropRoot
                         width: scr.dw; height: scr.modelData.height / scr.sc - (Prefs.bar ? scr.band : 0)
                         scale: scr.sc; transformOrigin: Item.TopLeft
                         focus: true
@@ -408,11 +441,12 @@ ShellRoot {
                             x: Math.max(12, Math.min(scr.dw - width - 12, scr.dropX - width / 2))
                             y: scr.barTop ? 2 : parent.height - height - 8
                             sourceComponent: scr.drop === "battery" ? cBattery : scr.drop === "weather" ? cWeather : scr.drop === "notifs" ? cNotifs
-                                           : ["wifi", "bt", "sound"].includes(scr.drop) ? cPanel : scr.drop === "sys" ? cSys : scr.drop === "music" ? cMusic : scr.drop === "palette" ? cPalette : cCalendar
+                                           : ["wifi", "bt", "sound"].includes(scr.drop) ? cPanel : scr.drop === "sys" ? cSys : scr.drop === "music" ? cMusic : scr.drop === "palette" ? cPalette
+                                           : scr.drop === "todo" ? cTodo : cCalendar
                             opacity: status === Loader.Ready ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: 140 } }
                         }
-                        Connections { target: Services; function onAppOpened() { scr.drop = "" } }
+                        Connections { target: Services; function onAppOpened() { if (!scr.dropPinned) scr.drop = "" } }
                         Connections {
                             target: shell
                             function onDropRequest(monitor, which) {
@@ -428,6 +462,7 @@ ShellRoot {
                         Component { id: cSys; DropSys { svc: Services } }
                         Component { id: cMusic; DropMusic { svc: Services } }
                         Component { id: cPalette; PaletteCard { svc: Services } }
+                        Component { id: cTodo; DropTodo { svc: Services } }
                     }
                 }
 

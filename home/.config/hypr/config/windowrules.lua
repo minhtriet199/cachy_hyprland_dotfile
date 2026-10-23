@@ -25,6 +25,10 @@ hl.window_rule({ match = { title = "^(Island Phone)$" }, float = true, center = 
 hl.window_rule({ match = { class = "^(com\\.interversehq\\.qView)$" }, float = true, center = true,
     size = { "monitor_w*0.7", "monitor_h*0.7" } })
 
+-- Island Todo (big to-do window from the bar ✓ card): floating, centred, tall
+hl.window_rule({ match = { title = "^(Island Todo)$" }, float = true, center = true,
+    size = { "monitor_w*0.45", "monitor_h*0.8" } })
+
 -- Nested Hyprland test window (class aquamarine): solid, floating at the size of its inner 1600x900 screen
 -- (its screen does not follow a resize, so a bigger window only showed black around it)
 hl.window_rule({ match = { class = "^(aquamarine)$" }, opaque = true, no_blur = true, float = true, center = true, size = { 1600, 900 } })

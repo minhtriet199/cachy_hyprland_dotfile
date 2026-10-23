@@ -136,6 +136,7 @@ Item {
     // was = the sideways phone is the one showing now; land = it should be after this
     function transition(scr, land, was) {
         if (windowed && svc) svc.phoneBig = true;      // pages leave room for the big phone's nav bar
+        else if (!shown && svc && Prefs.phoneRemember) svc.phoneBig = Prefs.phoneBigLast;   // reopen big / small as left
         if (land) {
             if (rise > 0.5 && !was) { viaTurn = true; setScreen(scr); swapAnim.stop(); swapT = 1; prepTurn(toLand) }
             else if (was && (hand > 0.5 || slideIn > 0.5)) setScreen(scr)
@@ -168,7 +169,8 @@ Item {
     function close() {
         if (!shown) return;
         history = [];
-        if (svc) svc.phoneBig = false;           // next open (Ctrl+B / Super+Space) always starts small
+        if (svc && !windowed && Prefs.phoneRemember) Prefs.set("phoneBigLast", svc.phoneBig);
+        if (svc) svc.phoneBig = false;           // next open starts small (or as left, with Reopen "As I left it")
         shown = false;
         toLand.stop(); toPort.stop(); prepMax.stop(); prepFrames = 0; turning = false; ringW = 0;
         dropAnim.restart();

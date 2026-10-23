@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Shapes
 
-// Battery icon whose fill follows the charge.
+// Battery icon whose fill follows the charge; a lightning bolt on it while plugged in (green fill = charging).
 Item {
     id: b
     property real size: 21
     property real level: 0.6
     property bool charging: false
+    property bool plugged: charging
     property color color: Theme.text
     implicitWidth: size; implicitHeight: size
     Item {
@@ -18,5 +19,11 @@ Item {
         }
         Rectangle { x: 4.5; y: 9.5; height: 5; radius: 1; color: b.charging ? Theme.leafDeep : b.color
             width: Math.max(1.5, 13 * Math.max(0, Math.min(1, b.level))) }
+        // plugged in: a bolt across the body (paper-coloured, with an outline so it reads on the fill and on empty)
+        Shape {
+            visible: b.plugged; anchors.fill: parent; preferredRendererType: Shape.CurveRenderer
+            ShapePath { strokeColor: b.color; strokeWidth: 1.6; fillColor: Theme.paper; joinStyle: ShapePath.RoundJoin
+                PathSvg { path: "M13.4 3.2L7 13h4.2l-1.6 7.8 6.6-10h-4.3z" } }
+        }
     }
 }

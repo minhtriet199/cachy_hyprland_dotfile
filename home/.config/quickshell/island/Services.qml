@@ -767,6 +767,9 @@ Singleton {
     SvcSchedule { id: schedulePart
         onDue: n => { if (s.dndOn) s.heldReminders = s.heldReminders.concat([n]); else s.remind(n) } }
     property alias schedule: schedulePart
+    // ── to-do boards (SvcTodo.qml): bar ✓ card + big window ──
+    SvcTodo { id: todoPart; svc: s }
+    property alias todo: todoPart
 
     // ── weather (SvcWeather.qml) ──
     SvcWeather { id: weatherPart; city: s.city }

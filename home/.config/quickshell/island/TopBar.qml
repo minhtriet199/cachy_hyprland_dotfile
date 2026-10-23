@@ -253,6 +253,7 @@ Item {
             fill: Theme.gLilac; padL: 6; padR: 6; gap: 6
             BarToggle { name: "dropper"; on: false; onClicked: bar.svc.tool("picker") }   // colour picker
             BarToggle { id: palT; name: "palette"; on: false; onClicked: bar.drop("palette", palT) }   // palette card (colours → theme)
+            BarToggle { id: todoT; name: "check"; on: bar.svc.todo.pinned; onClicked: bar.drop("todo", todoT) }   // to-do card
             BarToggle {
                 id: bellT
                 name: bar.svc.dnd ? "bellOff" : "bell"; on: bar.svc.dnd
@@ -294,7 +295,7 @@ Item {
             id: batPill
             fill: Theme.gLeaf; pressable: true
             onClicked: bar.drop("battery", batPill)
-            BarBattery { level: bar.svc.battery.percent / 100; charging: bar.svc.battery.charging }
+            BarBattery { level: bar.svc.battery.percent / 100; charging: bar.svc.battery.charging; plugged: bar.svc.battery.plugged }
             UiText { text: bar.svc.battery.percent + "%"; px: 16; w: 600 }
         }
         UiCandy {
