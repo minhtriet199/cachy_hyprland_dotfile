@@ -27,4 +27,4 @@ Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvu
 Location=Everywhere
 
 [UiSettings]
-ColorScheme=IslaDark
+ColorScheme=IslandDark

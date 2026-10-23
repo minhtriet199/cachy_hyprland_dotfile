@@ -1,0 +1,27 @@
+#!/bin/sh
+# greetd default_session: the Island login screen in a small Hyprland.
+# Safety net: if it can't start (or crashes without logging you in) you get greetd's text login (agreety) instead.
+share="${ISLAND_GREETER_SHARE:-/usr/local/share/island-greeter}"
+export ISLAND_GREETER_SHARE="$share"
+export ISLAND_GREETER_DATA="${ISLAND_GREETER_DATA:-/var/lib/island-greeter}"
+export HOME="$ISLAND_GREETER_DATA/home"
+[ -n "${XDG_RUNTIME_DIR:-}" ] && [ -w "$XDG_RUNTIME_DIR" ] || export XDG_RUNTIME_DIR="/tmp/island-greeter-$(id -u)"
+mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+rm -f "$XDG_RUNTIME_DIR/island-greeter-ok"
+unset WAYLAND_DISPLAY DISPLAY
+
+# the text console behind the greeter: cover colour, no text, no cursor (see paint-vt)
+[ "$(id -un)" = greeter ] && "$share/paint-vt" "$ISLAND_GREETER_DATA/cover"
+log="$HOME/greeter.log"
+mv -f "$log" "$log.old" 2>/dev/null
+
+if command -v dbus-run-session >/dev/null 2>&1; then
+    dbus-run-session -- Hyprland -c "$share/greeter.lua" >"$log" 2>&1
+else
+    Hyprland -c "$share/greeter.lua" >"$log" 2>&1
+fi
+
+[ -e "$XDG_RUNTIME_DIR/island-greeter-ok" ] && exit 0
+[ "$(id -un)" = greeter ] && "$share/paint-vt" reset     # text login: normal colours back
+echo "Island login screen did not start (log: $log). Text login:"
+exec agreety --cmd "$share/island-session"

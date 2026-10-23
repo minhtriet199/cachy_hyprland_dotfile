@@ -20,7 +20,7 @@
  {
   "keys": "SUPER + Z",
   "action": "exec",
-  "arg": "qs -c isla ipc call isla phonemode",
+  "arg": "qs -c island ipc call island phonemode",
   "category": "Windows",
   "desc": "Phone: overlay ↔ window",
   "locked": false,
@@ -416,9 +416,9 @@
  {
   "keys": "SUPER + K",
   "action": "exec",
-  "arg": "qs -c isla ipc call isla phone settingsKeys",
+  "arg": "qs -c island ipc call island phone settingsKeys",
   "category": "Apps",
-  "desc": "Keyboard shortcuts (Isla phone)",
+  "desc": "Keyboard shortcuts (Island phone)",
   "locked": false,
   "repeating": false
  },
@@ -623,7 +623,7 @@
  {
   "keys": "SUPER + C",
   "action": "exec",
-  "arg": "~/.config/quickshell/isla/tools/clip-hide.sh",
+  "arg": "~/.config/quickshell/island/tools/clip-hide.sh",
   "category": "Utilities",
   "desc": "Quick save",
   "locked": false,

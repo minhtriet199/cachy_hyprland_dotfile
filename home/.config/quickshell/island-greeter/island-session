@@ -1,0 +1,18 @@
+#!/bin/sh
+# Your session. Two ways greetd starts it:
+#   island-session            after the Island login screen. The console was reset to black when the login screen closed,
+#                           so paint it again in the cover colour.
+#   island-session autologin  at boot without a password (initial_session). Marks the session as "not logged in yet"
+#                           ($XDG_RUNTIME_DIR/isla-autologin): Island starts locked, shortcuts and startup apps wait for
+#                           the first unlock (hypr scripts/after-unlock.sh removes the mark). No mark → no session.
+# Then start Hyprland (uwsm's messages go to a log, not the screen).
+here="$(dirname "$0")"
+m="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin"
+if [ "${1:-}" = autologin ]; then
+    : >"$m" || exit 1
+else
+    rm -f "$m"
+fi
+"$here/paint-vt" "$HOME/.local/state/hypr/cover"
+mkdir -p "$HOME/.local/state/island"
+exec uwsm start -e -D Hyprland hyprland.desktop >"$HOME/.local/state/island/session.log" 2>&1

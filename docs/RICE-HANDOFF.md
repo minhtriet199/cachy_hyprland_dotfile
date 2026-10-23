@@ -1,7 +1,7 @@
-# CachyOS + Hyprland + Isla — handoff for the next AI
+# CachyOS + Hyprland + Island — handoff for the next AI
 
 Last updated: 2026-10-22. Read this first. Longer history: memory `cachyos-g14-setup.md` and the full old copy of
-this file at `~/.local/state/isla/RICE-HANDOFF-full-2026-10-22.md`.
+this file at `~/.local/state/island/RICE-HANDOFF-full-2026-10-22.md`.
 
 ---
 
@@ -13,16 +13,16 @@ this file at `~/.local/state/isla/RICE-HANDOFF-full-2026-10-22.md`.
 - **After every config change: `dotfiles-sync "short message"`**. No Claude credit / co-author lines there.
 - **Test in a separate nested desktop, never on the main one** (owner likes this, see §2). Don't open the real phone
   by IPC while the owner may be typing: it grabs the keyboard.
-- **Never symlink Isla files into test folders. Copy them** (a test once overwrote shell.qml).
+- **Never symlink Island files into test folders. Copy them** (a test once overwrote shell.qml).
 - **After any change, recheck old features too**, not just the new one. Say plainly what was and wasn't checked.
-- **Isla style:** `Theme.*` colours only (`Theme.adapt("#hex")` if you must), reuse components (UiCandy, UiRow, UiText,
+- **Island style:** `Theme.*` colours only (`Theme.adapt("#hex")` if you must), reuse components (UiCandy, UiRow, UiText,
   Glyph, SetSeg, SetToggle…), busy/error text inside the item it belongs to, every page fits **both** the upright
   phone (< 600 px wide) and the sideways phone.
 
 ### Principles
 1. **Clean, small code.** One shared piece, not variants (`DropCard`, `UiRow`, `Theme.tilt(i)`, `Svc*.qml` parts).
    Delete the old version when replacing it. Match the comments/naming around you.
-2. **Performance is measured, not guessed.** Before/after RSS of `qs -c isla`. Prefer events over timers; polls use bash
+2. **Performance is measured, not guessed.** Before/after RSS of `qs -c island`. Prefer events over timers; polls use bash
    `read` builtins; slow down while gaming / Game mode (`Services.calm`).
 3. **Lazy where it pays.** The phone is built on first open, removed 3 min after closing. Small windows stay
    (measured: not worth it).
@@ -32,24 +32,24 @@ this file at `~/.local/state/isla/RICE-HANDOFF-full-2026-10-22.md`.
 
 ## 2. How to test (nested Hyprland — owner's preferred way)
 
-A second Hyprland runs as a window on the desktop, with a **scratch copy** of Isla inside it. The real desktop and
+A second Hyprland runs as a window on the desktop, with a **scratch copy** of Island inside it. The real desktop and
 real settings are not touched.
 
-1. Copy: `cp -r ~/.config/quickshell/isla $T/isla; mkdir $T/state; cp ~/.local/state/isla/prefs.json $T/state/`
+1. Copy: `cp -r ~/.config/quickshell/island $T/island; mkdir $T/state; cp ~/.local/state/island/prefs.json $T/state/`
 2. Patch the **copy**: `Prefs.qml` `dir` → `$T/state` (so it never writes the real prefs.json); in `Services.qml` turn
    off `agents` (running: false), remove `PolkitAgent`, the 3 idle `IdleMonitor`s (`enabled: false &&`), the lid
    `systemd-inhibit` process and the screen-time 5 s timer. Add a test IPC function to `shell.qml` if you need to
    poke state (e.g. set `Services.wallPreview`, `Prefs.phoneWindow`).
 3. Config `$T/nest.lua`: `hl.monitor({ output = "WAYLAND-1", mode = "1920x1080", position = "0x0", scale = 1 })`, the
-   window rules you are testing, and `hl.on("hyprland.start", function () hl.exec_cmd("qs -p $T/isla > $T/qs.log 2>&1") end)`.
+   window rules you are testing, and `hl.on("hyprland.start", function () hl.exec_cmd("qs -p $T/island > $T/qs.log 2>&1") end)`.
    Check with `Hyprland --verify-config -c $T/nest.lua`.
 4. Run (in the background): `dbus-run-session Hyprland -c $T/nest.lua`
 5. Run commands inside it with `HYPRLAND_INSTANCE_SIGNATURE` + `WAYLAND_DISPLAY` of the newest `hyprctl instances`
-   entry: `qs -p $T/isla ipc call isla …`, `hyprctl clients`, `grim` (screenshots), and
+   entry: `qs -p $T/island ipc call island …`, `hyprctl clients`, `grim` (screenshots), and
    `hyprctl dispatch 'hl.dsp.send_shortcut({ mods = "CTRL", key = "S", window = "title:^(…)$" })'` for key presses.
 6. Check `$T/qs.log`. Stop with `hyprctl dispatch 'hl.dsp.exit()'` (inside the nested one).
 - The nested window's size can change between shots: crop by window geometry (`grim -g`), not fixed numbers.
-- Then restart the real Isla fresh (§7) and check its log + `hyprctl configerrors`.
+- Then restart the real Island fresh (§7) and check its log + `hyprctl configerrors`.
 
 ---
 
@@ -61,8 +61,8 @@ real settings are not touched.
 | GPU | RX 6700S (card1, drives both screens — MUX "Ultimate") + Radeon 680M (card0) |
 | Screens | ASUS VG27AQ5A **HDMI-A-1** (left, 2560×1440@120, **HDR on**) · laptop **eDP-1** (right, 2560×1600@120, scale 1.25) |
 | OS | CachyOS, kernels `linux-cachyos` 7.2.11 + `linux-cachyos-lts` 6.18 (backup) |
-| Desktop | **Hyprland 0.56, Lua config** · login: greetd + **isla-greeter** (`install.sh autologin` = boot into locked session, see isla-greeter README) |
-| Shell | **Isla**, own Quickshell config (`qs -c isla`) |
+| Desktop | **Hyprland 0.56, Lua config** · login: greetd + **island-greeter** (`install.sh autologin` = boot into locked session, see island-greeter README) |
+| Shell | **Island**, own Quickshell config (`qs -c island`) |
 | Input | fcitx5 + bamboo (EN/VI, Ctrl+Shift) |
 | Bluetooth | MediaTek MT7922 — **headset-mode mic broken** (§8) |
 | Power | asusctl Quiet=Silent, Balanced=Performance, Performance=Turbo · scx_lavd |
@@ -75,20 +75,20 @@ real settings are not touched.
 |---|---|
 | Dotfiles repo | `~/Documents/dot file/` (= `~/dotfiles`) → github `minhtriet199/cachy_hyprland_dotfile`. Also `packages-*.txt` + `install.sh` |
 | Sync | `dotfiles-sync "msg"` — rsync configs into the repo, commit, push (skips `*.bak*`) |
-| Isla code | `~/.config/quickshell/isla/` (≈ 95 QML files + `tools/`) |
+| Island code | `~/.config/quickshell/island/` (≈ 95 QML files + `tools/`) |
 | Hyprland | `~/.config/hypr/hyprland.lua` + `config/*.lua` + `scripts/` |
-| State | `~/.local/state/isla/prefs.json` · `~/.local/state/hypr/{look,input,screens,startup,gamemode}` |
-| Backups | `~/.local/state/isla/*.tar.gz` |
+| State | `~/.local/state/island/prefs.json` · `~/.local/state/hypr/{look,input,screens,startup,gamemode}` |
+| Backups | `~/.local/state/island/*.tar.gz` |
 | Wallpapers / snips | `~/Pictures/Wallpapers` · `~/Pictures/screenshot` |
 
 ### Hyprland notes
 - `binds.lua` is **generated** from `keybinds.json` by `scripts/keybinds.py generate`. Edit the JSON, never binds.lua.
-- `look.lua` / `input_isla.lua` / `monitors.lua` / `startup_isla.lua` are driven by Isla settings (`lookctl.py`,
+- `look.lua` / `input_island.lua` / `monitors.lua` / `startup_island.lua` are driven by Island settings (`lookctl.py`,
   `inputctl.py`, `screenctl.py`).
 - `games.lua`: games open on a new workspace; `follow_mouse=2` while a game is focused. `workspaces.lua`: 1–9 on the first
-  non-eDP screen, laptop 11–19. Isla `Services.rehome()` moves windows when a screen is unplugged.
+  non-eDP screen, laptop 11–19. Island `Services.rehome()` moves windows when a screen is unplugged.
 - `windowrules.lua`: games `immediate`; every window follows focus/unfocus opacity (no "always solid" rules);
-  PiP floats + `no_initial_focus`; "Isla Phone" window: float, no border/shadow/blur.
+  PiP floats + `no_initial_focus`; "Island Phone" window: float, no border/shadow/blur.
 - Live changes: `hyprctl eval 'hl.config({...})'`. `hyprctl dispatch` needs **Lua**:
   `hyprctl dispatch 'hl.dsp.dpms({ action = "off", monitor = "eDP-1" })'`. Wrong params are accepted silently.
   API: `/usr/share/hypr/stubs/hl.meta.lua`. Integer options must be whole numbers.
@@ -96,11 +96,11 @@ real settings are not touched.
 
 ---
 
-## 5. Isla
+## 5. Island
 
 ### Structure
 - `shell.qml` — per-screen windows (bar, dock, dropdowns, phone, toasts, pop-ups) + `IpcHandler`
-  (`qs -c isla ipc call isla <fn>`: `phone <screen>`, `close`, `phonemode`, `rotate`, `big`, `drop <name>`, `bar`, `power`,
+  (`qs -c island ipc call island <fn>`: `phone <screen>`, `close`, `phonemode`, `rotate`, `big`, `drop <name>`, `bar`, `power`,
   `lock`, `locktest` (30 s, safe), `lid`, `preview`, `gamemode`, `palette …`, `snip`, `locate`, `sharePick`).
 - `Services.qml` — all live data (stats in `SvcSysmon`, weather `SvcWeather`, colours `SvcPalette`, calendar `SvcSchedule`,
   recording `SvcRecord`). Settings search list = `settingsSearch`.
@@ -112,7 +112,7 @@ real settings are not touched.
 | Feature | How |
 |---|---|
 | Keys | Ctrl+S turn · Ctrl+F big/small · Ctrl+1…5 jump · Ctrl+←/→ page ↔ buttons · Alt+←/Backspace back · F1 help · Esc close |
-| **Phone as a window** | Settings → Look → **Open as: Overlay / Window** (`Prefs.phoneWindow`), or **Super+Z** (`ipc phonemode`). **One phone moves:** overlay → window = the overlay phone glides to the window's spot (screen's free-area middle) at the window phone's size while the window opens hidden (`phoneGhost`), is resized/moved exactly there, shown, then the overlay `vanish()`es; window → overlay = overlay `takeOver()`s on top of the window phone (from `hyprctl clients`), the window vanishes, the phone glides home (`handT`, `handAim` in PhoneStage; `swapGo`/`swapStep` in shell.qml). Pixel-checked: same spot + size. One `FloatingWindow` "Isla Phone" in shell.qml, lazy like the overlay; transparent, hugs the phone. `PhoneStage { windowed: true }` = flat big pose, no scrim, no big button. Hyprland ignores client resizes, so a turn sends `hl.dsp.window.resize` (stays centred). |
+| **Phone as a window** | Settings → Look → **Open as: Overlay / Window** (`Prefs.phoneWindow`), or **Super+Z** (`ipc phonemode`). **One phone moves:** overlay → window = the overlay phone glides to the window's spot (screen's free-area middle) at the window phone's size while the window opens hidden (`phoneGhost`), is resized/moved exactly there, shown, then the overlay `vanish()`es; window → overlay = overlay `takeOver()`s on top of the window phone (from `hyprctl clients`), the window vanishes, the phone glides home (`handT`, `handAim` in PhoneStage; `swapGo`/`swapStep` in shell.qml). Pixel-checked: same spot + size. One `FloatingWindow` "Island Phone" in shell.qml, lazy like the overlay; transparent, hugs the phone. `PhoneStage { windowed: true }` = flat big pose, no scrim, no big button. Hyprland ignores client resizes, so a turn sends `hl.dsp.window.resize` (stays centred). |
 | **Wallpaper live preview** | 👁 Preview / Space → phone shrinks to the bottom-right corner (`cornerScale`/`cornerMove`), page shows only the string + buttons, desktop follows the picked picture 220 ms after it settles. Esc / Space / ✕ / click outside ends it. Known: upright and sideways pages keep their own position, so turning mid-preview can jump. |
 | Phone height | Settings → Look → Phone: Low / Middle / High (`Prefs.phoneSpot`) |
 | Calculator | `ScrCalc.qml`: operators in a row → the new one wins (× − stays: negative), `tidy()` drops a dangling operator, closes brackets, 2(3) = 2×3; after = a digit starts fresh, an operator goes on, = again repeats the last step; ÷ 0 → ERROR. Maths = `Services.math` (shared with search). |
@@ -122,38 +122,38 @@ real settings are not touched.
 |---|---|
 | Snip editor | `hypr/scripts/snip.sh` + `SnipEditor.qml`. Enter/Save = file + copy, Esc/click outside = copy only. Resize handles, Select tool. Window id `sn` (never `ed`, see §6). |
 | Record → OBS | `tools/obsctl.py`, `share-pick.sh`, `SharePicker.qml`, `SvcRecord.qml`, `hypr/xdph.conf`. See memory `obs-record-flow`. XDPH window addresses are decimal, Hyprland's hex. |
-| Calendar notes + reminders | `SvcSchedule.qml`, `DropCalendar.qml`; data `~/.local/state/isla/schedule.json`. Held during Do not disturb. |
-| Clipboard | pins in `Prefs.clipPins` + `~/.local/share/isla/clip-pins/`; `tools/clip-prune.sh` deletes unpinned items older than `Prefs.clipDays`. Quick saves: Super+C → `tools/clip-hide.sh` (silent; presses copy in the app, restores the old clipboard — primary selection is off) → files in dot-folder `~/.local/share/isla/.k` (not synced); Ctrl ×3 on the Super+V clipboard toggles screen `clipHidden`; copied back with `wl-copy --sensitive` so cliphist skips it. |
+| Calendar notes + reminders | `SvcSchedule.qml`, `DropCalendar.qml`; data `~/.local/state/island/schedule.json`. Held during Do not disturb. |
+| Clipboard | pins in `Prefs.clipPins` + `~/.local/share/island/clip-pins/`; `tools/clip-prune.sh` deletes unpinned items older than `Prefs.clipDays`. Quick saves: Super+C → `tools/clip-hide.sh` (silent; presses copy in the app, restores the old clipboard — primary selection is off) → files in dot-folder `~/.local/share/island/.k` (not synced); Ctrl ×3 on the Super+V clipboard toggles screen `clipHidden`; copied back with `wl-copy --sensitive` so cliphist skips it. |
 | Brightness per screen | `DropBattery.qml` (DDC or HDR nits) |
 | Double-tap Ctrl rings | `hypr/config/locate.lua` → `ipc locate X Y` → `LocatePointer.qml` |
 | Game mode | Settings → Quick or `ipc gamemode`: animations off, phone light mode, visualizer paused |
-| Apps look | Kvantum Isla/IslaDark, qt6ct, GTK `isla.css`/`isla-dark.css`, icons Isla → MacTahoe. Helium forced sRGB (HDR). |
+| Apps look | Kvantum Island/IslandDark, qt6ct, GTK `island.css`/`island-dark.css`, icons Island → MacTahoe. Helium forced sRGB (HDR). |
 
 ### Card design (SekaiPop — github.com/Blapples/SekaiPop, refs `~/Pictures/screenshot/sekaipop-reference/`)
 - Every bar dropdown is a `DropCard` with one header style (inset box in `Theme.gActive[0]`, halftone dots); content ≥ 22 px from the edge.
 - Dense, a bit cramped; small tilts `Theme.tilt(i)`; sticker shadows (`drop: 3`); dark ink tiles mixed with light; pills over the header edge.
 - Weather card: only condition, temp, high/low, place, humidity · wind · UV, 8-point hourly line.
 - Palette button in the bar → `PaletteCard` (+ `ipc palette get|wallpaper|music|random|shuffle|apply|undo`).
-- Transition colour "Wallpaper": `SvcPalette` keeps `Prefs.wipeAuto` fresh (greeter needs `sudo …/isla-greeter/install.sh` to follow).
+- Transition colour "Wallpaper": `SvcPalette` keeps `Prefs.wipeAuto` fresh (greeter needs `sudo …/island-greeter/install.sh` to follow).
 
 ### Lock / login (one `LockScreen.qml` for both, 2026-10-22)
 - Rest = lock wallpaper (or sky) + date + big sticker clock + "Press any key". Any key/click → `PhoneBody` slides up
   (810 of 1080 design px), only the background Item is blurred (`MultiEffect` on a layer, so the desktop never shows).
   Phone: avatar/name, "Locked since" / "Welcome back", user pick (greeter, >1 user), password dots, Unlock/Log in,
   song (lock), Restart/Shut down (4 s countdown, other button = Cancel). Esc: cancel → clear → hide. 30 s idle → hides.
-- Shared state in the lock controller (`lockCtl` in isla/shell.qml and isla-greeter/shell.qml): `phoneUp`, `user`.
+- Shared state in the lock controller (`lockCtl` in island/shell.qml and island-greeter/shell.qml): `phoneUp`, `user`.
   Success (`leaving`): phone is pulled down off screen (InBack, blur + hidden clock stay) → iris cover → desktop. `PhoneBody { canBig: false }` on the lock.
-- Boot colour hand-over: Isla `Prefs` writes `~/.local/state/hypr/cover` (wipe colour); `misc.lua` and greeter.lua
-  use it as Hyprland's background; Prefs loads with `blockLoading` so Isla's first frame already has it.
+- Boot colour hand-over: Island `Prefs` writes `~/.local/state/hypr/cover` (wipe colour); `misc.lua` and greeter.lua
+  use it as Hyprland's background; Prefs loads with `blockLoading` so Island's first frame already has it.
 - Gap between greeter Hyprland and your session = VT1 text console. logind resets it to black when the greeter session
-  closes, so greetd's session command is `isla-session`, which runs `paint-vt` (all 16 console colours = cover colour,
-  clear, no cursor; console = `/sys/class/tty/tty0/active`, XDG_VTNR isn't set) then `uwsm start` (output → `~/.local/state/isla/session.log`). The greeter also paints at start.
+  closes, so greetd's session command is `island-session`, which runs `paint-vt` (all 16 console colours = cover colour,
+  clear, no cursor; console = `/sys/class/tty/tty0/active`, XDG_VTNR isn't set) then `uwsm start` (output → `~/.local/state/island/session.log`). The greeter also paints at start.
 - Test IPC only in scratch copies (tlock/tup/tpw/tenter/tok were added to the nested copy, not the real shell).
 
-### Login screen (isla-greeter, installed and working)
-- Code `~/.config/quickshell/isla-greeter/` (README). Installed copy `/usr/local/share/isla-greeter`, data `/var/lib/isla-greeter`
-  (kept fresh by user unit `isla-greeter-sync.path`). Falls back to `agreety` if it dies.
-- After LockScreen.qml changes → `sudo …/isla-greeter/install.sh`. **Run `check.sh` after `pacman -Syu` that updates
+### Login screen (island-greeter, installed and working)
+- Code `~/.config/quickshell/island-greeter/` (README). Installed copy `/usr/local/share/island-greeter`, data `/var/lib/island-greeter`
+  (kept fresh by user unit `island-greeter-sync.path`). Falls back to `agreety` if it dies.
+- After LockScreen.qml changes → `sudo …/island-greeter/install.sh`. **Run `check.sh` after `pacman -Syu` that updates
   Hyprland/quickshell, before rebooting.** Undo: `sudo …/uninstall.sh`.
 
 ---
@@ -167,8 +167,8 @@ real settings are not touched.
 - Inline `component` errors only say "X is not a type": move it to its own file to see the real error.
 - `font.pixelSize` must be an integer. Two `onXChanged:` on one object = "set multiple times".
 - QML JS has no `BigInt` and no regex `s` flag (use `[\s\S]`).
-- A load error keeps the **previous** config running, and lazy parts (phone, snip editor, pickers) only error when opened → check `qs -c isla log` after every edit and test lazy parts in the nested copy.
-- Isla doesn't watch prefs.json; to apply an outside edit, change a QML file's content.
+- A load error keeps the **previous** config running, and lazy parts (phone, snip editor, pickers) only error when opened → check `qs -c island log` after every edit and test lazy parts in the nested copy.
+- Island doesn't watch prefs.json; to apply an outside edit, change a QML file's content.
 - PyGObject can't implement `Gcr.Prompt` → talk D-Bus directly.
 - `pkill -f <pattern>` in a tool shell can kill that shell — kill by PID.
 - Hyprland colours in Lua are strings: `background_color = "rgb(ebd6d6)"`. A bare `0xEBD6D6` is accepted but means alpha 0 → black.
@@ -177,17 +177,17 @@ real settings are not touched.
 
 ## 7. Performance
 
-- **Isla ≈ 470–495 MB RSS fresh** with `MALLOC_ARENA_MAX=2` (was ≈ 850 MB).
+- **Island ≈ 470–495 MB RSS fresh** with `MALLOC_ARENA_MAX=2` (was ≈ 850 MB).
 - **Hot reload leaks RAM** (one reload: 475 → 616 MB). After editing, restart fresh:
   ```sh
-  qs -c isla kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c isla")'
-  pgrep -ax qs        # must be exactly ONE "qs -c isla"
+  qs -c island kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c island")'
+  pgrep -ax qs        # must be exactly ONE "qs -c island"
   ```
-  Never `hyprctl dispatch 'hl.exec_cmd(…)'` (runs AND errors → two Islas). If two run, kill the newer PID.
+  Never `hyprctl dispatch 'hl.exec_cmd(…)'` (runs AND errors → two Islands). If two run, kill the newer PID.
 - Lazy phone ≈ 100–120 MB per screen while it exists. Tested and **not** worth it: lazy power menu/dropdowns/etc., `QSG_RENDER_LOOP=basic`.
 - Events: window list, clipboard, privacy (PipeWire), EN/VI, volume/mic. Timers: status 4 s (12 s gaming), bar stats 2 s (6 s gaming), weather 30 min.
 - Quickshell UPower gives no data here → battery from sysfs.
-- `tools/isla-agents.py` = keyring prompter + Bluetooth agent in one Python. Only ONE gnome-keyring-daemon runs (checked 2026-10-22).
+- `tools/island-agents.py` = keyring prompter + Bluetooth agent in one Python. Only ONE gnome-keyring-daemon runs (checked 2026-10-22).
 - WARP on demand: `tools/warp.sh on|off` (setup done; undo: `sudo …/tools/warp-ondemand-setup.sh undo`). WARP tray app masked.
 - Kept on purpose: firewalld.
 
@@ -230,10 +230,10 @@ The owner now **wants desktop widgets** (through Edit Desktop). Done so far: Ctr
 ## 9. Quick commands
 
 ```sh
-qs -c isla log                 # Isla log (errors after edits)
-qs -c isla kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c isla")'   # restart Isla (§7)
-pgrep -ax qs                   # exactly one Isla?
-qs -c isla ipc call isla phone settingsQuick   # open a phone page
+qs -c island log                 # Island log (errors after edits)
+qs -c island kill; sleep 1; hyprctl eval 'hl.exec_cmd("env MALLOC_ARENA_MAX=2 qs -c island")'   # restart Island (§7)
+pgrep -ax qs                   # exactly one Island?
+qs -c island ipc call island phone settingsQuick   # open a phone page
 hyprctl configerrors           # Hyprland config errors
 dotfiles-sync "message"        # commit + push configs
 ```

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Print: select a region, then draw on it in Isla's snip editor (SnipEditor.qml).
+# Print: select a region, then draw on it in Island's snip editor (SnipEditor.qml).
 # Enter = save to ~/Pictures/screenshot + copy · Esc = copy only (with the drawing, if any).
 
 # Grab every screen FIRST, then freeze (hyprpicker draws a still frame over them) so the moment is
@@ -25,8 +25,8 @@ unjump
 # Dark dim outside the selection, selection itself stays clear, white border
 region=$(slurp -b "#00000080" -s "#00000000" -c "#ffffffcc" -w 2) || { unjump; exit 0; }   # Esc cancels
 
-# the cut goes to the Isla snip editor (SnipEditor.qml): Enter = save to ~/Pictures/screenshot + copy, Esc = copy only
-out="${XDG_RUNTIME_DIR:-/tmp}/isla-snip"; mkdir -p "$out"; rm -f "$out"/*
+# the cut goes to the Island snip editor (SnipEditor.qml): Enter = save to ~/Pictures/screenshot + copy, Esc = copy only
+out="${XDG_RUNTIME_DIR:-/tmp}/island-snip"; mkdir -p "$out"; rm -f "$out"/*
 file="$out/snip-$(date +%Y%m%d-%H%M%S).png"
 
 # region = "X,Y WxH" (logical px). Cut it from the screen it sits on; across two screens → grab live.
@@ -51,12 +51,12 @@ else
 fi
 [ -n "$1" ] && [ -f "$tmp/$1.ppm" ] && mv "$tmp/$1.ppm" "$out/screen.ppm"
 
-if [ -n "$1" ] && qs -c isla ipc call isla snip "$file|$out/screen.ppm|$1|$3|$4|$5|$6|$7" >/dev/null 2>&1; then
+if [ -n "$1" ] && qs -c island ipc call island snip "$file|$out/screen.ppm|$1|$3|$4|$5|$6|$7" >/dev/null 2>&1; then
     sleep 0.35                     # editor is up over the frozen frame: now let go of the freeze
     kill $freeze 2>/dev/null; unjump
     exit 0
 fi
-# Isla not running: old way — copy, notify
+# Island not running: old way — copy, notify
 kill $freeze 2>/dev/null; unjump
 wl-copy --type image/png < "$file"
 notify-send -a "Screenshot" -i "$file" "Screenshot copied" "Paste with Ctrl + V"

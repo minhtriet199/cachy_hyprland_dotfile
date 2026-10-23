@@ -1,12 +1,12 @@
--- Apps started from Isla search open on the screen you launched them from, even if you move focus
--- to the other screen while they load. Isla calls IslaLaunch("<monitor>") just before starting the app;
+-- Apps started from Island search open on the screen you launched them from, even if you move focus
+-- to the other screen while they load. Island calls IslandLaunch("<monitor>") just before starting the app;
 -- the next new window (within 10 s) goes to that screen's current workspace.
 --   * Games (steam_app_*, gamescope) are left to games.lua.
 --   * One launch = one window, so later windows open normally.
 
 local pending = nil -- { mon = name, t = os.time() }
 
-function IslaLaunch(mon)
+function IslandLaunch(mon)
     pending = { mon = mon, t = os.time() }
 end
 

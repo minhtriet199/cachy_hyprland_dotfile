@@ -131,8 +131,8 @@ DecorationFocus=85,191,198
 DecorationHover=169,221,228
 
 [General]
-ColorScheme=IslaDark
-Name=Isla
+ColorScheme=IslandDark
+Name=Island
 TerminalApplication=kitty
 font=Nunito,10,-1,5,700,0,0,0,0,0,0,0,0,0,0,1
 fixed=monospace,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
@@ -166,4 +166,4 @@ inactiveBlend=221,225,230
 inactiveForeground=221,225,230
 
 [Icons]
-Theme=Isla
+Theme=Island

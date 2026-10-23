@@ -1,8 +1,8 @@
 #!/bin/sh
-# Auto-login safety. `isla-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin until the first unlock and Isla
-# starts locked. If Isla isn't running (crash, broken config…) while that file is there, lock with hyprlock instead
+# Auto-login safety. `island-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin until the first unlock and Island
+# starts locked. If Island isn't running (crash, broken config…) while that file is there, lock with hyprlock instead
 # (~/.config/hypr/hyprlock.conf) so the session is never left open; its unlock counts as the login. If hyprlock can't
-# start either, end the session: greetd then shows the Isla login screen. With that login screen there is nothing to guard.
+# start either, end the session: greetd then shows the Island login screen. With that login screen there is nothing to guard.
 m="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin"
 [ -e "$m" ] || exit 0
 sleep 10

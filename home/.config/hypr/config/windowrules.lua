@@ -17,8 +17,8 @@ hl.window_rule({
     no_initial_focus  = true,         -- keep typing in the browser (Ctrl+T's new tab gets the search bar)
 })
 
--- Isla phone as a window (Isla Settings → Look → Open as: Window)
-hl.window_rule({ match = { title = "^(Isla Phone)$" }, float = true, center = true,
+-- Island phone as a window (Island Settings → Look → Open as: Window)
+hl.window_rule({ match = { title = "^(Island Phone)$" }, float = true, center = true,
     border_size = 0, no_shadow = true, no_blur = true, rounding = 0, decorate = false })   -- see-through: only the phone shows
 
 -- Gaming
@@ -71,7 +71,7 @@ hl.window_rule({
     center = true,
 })
 
--- Opacity: every window follows Isla Settings → Windows (focused / not focused, Dark / Light backdrop).
+-- Opacity: every window follows Island Settings → Windows (focused / not focused, Dark / Light backdrop).
 -- No per-app "always solid" rules; SUPER+E makes one window solid, full-screen is always solid.
 
 -- Float Utility Windows

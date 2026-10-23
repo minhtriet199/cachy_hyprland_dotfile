@@ -1,5 +1,0 @@
-#!/bin/sh
-# Started by greeter.lua inside the greeter's Hyprland: run the Isla login screen, then close this Hyprland.
-share="${ISLA_GREETER_SHARE:-/usr/local/share/isla-greeter}"
-qs -p "$share" >"$XDG_RUNTIME_DIR/isla-greeter-qs.log" 2>&1
-hyprctl dispatch exit >/dev/null 2>&1 || hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1

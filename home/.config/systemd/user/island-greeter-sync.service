@@ -1,0 +1,7 @@
+[Unit]
+Description=Copy Island look / name / screens to /var/lib/island-greeter
+ConditionPathIsDirectory=/var/lib/island-greeter
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/quickshell/island-greeter/island-greeter-sync

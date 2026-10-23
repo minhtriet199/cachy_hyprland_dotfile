@@ -1,4 +1,4 @@
--- Window look saved by Isla Settings → Windows (scripts/lookctl.py): opacity, backdrop tint, borders, corner radius, gaps.
+-- Window look saved by Island Settings → Windows (scripts/lookctl.py): opacity, backdrop tint, borders, corner radius, gaps.
 -- One "key=value" per line in ~/.local/state/hypr/look. Missing file = the values in decorations.lua stay.
 local f = io.open(os.getenv("HOME") .. "/.local/state/hypr/look")
 if not f then return end

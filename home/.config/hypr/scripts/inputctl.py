@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Mouse, touchpad, keyboard layout, cursor and text size (Isla Settings → Mouse & touchpad / Time & language).
+# Mouse, touchpad, keyboard layout, cursor and text size (Island Settings → Mouse & touchpad / Time & language).
 #   inputctl.py get                 → current values as JSON
 #   inputctl.py set key=value ...   → save to ~/.local/state/hypr/input and apply live
-# config/input_isla.lua reads the same file at startup / reload.
+# config/input_island.lua reads the same file at startup / reload.
 import json, os, re, subprocess, sys
 
 STATE = os.path.expanduser("~/.local/state/hypr/input")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Window look (Isla Settings → Windows): opacity, borders, corner radius, gaps.
+# Window look (Island Settings → Windows): opacity, borders, corner radius, gaps.
 #   lookctl.py get                 → current values as JSON
 #   lookctl.py set key=value ...   → save to ~/.local/state/hypr/look and apply live
 # config/look.lua reads the same file at startup / reload.

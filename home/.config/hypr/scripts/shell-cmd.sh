@@ -2,30 +2,30 @@
 # Shell-independent keybind helper.
 # Usage: shell-cmd.sh <noctalia msg args...>   e.g.  shell-cmd.sh panel-toggle launcher
 # Noctalia running -> passes the exact same command to "noctalia msg" (old behaviour).
-# Isla (Quickshell) running instead -> does the same job through Isla or plain tools.
+# Island (Quickshell) running instead -> does the same job through Island or plain tools.
 
-# Super+Tab: Isla's Islands screen, or the old fuzzel workspace list under Noctalia
+# Super+Tab: Island's Islands screen, or the old fuzzel workspace list under Noctalia
 if [ "$1" = islands ]; then
     pgrep -x noctalia >/dev/null && exec "$HOME/.config/hypr/scripts/ws-list.sh"
-    exec qs -c isla ipc call isla phone islands
+    exec qs -c island ipc call island phone islands
 fi
 
 if pgrep -x noctalia >/dev/null; then
     exec noctalia msg "$@"
 fi
 
-isla() { qs -c isla ipc call isla "$@"; }
+island() { qs -c island ipc call island "$@"; }
 notify() { notify-send -a "Shortcuts" "$1" "$2"; }
 
 case "$*" in
-    "panel-toggle launcher")                isla phone search ;;
+    "panel-toggle launcher")                island phone search ;;
     "panel-toggle launcher /emo")           notify "Emoji picker" "Only in Noctalia for now" ;;
-    "panel-toggle session")                 isla power ;;
-    "settings-toggle")                      isla phone settings ;;
-    "bar-toggle")                           isla bar ;;
-    "panel-toggle control-center bluetooth") isla phone quick ;;
-    "panel-toggle wallpaper")               isla phone wallpapers ;;
-    "panel-toggle clipboard")               isla phone clipboard ;;
+    "panel-toggle session")                 island power ;;
+    "settings-toggle")                      island phone settings ;;
+    "bar-toggle")                           island bar ;;
+    "panel-toggle control-center bluetooth") island phone quick ;;
+    "panel-toggle wallpaper")               island phone wallpapers ;;
+    "panel-toggle clipboard")               island phone clipboard ;;
     "volume-up")                            wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ ;;
     "volume-down")                          wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
     "volume-mute")                          wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;

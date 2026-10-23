@@ -21,7 +21,7 @@ end)
 -- Windows
 hl.bind("SUPER + Escape", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle session"), { description = "Power menu" })
 hl.bind("SUPER + Q", hl.dsp.exec_cmd("~/.config/hypr/scripts/pip-toggle.sh"), { description = "Picture-in-Picture (open / close)" })
-hl.bind("SUPER + Z", hl.dsp.exec_cmd("qs -c isla ipc call isla phonemode"), { description = "Phone: overlay ↔ window" })
+hl.bind("SUPER + Z", hl.dsp.exec_cmd("qs -c island ipc call island phonemode"), { description = "Phone: overlay ↔ window" })
 hl.bind("SUPER + D", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh bar-toggle"), { description = "Show / hide top bar" })
 hl.bind("SUPER + W", hl.dsp.window.close(), { description = "Close window" })
 hl.bind("SUPER + A", hl.dsp.window.float({ action = "toggle" }), { description = "Toggle floating" })
@@ -81,7 +81,7 @@ hl.bind("CONTROL + SHIFT + Escape", hl.dsp.exec_cmd("uwsm app -- kitty -e btop")
 hl.bind("SUPER + Space", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher"), { description = "App launcher" })
 hl.bind("SUPER + period", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle launcher /emo"), { description = "Emoji picker" })
 hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle session"), { description = "Power menu" })
-hl.bind("SUPER + K", hl.dsp.exec_cmd("qs -c isla ipc call isla phone settingsKeys"), { description = "Keyboard shortcuts (Isla phone)" })
+hl.bind("SUPER + K", hl.dsp.exec_cmd("qs -c island ipc call island phone settingsKeys"), { description = "Keyboard shortcuts (Island phone)" })
 
 -- Media & hardware
 hl.bind("SUPER + X", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh media toggle"), { locked = true, description = "Play / pause" })
@@ -110,7 +110,7 @@ hl.bind("SUPER + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/snip.sh"), { descri
 hl.bind("SUPER + Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh screenshot-fullscreen"), { description = "Screenshot full screen" })
 hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle wallpaper"), { description = "Wallpaper picker" })
 hl.bind("SUPER + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard"), { description = "Clipboard history" })
-hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/quickshell/isla/tools/clip-hide.sh"), { description = "Quick save" })
+hl.bind("SUPER + C", hl.dsp.exec_cmd("~/.config/quickshell/island/tools/clip-hide.sh"), { description = "Quick save" })
 
 -- Mouse
 hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { description = "Drag window" })

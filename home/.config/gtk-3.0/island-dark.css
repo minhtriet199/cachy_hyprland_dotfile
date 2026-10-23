@@ -1,0 +1,48 @@
+/* Island dark colours for GTK apps (keyring prompt, file pickers, GTK dialogs) — matches Island's Theme.qml.
+   gtk.css imports this; noctalia.css is the old dark one (switch the import back to undo). */
+@define-color accent_color #2F9EAB;
+@define-color accent_bg_color #55BFC6;
+@define-color accent_fg_color #191515;
+@define-color destructive_bg_color #4E3139;
+@define-color destructive_fg_color #191515;
+@define-color error_bg_color #4E3139;
+@define-color error_fg_color #191515;
+@define-color error_color #D9577B;
+@define-color success_color #3E9A5D;
+@define-color warning_color #F7A04B;
+@define-color window_bg_color #292216;
+@define-color window_fg_color #CFD6D9;
+@define-color view_bg_color #211E12;
+@define-color view_fg_color #CFD6D9;
+@define-color headerbar_bg_color #2D2618;
+@define-color headerbar_fg_color #CFD6D9;
+@define-color headerbar_backdrop_color #292216;
+@define-color popover_bg_color #251F14;
+@define-color popover_fg_color #CFD6D9;
+@define-color card_bg_color #251F14;
+@define-color card_fg_color #CFD6D9;
+@define-color dialog_bg_color #251F14;
+@define-color dialog_fg_color #CFD6D9;
+@define-color overview_bg_color #292216;
+@define-color overview_fg_color #CFD6D9;
+@define-color sidebar_bg_color #2D2618;
+@define-color sidebar_fg_color #CFD6D9;
+@define-color sidebar_backdrop_color #292216;
+@define-color sidebar_border_color #322D22;
+@define-color secondary_sidebar_bg_color #292216;
+@define-color secondary_sidebar_fg_color #CFD6D9;
+@define-color theme_selected_bg_color #2E3C3E;
+@define-color theme_selected_fg_color #D5DEE0;
+@define-color theme_unfocused_fg_color #5E7A84;
+@define-color theme_unfocused_text_color #5E7A84;
+@define-color theme_unfocused_bg_color #292216;
+@define-color theme_unfocused_base_color #211E12;
+@define-color theme_unfocused_selected_bg_color #253032;
+@define-color theme_unfocused_selected_fg_color #D5DEE0;
+
+/* Island touches: outlined, rounded buttons and fields, round dialogs */
+button { border-radius: 12px; }
+button:not(.flat):not(.titlebutton):not(.image-button) { border: 2px solid #CCD3D5; box-shadow: 0 2px 0 #CCD3D5; }
+button.suggested-action, button.default { background: #55BFC6; color: #191515; }
+entry, spinbutton, .entry { border-radius: 12px; border: 2px solid #CCD3D5; background-color: #211E12; }
+window.dialog, messagedialog, .message-dialog { border-radius: 22px; }

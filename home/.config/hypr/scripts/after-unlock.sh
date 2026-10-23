@@ -1,6 +1,6 @@
 #!/bin/sh
-# Auto-login: the first unlock is your login. Isla (or boot-lock-guard's hyprlock) runs this once, through Hyprland:
-# shortcuts back on, then the startup apps from Isla Settings → Apps (held until now so nothing opens behind the lock).
+# Auto-login: the first unlock is your login. Island (or boot-lock-guard's hyprlock) runs this once, through Hyprland:
+# shortcuts back on, then the startup apps from Island Settings → Apps (held until now so nothing opens behind the lock).
 m="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin"
 [ -e "$m" ] || exit 0
 rm -f "$m"
