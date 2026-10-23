@@ -254,6 +254,14 @@ Singleton {
     property var battery: ({ percent: 100, charging: false, plugged: false, status: "", minutes: -1, health: 100 })
     property string powerProfile: ""                    // asusctl: Quiet · Balanced · Performance
     function setProfile(p) { powerProfile = p; run(["asusctl", "profile", "set", p]) }
+    // a game opens (steam_app_* / gamescope window) while in Silent: power mode → Performance (asusctl "Balanced");
+    // when the last one closes it goes back to Silent — unless you changed it yourself meanwhile
+    readonly property bool gameOpen: clients.some(c => /^(steam_app_|gamescope)/.test(c.cls))
+    property string _profileBefore: ""
+    onGameOpenChanged: {
+        if (gameOpen) { if (powerProfile === "Quiet") { _profileBefore = powerProfile; setProfile("Balanced") } }   // only up from Silent (Turbo stays)
+        else { if (_profileBefore && powerProfile === "Balanced") setProfile(_profileBefore); _profileBefore = "" }
+    }
     property string netDown: "0 B/s"
     property string netUp: "0 B/s"
     property var _net: null

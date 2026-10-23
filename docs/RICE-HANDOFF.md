@@ -235,6 +235,7 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] Making Phone app and for this system to connect them light weight when running in the background  connect phone notification to this system  connect let me control this system one the phone
 - [ ] check update diskmap currently it kinda bad
 - [ ] Adding a website display image wallpaper
+- [ ] Check the git install  work for all system  and my fresh system
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):
