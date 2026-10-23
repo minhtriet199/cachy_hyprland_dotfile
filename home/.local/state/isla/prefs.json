@@ -2,7 +2,7 @@
   "notifications": true,
   "dock": false,
   "bar": true,
-  "size": 0.7,
+  "size": 0.8,
   "barStyle": "Transparent",
   "barPos": "Top",
   "wallpaper": "/home/gamer/Pictures/Wallpapers/Fuc6eq4 (1).png",
@@ -36,7 +36,7 @@
   "city": "Ho Chi Minh City",
   "autoTz": false,
   "dndGaming": false,
-  "theme": "custom",
+  "theme": "isla",
   "boxStyle": "ring",
   "themeHue": 0.78,
   "dark": false,
@@ -65,9 +65,7 @@
     ]
   ],
   "clipPins": [
-    "/home/gamer/Documents/Md_File/RICE-HANDOFF.md",
-    "4. Reply \"done\".",
-    "✻ Baked for 46s · done 16:32"
+    "/home/gamer/Documents/Md_File/RICE-HANDOFF.md"
   ],
   "clipDays": 15,
   "phoneSpot": "Middle",
@@ -75,5 +73,5 @@
     "#ebd6d6",
     "#dcb7b7"
   ],
-  "phoneWindow": false
+  "phoneWindow": true
 }

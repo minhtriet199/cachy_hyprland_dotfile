@@ -123,7 +123,7 @@ real settings are not touched.
 | Snip editor | `hypr/scripts/snip.sh` + `SnipEditor.qml`. Enter/Save = file + copy, Esc/click outside = copy only. Resize handles, Select tool. Window id `sn` (never `ed`, see §6). |
 | Record → OBS | `tools/obsctl.py`, `share-pick.sh`, `SharePicker.qml`, `SvcRecord.qml`, `hypr/xdph.conf`. See memory `obs-record-flow`. XDPH window addresses are decimal, Hyprland's hex. |
 | Calendar notes + reminders | `SvcSchedule.qml`, `DropCalendar.qml`; data `~/.local/state/isla/schedule.json`. Held during Do not disturb. |
-| Clipboard | pins in `Prefs.clipPins` + `~/.local/share/isla/clip-pins/`; `tools/clip-prune.sh` deletes unpinned items older than `Prefs.clipDays`. Quick saves: Super+Shift+C → `tools/clip-hide.sh` (silent, selection or clipboard) → files in dot-folder `~/.local/share/isla/.k` (not synced); Super+Shift+V = screen `clipHidden`; copied back with `wl-copy --sensitive` so cliphist skips it. |
+| Clipboard | pins in `Prefs.clipPins` + `~/.local/share/isla/clip-pins/`; `tools/clip-prune.sh` deletes unpinned items older than `Prefs.clipDays`. Quick saves: Super+Shift+C → `tools/clip-hide.sh` (silent; presses copy in the app, restores the old clipboard — primary selection is off) → files in dot-folder `~/.local/share/isla/.k` (not synced); Super+Shift+V = screen `clipHidden`; copied back with `wl-copy --sensitive` so cliphist skips it. |
 | Brightness per screen | `DropBattery.qml` (DDC or HDR nits) |
 | Double-tap Ctrl rings | `hypr/config/locate.lua` → `ipc locate X Y` → `LocatePointer.qml` |
 | Game mode | Settings → Quick or `ipc gamemode`: animations off, phone light mode, visualizer paused |
