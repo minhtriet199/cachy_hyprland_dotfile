@@ -221,6 +221,22 @@ real settings are not touched.
 Pictures: `Md_File/todo-refs/`. Designs: `~/Downloads/isla-handoff/design/png/` (Edit-Desktop, Widgets, Lock, Wallpapers).
 The owner now **wants desktop widgets** (through Edit Desktop). Done so far: Ctrl+S turn, phone window, wallpaper live preview.
 
+**Status** — the live list is the to-do board **"Rice wish list"** (`~/Documents/Todo/Rice wish list.md`, bar ✓ card).
+Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools/wishlist-sync.py`) on every save:
+
+<!-- wishlist:start — copied from ~/Documents/Todo/Rice wish list.md (Island ✓ card): edit the board, not this -->
+- [ ] Right-click empty desktop → menu: Edit Desktop · Wallpapers · Group themes (candy card)
+    - [right-click-desktop-menu.png](</home/gamer/Documents/Md_File/todo-refs/right-click-desktop-menu.png>)
+- [ ] Edit Desktop mode: framed preview, tray tabs Widgets / Bar / Theme / Presets, drag with snap guides, Lock all, Done
+- [ ] More widgets: clocks, date, user card, weather, calendar, to-do list, visualizer, music, stats (several styles each)
+    - [widget-sheet-examples.png](</home/gamer/Documents/Md_File/todo-refs/widget-sheet-examples.png>)
+- [ ] More themes (wait until I pick them): a theme sets UI style + widget style; Presets = saved layouts
+- [x] New lock / login flow
+- [ ] Making Phone app and for this system to connect them light weight when running in the background  connect phone notification to this system  connect let me control this system one the phone
+<!-- wishlist:end -->
+
+**Details** (reference notes for the wishes above):
+
 1. **Right-click empty desktop → menu:** Edit Desktop · Wallpapers · Group themes (candy card, see todo-refs picture).
 2. **Edit Desktop mode:** desktop shrinks into a framed preview; bottom tray tabs **Widgets / Bar / Theme / Presets**;
    left click add/edit, right click remove, drag to move with snap guides (centre line, same width); picked widget shows

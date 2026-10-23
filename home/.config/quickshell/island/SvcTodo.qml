@@ -62,9 +62,13 @@ Scope {
         printErrors: false
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: t.items = t.parse(text())
+        onLoaded: { t.items = t.parse(text()); if (t.path === t.wishBoard) wishSync.restart() }
         onLoadFailed: t.items = []
     }
+
+    // the "Rice wish list" board is copied into the handoff doc (RICE-HANDOFF.md §8b) after each change
+    readonly property string wishBoard: dir + "/Rice wish list.md"
+    Timer { id: wishSync; interval: 800; onTriggered: Quickshell.execDetached(["python3", Quickshell.shellDir + "/tools/wishlist-sync.py"]) }
 
     // ── boards ──
     function open(p) { draft = false; path = p; Prefs.set("todoLast", p) }

@@ -28,6 +28,7 @@ cp -a "$HOME/.local/share/color-schemes/Island.colors" "$HOME/.local/share/color
 # GTK apps (keyring prompt, file pickers, dialogs) in Island colours
 for v in 3.0 4.0; do mkdir -p home/.config/gtk-$v && cp -a "$HOME/.config/gtk-$v/gtk.css" "$HOME/.config/gtk-$v/"island*.css home/.config/gtk-$v/ 2>/dev/null; [ -f "$HOME/.config/gtk-$v/settings.ini" ] && cp -a "$HOME/.config/gtk-$v/settings.ini" home/.config/gtk-$v/; done
 # handoff notes for the next person / AI
+python3 "$HOME/.config/quickshell/island/tools/wishlist-sync.py" 2>/dev/null   # handoff §8b ← "Rice wish list" board
 mkdir -p docs && cp -a "$HOME/Documents/Md_File/RICE-HANDOFF.md" docs/ 2>/dev/null
 # Dolphin look (icon view, previews, panels, Island Dark colours)
 cp -a "$HOME/.config/dolphinrc" "home/.config/" 2>/dev/null
