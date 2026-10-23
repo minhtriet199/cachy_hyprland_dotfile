@@ -7,7 +7,8 @@ import Quickshell.Hyprland
 //   - [ ] text               an item ("- [x]" = done)
 //       - [name](<path>)     a file under it (pictures / videos show as thumbnails, other files as links)
 // Opening a file pins the card on top; when the window that opened for it closes, the card unpins.
-// Loads on the first open of the card (Prefs.todoLast, else a new blank board).
+// Loads on the first open of the card (Prefs.todoLast, else a new blank board). A new board is only a draft
+// until its first item: left empty, no file is ever written (a board emptied later stays).
 Scope {
     id: t
     property var svc
@@ -19,6 +20,12 @@ Scope {
     property var boards: []                         // { path, name, time (ms), done, total }, newest first
     property bool pinned: false                     // card stays up over other windows (clicks go through around it)
     property bool bigOpen: false                    // the big window
+    property bool draft: false                      // new board, nothing added yet → no file
+    property string filter: "all"                   // all · done · todo (card and big window alike)
+    // what the list shows: done items first, then the rest, each { it, i } (i = place in the file)
+    readonly property var view: items.map((x, i) => ({ it: x, i: i }))
+        .filter(v => filter === "all" || (filter === "done") === v.it.done)
+        .sort((a, b) => (b.it.done - a.it.done) || (a.i - b.i))
 
     function kind(f) {
         const e = f.split(".").pop().toLowerCase();
@@ -40,7 +47,10 @@ Scope {
         return "# " + name + "\n\n" + items.map(i => "- [" + (i.done ? "x" : " ") + "] " + i.text.replace(/\n/g, " ")
             + i.files.map(f => "\n    - [" + f.split("/").pop() + "](<" + f + ">)").join("")).join("\n") + "\n";
     }
-    function setItems(v) { items = v; if (path) { file.setText(render()); listSoon.restart() } }
+    function setItems(v) {
+        items = v; if (!path || (draft && !v.length)) return
+        draft = false; file.setText(render()); listSoon.restart()
+    }
     function add(txt, files) { if (!txt.trim() && !files.length) return; setItems(items.concat([{ text: txt.trim(), done: false, files: files }])) }
     function toggle(i) { setItems(items.map((x, k) => k === i ? Object.assign({}, x, { done: !x.done }) : x)) }
     function edit(i, txt) { setItems(items.map((x, k) => k === i ? Object.assign({}, x, { text: txt.trim() }) : x)) }
@@ -57,12 +67,17 @@ Scope {
     }
 
     // ── boards ──
-    function open(p) { path = p; Prefs.set("todoLast", p) }
+    function open(p) { draft = false; path = p; Prefs.set("todoLast", p) }
     property bool started: false
-    function start() { if (started) return; started = true; listP.first = true; listP.running = true }
-    function newBoard() { act.go('mkdir -p "$1"; n="New board"; i=1; while [ -e "$1/$n.md" ]; do i=$((i+1)); n="New board $i"; done; printf "# %s\\n\\n" "$n" > "$1/$n.md" && echo "$1/$n.md"', [], p => t.open(p)) }
+    function start() { if (started) return; started = true; Quickshell.execDetached(["mkdir", "-p", dir]); listP.first = true; listP.running = true }
+    function newBoard() {
+        const taken = boards.map(x => x.name); let n = "New board", k = 1;
+        while (taken.includes(n)) n = "New board " + (++k);
+        items = []; path = dir + "/" + n + ".md"; draft = true;       // a file only once something is added
+    }
     function rename(n) {
         n = n.replace(/[\/\n]/g, " ").trim(); if (!n || n === name || !path) return
+        if (draft) { path = dir + "/" + n + ".md"; return }
         act.go('[ -e "$1/$2.md" ] && exit 0; mv "$3" "$1/$2.md" && echo "$1/$2.md"', [n, path], p => { if (p) { t.open(p); t.setItems(t.items) } })
     }
     function removeBoard(p) { act.go('rm -f "$2"', [p], () => { if (p === t.path) { t.path = ""; t.items = [] } }) }
