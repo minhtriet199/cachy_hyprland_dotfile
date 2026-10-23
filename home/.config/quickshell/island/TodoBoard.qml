@@ -5,6 +5,7 @@ import Quickshell.Io
 // One to-do board (Services.todo): items with a tick box, text (click to change), ✕; under an item its pictures /
 // videos as thumbnails and other files as links (click = open, Ctrl+click = show in Dolphin). Below: write a new item,
 // Paste a picture or attach Files, Add. k = text size (1 in the bar card, bigger in the big window).
+// Deleting asks once more: ✕ turns into "Delete?" (right-click on a file: "Remove?") for 3 s.
 Item {
     id: b
     property var todo
@@ -16,6 +17,9 @@ Item {
     function focusField() { field.forceActiveFocus() }
     function addNow() { todo.add(field.text, pending); field.text = ""; pending = [] }
     Connections { target: b.todo; function onPicked(f) { b.pending = b.pending.concat(f) } }
+    property string sure: ""                      // what waits for the second click
+    Timer { id: sureT; interval: 3000; onTriggered: b.sure = "" }
+    function ask(key, act) { if (sure === key) { sure = ""; act() } else { sure = key; sureT.restart() } }
 
     // video: a frame made once with ffmpegthumbnailer (~/.cache/island/todo-thumbs)
     component VideoThumb: Image {
@@ -81,15 +85,21 @@ Item {
                                             color: Theme.seaDeep; font.underline: true; elide: Text.ElideMiddle; width: Math.min(implicitWidth, inner.width) } }
                                         // click = open · Ctrl+click = show in Dolphin · right click = take it off
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                            onClicked: m => { if (m.button === Qt.RightButton) b.todo.unattach(row.index, fi.modelData)
+                                            onClicked: m => { if (m.button === Qt.RightButton) b.ask("f" + row.index + fi.modelData, () => b.todo.unattach(row.index, fi.modelData))
                                                               else b.todo.openFile(fi.modelData, m.modifiers & Qt.ControlModifier) } }
+                                        UiTag { visible: b.sure === "f" + row.index + fi.modelData; anchors.centerIn: parent; text: "Remove?"; fill: Theme.pinkSoft; ink: Theme.ink; textColor: Theme.textDeep; px: 11 * b.k; tilt: -4 }
                                     }
                                 }
                             }
                         }
-                        UiCandy { x: row.width - width - 8 * b.k; y: 7 * b.k; width: 22 * b.k; height: width; radius: width / 2; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
-                            onClicked: b.todo.remove(row.index)
-                            Glyph { anchors.centerIn: parent; name: "close"; size: 10 * b.k; stroke: 2.8 } }
+                        UiCandy {
+                            id: del
+                            readonly property bool asking: b.sure === "i" + row.index
+                            x: row.width - width - 8 * b.k; y: 7 * b.k; width: asking ? dq.implicitWidth + 16 * b.k : 22 * b.k; height: 22 * b.k; radius: height / 2
+                            bw: 2; drop: 0; hi: 0; fill: asking ? Theme.pinkSoft : Theme.paper; pressable: true
+                            onClicked: b.ask("i" + row.index, () => b.todo.remove(row.index))
+                            Glyph { visible: !del.asking; anchors.centerIn: parent; name: "close"; size: 10 * b.k; stroke: 2.8 }
+                            UiText { id: dq; visible: del.asking; anchors.centerIn: parent; text: "Delete?"; px: 11 * b.k; w: 700 } }
                     }
                 }
                 UiText { visible: b.todo.items.length === 0; width: parent.width; height: 30 * b.k; horizontalAlignment: Text.AlignHCenter

@@ -73,6 +73,8 @@
     "#ebd6d6",
     "#dcb7b7"
   ],
-  "phoneWindow": true,
-  "todoLast": ""
+  "todoLast": "/home/gamer/Documents/Todo/Rice wish list.md",
+  "phoneRemember": false,
+  "phoneWinLast": false,
+  "phoneBigLast": false
 }
