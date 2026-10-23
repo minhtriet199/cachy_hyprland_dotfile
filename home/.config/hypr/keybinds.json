@@ -621,6 +621,24 @@
   "repeating": false
  },
  {
+  "keys": "SUPER + SHIFT + C",
+  "action": "exec",
+  "arg": "~/.config/quickshell/isla/tools/clip-hide.sh",
+  "category": "Utilities",
+  "desc": "Quick save",
+  "locked": false,
+  "repeating": false
+ },
+ {
+  "keys": "SUPER + SHIFT + V",
+  "action": "exec",
+  "arg": "qs -c isla ipc call isla phone clipHidden",
+  "category": "Utilities",
+  "desc": "Quick saves",
+  "locked": false,
+  "repeating": false
+ },
+ {
   "keys": "SUPER + mouse:272",
   "action": "drag",
   "arg": "",

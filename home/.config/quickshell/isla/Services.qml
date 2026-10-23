@@ -596,8 +596,10 @@ Singleton {
     FileView { path: Quickshell.env("HOME") + "/.cache/isla/cliptimes"; watchChanges: true; printErrors: false
         onFileChanged: { reload(); s.loadClips() } }
     Process { id: clipAct; onExited: s.loadClips() }
-    function clipCopy(c) { run(c.id ? ["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id] : ["sh", "-c", "wl-copy < \"$0\"", c.file]) }
-    function clipDelete(c) { if (clipAct.running) return; if (c.pinned) clipPin(c); if (!c.id) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
+    // hidden pins are copied as "sensitive" → cliphist skips them, they never show in the normal history
+    function clipCopy(c) { run(c.id ? ["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id] : ["sh", "-c", "wl-copy $1 < \"$0\"", c.file, c.hidden ? "--sensitive" : ""]) }
+    function clipDelete(c) { if (c.hidden) { hidAct.command = ["rm", "-f", c.file]; hidAct.running = true; return }
+        if (clipAct.running) return; if (c.pinned) clipPin(c); if (!c.id) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
     // wipe keeps pinned items (deletes every line whose text is not in the pins)
     function clipWipe() { if (clipAct.running) return
         clipAct.command = ["bash", "-c", "cliphist list | awk -F'\\t' 'NR==FNR{p[$0];next} !(substr($0,index($0,\"\\t\")+1) in p)' <(printf '%s\\n' \"$@\") - | cliphist delete", "_"].concat(Prefs.clipPins)
@@ -608,6 +610,17 @@ Singleton {
         Prefs.set("clipPins", c.pinned ? Prefs.clipPins.filter(k => k !== c.key) : Prefs.clipPins.concat([c.key]))
         clips = c.pinned && !c.id ? clips.filter(x => x.key !== c.key)      // show it now, no reload
               : clips.map(x => x.key === c.key ? Object.assign({}, x, { pinned: !c.pinned, file: c.pinned ? "" : f }) : x) }
+    // ── hidden pins: Super+Shift+C (tools/clip-hide.sh) saves one file each; only Super+Shift+V (screen clipHidden) shows them ──
+    property var hiddenClips: []
+    Process { id: hidList; command: ["sh", "-c", "cd \"$0\" 2>/dev/null || exit 0; for f in $(ls -r); do printf '%s\\t' \"$f\"; case $f in *.txt) head -c 300 \"$f\" | tr '\\n\\t' '  ' ;; esac; echo; done",
+                                     Quickshell.env("HOME") + "/.local/share/isla/.k"]
+        stdout: StdioCollector { onStreamFinished: s.hiddenClips = this.text.split("\n").filter(l => l.includes("\t")).map(l => {
+            const i = l.indexOf("\t"), f = l.slice(0, i), t = l.slice(i + 1), img = f.endsWith(".png");
+            return { id: "", key: f, text: img ? "PNG image" : t, kind: img ? "IMG" : s.clipKind(t), info: "", time: parseInt(f), pinned: true, hidden: true,
+                     file: hidList.command[3] + "/" + f };
+        }) } }
+    Process { id: hidAct; onExited: s.loadHidden() }
+    function loadHidden() { hidList.running = true }
     // full text / image file for the preview card
     property string clipFull: ""
     property string clipImage: ""

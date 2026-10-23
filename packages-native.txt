@@ -217,4 +217,5 @@ xdg-user-dirs
 xf86-video-amdgpu
 xfsprogs
 xl2tpd
+ydotool
 zip

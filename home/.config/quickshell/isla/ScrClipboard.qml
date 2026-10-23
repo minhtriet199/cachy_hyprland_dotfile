@@ -8,18 +8,21 @@ Item {
     property string query: ""
     property int sel: 0
     property bool pinsOnly: false
+    property bool hidden: false        // hidden pins (Super+Shift+V): own list, no tabs, no pin button
     signal go(string screen)
     signal done()
-    readonly property var list: { const q = query.toLowerCase(); return svc.clips.filter(x => (!pinsOnly || x.pinned) && (!q || x.text.toLowerCase().includes(q) || x.kind.toLowerCase() === q)) }
+    readonly property var list: { const q = query.toLowerCase(); return (hidden ? svc.hiddenClips : svc.clips).filter(x => (!pinsOnly || x.pinned) && (!q || x.text.toLowerCase().includes(q) || x.kind.toLowerCase() === q)) }
     readonly property var cur: list.length ? list[Math.min(sel, list.length - 1)] : null
     readonly property var chip: ({ TXT: "#D8F1F4", CMD: "#D6EED7", DIR: "#FFE7A8", URL: "#FBD5E0", IMG: "#FDDCCB" })
     function focusField() { field.forceActiveFocus() }
-    Component.onCompleted: svc.loadClips()
+    function load() { if (hidden) svc.loadHidden(); else svc.loadClips() }
+    Component.onCompleted: load()
     // the screen stays loaded between openings → refresh every time it shows, and while open
-    onVisibleChanged: { if (visible) { svc.loadClips(); sel = 0 } else { field.text = ""; _shown = "" } }   // search starts empty next time
+    onVisibleChanged: { if (visible) { load(); sel = 0 } else { field.text = ""; _shown = "" } }   // search starts empty next time
     // the list refreshes every 1.5 s with new objects: only reload the preview when a different item is picked (else it flickers)
     property string _shown: ""
-    onCurChanged: { const id = cur ? cur.id : ""; if (id !== _shown) { _shown = id; svc.clipPreview(cur) } }
+    // (keyed by text: pins kept as files have no cliphist id; only while shown: both clipboard screens share the preview)
+    onCurChanged: { if (!visible) return; const k = cur ? cur.key : ""; if (k !== _shown) { _shown = k; svc.clipPreview(cur) } }
     onQueryChanged: sel = 0
     onPinsOnlyChanged: sel = 0
     function copy() { if (!cur) return; svc.clipCopy(cur); c.done() }
@@ -59,14 +62,14 @@ Item {
         // title
         Item {
             width: parent.width; height: 34
-            UiCandy { width: 30; height: 30; radius: 9; bw: 2.5; ink: Theme.inkPhone; drop: 0; hi: 0; fill: Theme.sun; anchors.verticalCenter: parent.verticalCenter
-                Glyph { anchors.centerIn: parent; name: "clipboard"; size: 15; stroke: 2.6 } }
-            UiText { x: 40; anchors.verticalCenter: parent.verticalCenter; text: "Clipboard"; px: 22; w: 700; color: Theme.textDeep }
+            UiCandy { width: 30; height: 30; radius: 9; bw: 2.5; ink: Theme.inkPhone; drop: 0; hi: 0; fill: c.hidden ? Theme.lilacSoft : Theme.sun; anchors.verticalCenter: parent.verticalCenter
+                Glyph { anchors.centerIn: parent; name: c.hidden ? "eyeOff" : "clipboard"; size: 15; stroke: 2.6 } }
+            UiText { x: 40; anchors.verticalCenter: parent.verticalCenter; text: c.hidden ? "Hidden pins" : "Clipboard"; px: 22; w: 700; color: Theme.textDeep }
             Row {
                 anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 6
                 // tabs: chosen one is a dark ink tile
                 Repeater {
-                    model: ["All", "Pinned"]
+                    model: c.hidden ? [] : ["All", "Pinned"]
                     delegate: UiCandy {
                         id: tab
                         required property string modelData
@@ -110,7 +113,7 @@ Item {
                 Column { x: 58; width: parent.width - 58 - 68; anchors.verticalCenter: parent.verticalCenter
                     UiText { width: parent.width; text: modelData.text.replace(/\s+/g, " "); px: 13; w: 600; height: 17 }
                     UiText { visible: text !== ""; width: parent.width; text: c.svc.ago(modelData.time); fam: "n"; px: 10; w: 800; color: Theme.textSoft; height: 13 } }
-                UiCandy { x: parent.width - 60; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
+                UiCandy { visible: !c.hidden; x: parent.width - 60; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; bw: 2; ink: Theme.inkPhone; drop: 0; hi: 0
                     fill: row.modelData.pinned ? Theme.inkPhone : Theme.paper; pressable: true
                     onClicked: c.svc.clipPin(row.modelData)
                     Glyph { anchors.centerIn: parent; name: "pushpin"; size: 13; stroke: 2.6; rotation: 30; color: row.modelData.pinned ? "#FFFFFF" : Theme.text } }
@@ -137,7 +140,7 @@ Item {
                     x: 14; y: 22; width: parent.width - 28; height: parent.height - 22 - 52
                     source: c.svc.clipImage; fillMode: Image.PreserveAspectFit; asynchronous: true; cache: false
                 }
-                UiText { visible: !c.cur; anchors.centerIn: parent; text: c.pinsOnly ? "Nothing pinned yet" : "Nothing copied yet"; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
+                UiText { visible: !c.cur; anchors.centerIn: parent; text: c.hidden ? "Nothing hidden yet · Super+Shift+C" : c.pinsOnly ? "Nothing pinned yet" : "Nothing copied yet"; fam: "n"; px: 13; w: 800; color: Theme.textSoft }
                 UiText { x: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; height: 22
                     text: !c.cur ? "" : c.cur.kind === "IMG" ? c.cur.info : (c.svc.clipFull.length + " characters · " + (c.svc.clipFull.split("\n").length) + " line" + (c.svc.clipFull.split("\n").length > 1 ? "s" : ""))
                     fam: "n"; px: 11; w: 800; color: Theme.textSoft }

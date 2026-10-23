@@ -1,6 +1,7 @@
 #!/bin/sh
 # Clipboard history saver (autostart: wl-paste --watch this). Same as `cliphist store`, and also writes
 # down when it was copied ("<id> <unix time>" in ~/.cache/isla/cliptimes) so the phone can show the time.
+[ "$CLIPBOARD_STATE" = sensitive ] && exit 0      # hidden pins are copied as sensitive: keep them out of the history
 cliphist store || exit 0
 id=$(cliphist list | head -n 1 | cut -f 1)
 [ -n "$id" ] || exit 0

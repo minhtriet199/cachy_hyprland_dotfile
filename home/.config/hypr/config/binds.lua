@@ -110,6 +110,8 @@ hl.bind("SUPER + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/snip.sh"), { descri
 hl.bind("SUPER + Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh screenshot-fullscreen"), { description = "Screenshot full screen" })
 hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle wallpaper"), { description = "Wallpaper picker" })
 hl.bind("SUPER + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle clipboard"), { description = "Clipboard history" })
+hl.bind("SUPER + SHIFT + C", hl.dsp.exec_cmd("~/.config/quickshell/isla/tools/clip-hide.sh"), { description = "Quick save" })
+hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("qs -c isla ipc call isla phone clipHidden"), { description = "Quick saves" })
 
 -- Mouse
 hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { description = "Drag window" })

@@ -105,9 +105,9 @@ Item {
     property string orient: "portrait"
     function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
-    readonly property var allScreens: ["home", "quick", "islands", "clipboard", "profile", "calc", "settings", "settingsQuick", "wallpapers",
+    readonly property var allScreens: ["home", "quick", "islands", "clipboard", "clipHidden", "profile", "calc", "settings", "settingsQuick", "wallpapers",
                                        "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap"]
-    readonly property var tallScreens: ["quick", "clipboard", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
+    readonly property var tallScreens: ["quick", "clipboard", "clipHidden", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
     function rotate() {
         if (!shown) return;
         const was = wantLand;
@@ -484,14 +484,16 @@ Item {
     // ── screens ──
     property string pendingQuery: ""
     function compFor(n, land) {
-        if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : n === "calc" ? cCalcTall : cProfileTall;
-        return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, profile: cProfile, calc: cCalc, settings: cSettings,
+        if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : n === "clipHidden" ? cHidTall : n === "calc" ? cCalcTall : cProfileTall;
+        return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, clipHidden: cHid, profile: cProfile, calc: cCalc, settings: cSettings,
                   settingsQuick: cSettingsQuick, wallpapers: cWallpapers })[n] || cSetPage;
     }
     // upright layouts inside a scroller for the short sideways phone
     Component { id: cQuickTall; ScrQuickWide { svc: stage.svc; onGo: s => stage.go(s); onBack: stage.back(); onClose: stage.close() } }
     Component { id: cClipTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
         ScrClipboard { width: parent.width; height: 760; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
+    Component { id: cHidTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
+        ScrClipboard { width: parent.width; height: 760; focus: true; hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
     Component { id: cProfileTall; Flickable { clip: true; contentHeight: 820; boundsBehavior: Flickable.StopAtBounds
         ScrProfile { width: parent.width; height: 820; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
     Component { id: cHome; ScrHome { svc: stage.svc; onGo: s => stage.go(s); onLaunch: a => { stage.svc.launch(a); stage.close() }
@@ -505,6 +507,7 @@ Item {
     Component { id: cCalc; ScrCalc { svc: stage.svc; onDone: stage.close() } }
     Component { id: cProfile; ScrProfile { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
     Component { id: cClip; ScrClipboard { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
+    Component { id: cHid; ScrClipboard { hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
     Component { id: cIslands; ScrIslands { svc: stage.svc; monitor: stage.monitor; onGo: s => stage.go(s); onDone: stage.close() } }
     Component { id: cSettings; ScrSettings { svc: stage.svc; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     Component { id: cSettingsQuick; ScrSettingsQuick { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
