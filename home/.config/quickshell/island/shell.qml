@@ -368,6 +368,8 @@ ShellRoot {
                     Item {
                         width: scr.dw; height: scr.band
                         scale: scr.sc; transformOrigin: Item.TopLeft
+                        // empty bar space closes an open card, like clicking anywhere else (the pills sit on top)
+                        MouseArea { anchors.fill: parent; enabled: scr.drop !== ""; acceptedButtons: Qt.AllButtons; onClicked: scr.drop = "" }
                         UiCandy { visible: Prefs.barStyle === "Float"; x: 8; y: scr.barPad - 6; width: parent.width - 16; height: 62; radius: 26; fill: Theme.cream; drop: 0; hi: 3 }
                         Rectangle { visible: Prefs.barStyle === "Straight"; width: parent.width; height: scr.band - 4; y: scr.barTop ? 0 : 4; color: Theme.ink
                             Rectangle { x: 0; y: scr.barTop ? 0 : 3; width: parent.width; height: parent.height - 3; color: Theme.cream } }
