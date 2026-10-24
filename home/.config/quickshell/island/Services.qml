@@ -66,7 +66,7 @@ Singleton {
         { title: "Start postgres", sub: "docker compose up -d", glyph: "database", tint: "#3E9A5D", keywords: "docker pg db postgres", cmd: ["sh", "-c", "cd ~/docker/postgres && docker compose up -d"] },
         { title: "System monitor", sub: "btop", glyph: "pulse", tint: "#2F9EAB", keywords: "btop task cpu ram", cmd: ["kitty", "btop"] },
         { title: "Lock screen", sub: "loginctl lock-session", glyph: "lock", tint: "#5E7A84", keywords: "lock", cmd: ["loginctl", "lock-session"] },
-        { title: "Suspend", sub: "Sleep the island", glyph: "moon", tint: "#A893EC", keywords: "sleep suspend", cmd: ["systemctl", "suspend"] },
+        { title: "Sleep", sub: "Hibernate (or screens off until it's set up)", glyph: "moon", tint: "#A893EC", keywords: "sleep suspend hibernate", cmd: ["sh", Quickshell.shellDir + "/tools/sleep.sh"] },
         { title: "Reboot", sub: "Restart the computer", glyph: "reload", tint: "#EE7D9C", keywords: "restart reboot", cmd: ["systemctl", "reboot"] },
         { title: "Shut down", sub: "Turn the island off", glyph: "power", tint: "#E2607F", keywords: "poweroff shutdown off", cmd: ["systemctl", "poweroff"] }
     ]
@@ -487,10 +487,15 @@ Singleton {
     function _mins(a) { return a && a.length > _ix ? Number(a[_ix]) || 0 : 0 }
     // the first key / mouse move after any of them turns the screens back on: Hyprland's own wake-on-input is off
     // (it would also light the laptop panel under a closed lid), so without this the screens stayed black
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleLock); onIdle: s.lockRequested(); onBack: s.screensOn() }
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleScreen); onIdle: s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]); onBack: s.screensOn() }
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleSleep); onBack: s.screensOn()
-        onIdle: { s.lockRequested(); s.run(["sh", "-c", "sleep 2; systemctl suspend"]) } }   // lock first, then sleep
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleLock); onBack: s.screensOn()
+        onIdle: { s.powerLog("idle → lock"); s.lockRequested() } }
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
+        onIdle: { s.powerLog("idle → screens off"); s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) } }
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
+    // Sleep = hibernate when it's set up, else screens off (tools/sleep.sh) — never suspend: this laptop can't wake from it
+    function sleepNow(why) { powerLog(why + " → sleep"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
+    // timeline of idle / lid / sleep events: ~/.local/state/island/power.log (to check what happened while you were away)
+    function powerLog(msg) { run(["sh", "-c", "echo \"$(date '+%F %T') $1\" >> \"$HOME/.local/state/island/power.log\"", "log", msg]) }
     function screensOn() {
         for (const m of Hyprland.monitors.values)
             if (!(lidClosed && m.name.startsWith("eDP"))) run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"on\", monitor = \"" + m.name + "\" })"])
@@ -503,11 +508,11 @@ Singleton {
     function _laptopDpms(on) { run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + (on ? "on" : "off") + "\", monitor = \"" + _laptopScreen + "\" })"]) }
     property bool lidClosed: false
     function lid(closed) {
-        lidClosed = closed;
+        lidClosed = closed; powerLog(closed ? "lid closed" : "lid opened");
         if (!closed) { _laptopDpms(true); return }
         let a = (Prefs.lidClose || [])[_ix] || "sleep";
         if (a === "sleep" && Hyprland.monitors.values.length > 1) a = "screen";   // docked: keep working on the other screen
-        if (a === "sleep") { lockRequested(); run(["sh", "-c", "sleep 2; systemctl suspend"]) }
+        if (a === "sleep") sleepNow("lid");
         else if (a === "lock") { lockRequested(); _laptopDpms(false) }
         else if (a === "screen") _laptopDpms(false);
     }
@@ -748,7 +753,7 @@ Singleton {
     function power(what) {
         if (what === "lock") lockRequested();
         else if (what === "logout") run(["sh", "-c", "command -v uwsm >/dev/null && uwsm stop || hyprctl dispatch exit"]);
-        else if (what === "suspend") run(["systemctl", "suspend"]);
+        else if (what === "suspend") sleepNow("power menu");
         else if (what === "reboot") run(["systemctl", "reboot"]);
         else if (what === "shutdown") run(["systemctl", "poweroff"]);
     }

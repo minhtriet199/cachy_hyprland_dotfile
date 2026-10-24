@@ -18,12 +18,12 @@
     5
   ],
   "idleScreen": [
-    10,
-    3
+    5,
+    5
   ],
   "idleSleep": [
-    0,
-    15
+    10,
+    10
   ],
   "phoneLite": false,
   "lidClose": [

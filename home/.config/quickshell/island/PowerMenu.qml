@@ -18,7 +18,7 @@ FocusScope {
     readonly property var opts: [
         { id: "lock",     label: "Lock",      glyph: "lock",       tint: Theme.gSea,   ok: svc.hasLocker, confirm: false, doing: "Locking" },
         { id: "logout",   label: "Log out",   glyph: "arrowRight", tint: Theme.gSun,   ok: true, confirm: true, doing: "Logging out" },
-        { id: "suspend",  label: "Suspend",   glyph: "moon",       tint: Theme.gLilac, ok: true, confirm: true, doing: "Suspending" },
+        { id: "suspend",  label: "Sleep",     glyph: "moon",       tint: Theme.gLilac, ok: true, confirm: true, doing: "Going to sleep" },
         { id: "reboot",   label: "Reboot",    glyph: "reload",     tint: Theme.gLeaf,  ok: true, confirm: true, doing: "Rebooting" },
         { id: "shutdown", label: "Shut down", glyph: "power",      tint: Theme.gBerry, ok: true, confirm: true, doing: "Shutting down" }
     ]
