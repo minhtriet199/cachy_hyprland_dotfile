@@ -300,7 +300,8 @@ Item {
                             required property string modelData
                             readonly property bool cur: stage.portShown === modelData
                             readonly property bool prev: stage.prevScreen === modelData && !stage.prevLand && !stage.wantLand
-                            anchors.fill: parent
+                            width: parent.width; height: parent.height
+                            y: cur ? -stage.peek : 0
                             active: cur || prev || item !== null
                             opacity: cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
                             visible: opacity > 0
@@ -312,6 +313,10 @@ Item {
                             onLoaded: if (cur && item.focusField) item.focusField()
                         }
                     }
+                    // small overlay phone: its bottom sits below the screen edge → the wheel (where the page itself
+                    // doesn't scroll) slides the page up so the bottom can be reached
+                    WheelHandler { enabled: stage.peekMax > 0
+                        onWheel: e => stage.peek = Math.max(0, Math.min(stage.peekMax, stage.peek - e.angleDelta.y / 2)) }
                     // big mode: nav bar at the bottom of the phone (the side rail is hidden then)
                     UiCandy {
                         id: navBar
@@ -546,7 +551,24 @@ Item {
             stage.focusFirst(stage.wantLand ? lBody : pBody);
         }
     }
-    onScreenChanged: focusSoon.restart()
+    onScreenChanged: { focusSoon.restart(); peek = 0 }
+    // ── small overlay phone: how far the page can slide up (the phone's bottom is below the screen edge, less when lifted) ──
+    readonly property real peekMax: shown && !big && !windowed && !wantLand ? Math.max(0, 290 - pHolder.spot) : 0
+    property real peek: 0
+    Behavior on peek { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+    onPeekMaxChanged: peek = Math.min(peek, peekMax)
+    Binding { target: pBody.screen; property: "clip"; value: stage.peek > 0 }
+    // Tab / arrows onto a button below the edge → slide up to it; back near the top → slide back
+    Connections {
+        target: stage.Window.window
+        function onActiveFocusItemChanged() {
+            const a = stage.Window.activeFocusItem;
+            if (!a || stage.peekMax <= 0 || stage.zoneOf(a.parent) !== pBody || a.cursorPosition !== undefined) return;
+            const scr = pBody.screen, top = a.mapToItem(scr, 0, 0).y + stage.peek, bot = top + a.height;
+            const seen = scr.height - stage.peekMax;            // page height that's on screen without sliding
+            stage.peek = Math.max(0, Math.min(stage.peekMax, bot + 16 - seen, top - 16))
+        }
+    }
     function switchZone() {
         const screenZone = wantLand ? lBody : pBody;
         const buttons = big && !wantLand ? navBar : railCol;
