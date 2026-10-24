@@ -27,6 +27,12 @@ Item {
     onQueryChanged: sel = 0
     onPinsOnlyChanged: sel = 0
     function copy() { if (!cur) return; svc.clipCopy(cur); c.done() }
+    // Tab / Shift+Tab flips All ↔ Pinned (instead of the phone's button-focus walk); hidden pins have no tabs → Tab does nothing
+    function tabKey(e) {
+        if (e.key !== Qt.Key_Tab && e.key !== Qt.Key_Backtab) return false;
+        if (!hidden) pinsOnly = !pinsOnly;
+        e.accepted = true; return true
+    }
     // Ctrl tapped 3 times in a row (nothing else between, within 0.8 s) → hidden pins ↔ clipboard
     property int _taps: 0
     property real _tapAt: 0
@@ -39,6 +45,7 @@ Item {
     // typing while on the list goes to the search box (letters, numbers, Backspace)
     Keys.onPressed: e => {
         c.ctrlTap(e);
+        if (c.tabKey(e)) return;
         if (field.activeFocus || (e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) return;
         if (e.key === Qt.Key_Delete) { if (c.cur) c.svc.clipDelete(c.cur); e.accepted = true }   // (its text is an invisible char: typed into the search it emptied the list)
         else if (e.key === Qt.Key_Backspace) { field.forceActiveFocus(); field.text = field.text.slice(0, -1); e.accepted = true }
@@ -58,7 +65,7 @@ Item {
                 x: 46; width: parent.width - 46 - 44; anchors.verticalCenter: parent.verticalCenter; clip: true
                 font.family: Theme.display; font.weight: 600; font.pixelSize: 18; color: Theme.text
                 onTextChanged: c.query = text
-                Keys.onPressed: e => c.ctrlTap(e)
+                Keys.onPressed: e => { c.ctrlTap(e); c.tabKey(e) }
                 Keys.onUpPressed: c.sel = Math.max(0, c.sel - 1)
                 Keys.onDownPressed: c.sel = Math.min(c.list.length - 1, c.sel + 1)
                 Keys.onReturnPressed: c.copy()

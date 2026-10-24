@@ -7,9 +7,38 @@
 --     without taking focus away from you.
 --   * Every window of the same game (splash, launcher, main window) goes to the same workspace.
 
+-- A game = anything Steam launched (its process carries SteamAppId), so native Linux games
+-- (e.g. "Desperados III.x86_64") count too, not only Proton's steam_app_* windows.
+-- Found classes go to ~/.cache/island/game-classes so Island's Performance switch knows them.
+local classesFile = os.getenv("HOME") .. "/.cache/island/game-classes"
+local gameClass = {} -- class -> true (game) / false (checked, not a game)
+do
+    local f = io.open(classesFile)
+    if f then for l in f:lines() do if l ~= "" then gameClass[l] = true end end f:close() end
+end
+
+local function steamLaunched(pid)
+    local f = pid and io.open("/proc/" .. pid .. "/environ")
+    if not f then return false end
+    local env = f:read("a") or ""
+    f:close()
+    return env:match("%zSteamAppId=[1-9]") ~= nil or env:match("^SteamAppId=[1-9]") ~= nil
+end
+
 local function isGame(w)
     local c = w.class or ""
-    return c:match("^steam_app_%d+") ~= nil or c == "gamescope"
+    if c:match("^steam_app_%d+") or c == "gamescope" then return true end
+    if gameClass[c] ~= nil then return gameClass[c] end
+    local yes = steamLaunched(w.pid)
+    if c ~= "" then
+        gameClass[c] = yes
+        if yes then
+            os.execute("mkdir -p '" .. classesFile:match("(.*)/") .. "'")
+            local f = io.open(classesFile, "a")
+            if f then f:write(c, "\n") f:close() end
+        end
+    end
+    return yes
 end
 
 -- first workspace id - 1 for each screen (scripts/ws.sh numbering)

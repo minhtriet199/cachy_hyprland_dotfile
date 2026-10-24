@@ -236,6 +236,7 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] check update diskmap currently it kinda bad
 - [ ] Adding a website display image wallpaper
 - [ ] Check the git install  work for all system  and my fresh system
+- [ ] Island task manager in the System card: top apps grouped (Helium = 1 row), icon, CPU %, RAM (PSS), End button; lazy, only polls while open; keep Open btop for full view; helper in C (7 ms/tick vs Python 32 ms, ~0.35% CPU at 2 s), install.sh compiles it
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):

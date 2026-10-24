@@ -256,7 +256,12 @@ Singleton {
     function setProfile(p) { powerProfile = p; run(["asusctl", "profile", "set", p]) }
     // a game opens (steam_app_* / gamescope window) while in Silent: power mode → Performance (asusctl "Balanced");
     // when the last one closes it goes back to Silent — unless you changed it yourself meanwhile
-    readonly property bool gameOpen: clients.some(c => /^(steam_app_|gamescope)/.test(c.cls))
+    readonly property bool gameOpen: clients.some(c => isGameCls(c.cls))
+    // games = steam_app_* / gamescope, plus classes hypr games.lua found launched by Steam (native Linux games)
+    property var gameClasses: []
+    function isGameCls(c) { return /^(steam_app_|gamescope)/.test(c) || gameClasses.includes(c) }
+    FileView { path: Quickshell.env("HOME") + "/.cache/island/game-classes"; watchChanges: true; printErrors: false
+        onLoaded: s.gameClasses = text().split("\n").filter(l => l); onFileChanged: reload() }
     property string _profileBefore: ""
     onGameOpenChanged: {
         if (gameOpen) { if (powerProfile === "Quiet") { _profileBefore = powerProfile; setProfile("Balanced") } }   // only up from Silent (Turbo stays)
@@ -802,7 +807,7 @@ Singleton {
 
     // you're in a game (Steam / Proton / gamescope window focused) → the bar stops its moving bits so the GPU stays with the game
     readonly property bool gaming: { try { const t = Hyprland.activeToplevel
-        return !!t && /^(steam_app.*|gamescope)$/.test(String((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "")) } catch (e) { return false } }
+        return !!t && s.isGameCls(String((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "")) } catch (e) { return false } }
     // ── music visualizer (cava, only while something is playing, not while gaming) ──
     property var viz: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Process {
