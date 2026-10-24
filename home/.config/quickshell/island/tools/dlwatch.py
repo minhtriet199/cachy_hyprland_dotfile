@@ -3,6 +3,8 @@
 {"items": [{"name", "app", "done", "total"}], "speed": bytes/s, "busy": bool}.
 Steam: appmanifest_*.acf BytesToDownload in every library; done = the manifest's BytesDownloaded, or (Steam only
 saves that every ~10 min) the bytes written so far in steamapps/downloading/<appid> scaled from BytesToStage.
+A game stays listed (busy) until Steam has also installed it: StateFlags "update started" (1024) or its downloading
+folder still there; after the download it shows as installing.
 Browsers: *.crdownload (Chromium, Helium), *.part (Firefox), *.download in ~/Downloads (size only; they don't store the total). Any other app shows
 up in the network speed. busy = something is downloading or the network is still pulling > 150 KB/s."""
 import glob, json, os, re, sys, time
@@ -41,13 +43,16 @@ def steam_items(libs):
                 t = open(f, errors="ignore").read()
             except OSError:
                 continue
-            v = dict(re.findall(r'"(name|BytesToDownload|BytesDownloaded|BytesToStage)"\s+"([^"]*)"', t))
+            v = dict(re.findall(r'"(name|BytesToDownload|BytesDownloaded|BytesToStage|StateFlags)"\s+"([^"]*)"', t))
             total, done = int(v.get("BytesToDownload") or 0), int(v.get("BytesDownloaded") or 0)
             stage, appid = int(v.get("BytesToStage") or 0), re.sub(r"\D", "", os.path.basename(f))
+            flags, folder = int(v.get("StateFlags") or 4), os.path.join(lib, "downloading", appid)
+            if not (flags & 1024 or os.path.isdir(folder)):
+                continue
             if total and done < total and stage:
-                done = min(total - 1, max(done, written(os.path.join(lib, "downloading", appid)) * total // stage))
-            if total and done < total:
-                out.append({"name": v.get("name", "Steam game"), "app": "Steam", "done": done, "total": total})
+                done = min(total - 1, max(done, written(folder) * total // stage))
+            out.append({"name": v.get("name", "Steam game"), "app": "Steam", "done": done, "total": total,
+                        "installing": bool(total) and done >= total})
     return out
 
 

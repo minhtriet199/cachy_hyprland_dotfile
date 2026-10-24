@@ -39,7 +39,7 @@ Item {
                     Rectangle { width: parent.width * (modelData.total ? modelData.done / modelData.total : 1); height: parent.height; radius: 3
                         color: Theme.sea; opacity: modelData.total ? 0.6 : 0.2 } }
                 UiText { fam: "n"; px: 12; w: 800; color: "#FFFFFF"; opacity: 0.35; height: 22
-                    text: modelData.app + (modelData.total ? "  ·  " + ds.size(modelData.done) + " of " + ds.size(modelData.total) : "") + "  ·  " + ds.rate(modelData.rate !== undefined ? modelData.rate : ds.d.speed) }
+                    text: modelData.installing ? modelData.app + "  ·  Installing…" : modelData.app + (modelData.total ? "  ·  " + ds.size(modelData.done) + " of " + ds.size(modelData.total) : "") + "  ·  " + ds.rate(modelData.rate !== undefined ? modelData.rate : ds.d.speed) }
             }
         }
         UiText { visible: ds.status !== ""; fam: "n"; px: 15; w: 800; color: "#FFFFFF"; opacity: 0.45; text: ds.status }
