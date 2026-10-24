@@ -327,8 +327,13 @@ ShellRoot {
     IpcHandler {
         target: "island"
         function phone(screen: string): void { shell.phone(screen) }
-        // Download mode: "toggle" · "keep" (done dialog → Keep using) — qs -c island ipc call island download toggle
-        function download(what: string): void { if (what === "keep") Services.download.keepUsing(); else Services.toggle("download") }
+        // Download mode: "toggle" · "keep" (done dialog → Keep using) · "start-shutdown" / "start-keep" (on, no question)
+        // — qs -c island ipc call island download toggle
+        function download(what: string): void {
+            if (what === "keep") Services.download.keepUsing();
+            else if (what.startsWith("start-")) Services.download.begin(what.slice(6));
+            else Services.toggle("download")
+        }
         function close(): void { shell.phoneClose() }
         // Super+Z: open phone → overlay ↔ window; closed phone → opens as a window
         function phonemode(): void { if (shell.phoneGhost || swapProbe.running) return; if (shell.phoneOpen) Prefs.phoneWindow = !Prefs.phoneWindow; else shell.phone("home", true) }
