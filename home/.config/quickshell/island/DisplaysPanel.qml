@@ -237,6 +237,14 @@ Item {
                 UiText { text: "HDR"; px: 14; w: 700; anchors.verticalCenter: parent.verticalCenter }
                 UiSwitch { on: !!dp.scr && dp.scr.hdr; onColor: Theme.purple; onToggled: dp.svc.screenCmd(["hdr", dp.scr.output, dp.scr.hdr ? "off" : "on"]) } }
         }
+        // gamma (all screens, through hyprsunset; shared with night light)
+        Item {
+            visible: !!dp.scr
+            width: parent.width; height: 40
+            UiText { y: 0; text: "GAMMA · " + Math.round(dp.svc.gamma * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 16 }
+            UiSlider { y: 22; width: parent.width; value: (dp.svc.gamma - 0.5) / 0.5; color: "#A08AEA"
+                onPicked: v => dp.svc.setGamma(0.5 + v * 0.5) }
+        }
         // resolution / refresh / scale chips
         Repeater {
             model: dp.scr ? [

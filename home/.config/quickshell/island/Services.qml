@@ -239,7 +239,6 @@ Singleton {
     }
     onGameModeChanged: if (Prefs.ready) applyGameMode()
     Connections { target: Prefs; function onReadyChanged() { if (Prefs.ready) s.applyGameMode() } }
-    property bool easyEffects: false
     // OBS recording for the bar timer (SvcRecord.qml)
     property bool obsUp: false
     SvcRecord { id: recordPart; obsUp: s.obsUp }
@@ -282,7 +281,9 @@ Singleton {
             "for d in /sys/class/power_supply/A*; do read -r x 2>/dev/null < $d/online && echo ac=$x; break; done",
             "read -r x 2>/dev/null < /sys/firmware/acpi/platform_profile && echo prof=$x",
             "h0=; h1=; for d in /sys/class/rfkill/rfkill*; do read -r x 2>/dev/null < $d/soft && { [ \"$x\" = 0 ] && h0=0; [ \"$x\" = 1 ] && h1=1; }; done; echo rf=$h0$h1",
-            "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in night:hyprsunset fx:easyeffects obs:obs; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
+            "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in obs:obs; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
+            // hyprsunset does night light (temperature < 6000) and gamma; only asked while it runs
+            "case \"$p\" in *\" hyprsunset \"*) t=$(hyprctl hyprsunset temperature 2>/dev/null); echo night=$([ \"${t:-6000}\" -lt 6000 ] && echo on || echo off); echo gam=$(hyprctl hyprsunset gamma 2>/dev/null);; *) echo night=off; echo gam=100;; esac",
             "rx=0; tx=0; { read -r _; read -r _; while read -r l; do set -- ${l/:/ }; [ \"$1\" = lo ] && continue; rx=$((rx + $2)); tx=$((tx + ${10})); done; } < /proc/net/dev; echo \"net=$rx $tx\""
         ].join("; ")]
         stdout: StdioCollector { onStreamFinished: {
@@ -302,7 +303,7 @@ Singleton {
                 s.checkBattery();
             }
             s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
-            s.nightLight = v.night === "on"; s.easyEffects = v.fx === "on"; s.obsUp = v.obs === "on";
+            s.nightLight = v.night === "on"; if (parseInt(v.gam) > 0) s.gamma = parseInt(v.gam) / 100; s.obsUp = v.obs === "on";
             const n = (v.net || "0 0").split(" ").map(Number), t = Date.now();
             if (s._net) { const dt = (t - s._net.t) / 1000; s.netDown = s.speed((n[0] - s._net.r) / dt); s.netUp = s.speed((n[1] - s._net.x) / dt) }
             s._net = { r: n[0], x: n[1], t: t };
@@ -752,10 +753,11 @@ Singleton {
         else if (what === "ime") { imeVi = !imeVi; run(["fcitx5-remote", "-t"]) }
         else if (what === "dnd") dnd = !dnd;
         else if (what === "airplane") { airplane = !airplane; run(["rfkill", airplane ? "block" : "unblock", "all"]) }
-        else if (what === "night") { nightLight = !nightLight; run(nightLight ? ["sh", "-c", "pgrep -x hyprsunset || hyprsunset -t " + nightTemp + " >/dev/null 2>&1 &"] : ["pkill", "-x", "hyprsunset"]) }
+        else if (what === "night") { nightLight = !nightLight; const g = Math.round(gamma * 100);     // one hyprsunset for night light + gamma
+            run(["sh", "-c", nightLight ? "if pgrep -x hyprsunset >/dev/null; then hyprctl hyprsunset temperature " + nightTemp + "; else hyprsunset -t " + nightTemp + " -g " + g + " >/dev/null 2>&1 & fi"
+                                        : g < 100 ? "hyprctl hyprsunset temperature 6000; hyprctl hyprsunset identity" : "pkill -x hyprsunset"]) }
         else if (what === "awake") keepAwake = !keepAwake;
         else if (what === "game") Prefs.flip("gameMode");
-        else if (what === "fx") run(easyEffects ? ["pkill", "-x", "easyeffects"] : ["sh", "-c", "easyeffects --gapplication-service >/dev/null 2>&1 &"]);
         else if (what === "mute") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
         else if (what === "mic") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]);
         statusSoon.restart();
@@ -763,7 +765,10 @@ Singleton {
     function setVolume(v) { setSinkVolume(v) }
     function setMicVolume(v) { micVolume = v; run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", v.toFixed(2)]) }
     function setBrightness(v) { brightness = v; run(["brightnessctl", "set", Math.round(Math.max(0.02, v) * 100) + "%"]) }
-    function setGamma(v) { gamma = Math.max(0.5, v) }
+    // gamma through hyprsunset (shared with night light): started only when needed, stopped at 100% with night light off
+    function setGamma(v) { const g = Math.round(Math.max(0.5, Math.min(1, v)) * 100); gamma = g / 100
+        run(["sh", "-c", "if pgrep -x hyprsunset >/dev/null; then " + (g >= 100 && !nightLight ? "pkill -x hyprsunset" : "hyprctl hyprsunset gamma " + g)
+                         + "; elif [ " + g + " -lt 100 ]; then hyprsunset -i -g " + g + " >/dev/null 2>&1 & fi"]) }
     function tool(name) {
         if ((name === "record" || name === "recordPick") && !recording) busy("rec");
         if (name === "fullscreen") hypr("hl.dsp.window.fullscreen()", "fullscreen");

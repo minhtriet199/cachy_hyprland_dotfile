@@ -35,32 +35,25 @@ Item {
                     Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: q.svc.recording ? "#E2607F" : Theme.berry } }
             }
         }
-        // toggles: 2 wide per row
+        // brightness (gamma lives in Settings → Displays)
+        Column {
+            width: parent.width; spacing: 6
+            UiText { x: 4; text: "☼ Brightness " + Math.round(q.svc.brightness * 100) + "%"; px: 13; w: 600; height: 16 }
+            PhoneLevel { width: parent.width; height: 12; value: q.svc.brightness; color: Theme.sunDeep; onPicked: v => q.svc.setBrightness(v) }
+        }
+        // chips, 2 per row: click opens its settings page, right-click switches it on / off
         Grid {
             columns: 2; rowSpacing: 10; columnSpacing: 10
             readonly property real wideW: (q.cw - 10) / 2
-            PhoneToggleTile { width: parent.wideW; glyph: "wifi"; title: "Wi-Fi"; on: q.svc.wifi.on; sub: q.svc.wifi.on ? (q.svc.wifi.ssid || "On") : "Off"; onClicked: q.svc.toggle("wifi"); onRightClicked: q.go("settingsWifi") }
-            PhoneToggleTile { width: parent.wideW; glyph: "bluetooth"; title: "Bluetooth"; on: q.svc.bluetooth.on; sub: q.svc.bluetooth.on ? (q.svc.bluetooth.name || "On") : "Off"; onClicked: q.svc.toggle("bt"); onRightClicked: q.go("settingsBt") }
-            PhoneToggleTile { width: parent.wideW; glyph: "mic"; title: "Microphone"; on: q.svc.micOn; sub: Math.round(q.svc.micVolume * 100) + "%"; level: q.svc.micVolume; levelColor: Theme.berry
-                onClicked: q.svc.toggle("mic"); onRightClicked: q.go("settingsSound"); onLevelPicked: v => q.svc.setMicVolume(v) }
-            PhoneToggleTile { width: parent.wideW; glyph: q.svc.muted ? "mute" : "volume"; title: "Speaker"; on: !q.svc.muted; sub: Math.round(q.svc.volume * 100) + "%"; level: q.svc.volume; levelColor: Theme.leaf
-                onClicked: q.svc.toggle("mute"); onRightClicked: q.go("settingsSound"); onLevelPicked: v => q.svc.setVolume(v) }
+            PhoneToggleTile { width: parent.wideW; glyph: "wifi"; title: "Wi-Fi"; on: q.svc.wifi.on; sub: q.svc.wifi.on ? (q.svc.wifi.ssid || "On") : "Off"; onClicked: q.go("settingsWifi"); onRightClicked: q.svc.toggle("wifi") }
+            PhoneToggleTile { width: parent.wideW; glyph: "bluetooth"; title: "Bluetooth"; on: q.svc.bluetooth.on; sub: q.svc.bluetooth.on ? (q.svc.bluetooth.name || "On") : "Off"; onClicked: q.go("settingsBt"); onRightClicked: q.svc.toggle("bt") }
+            // Sound = speaker + mic: bars speaker (left) | mic (right); right-click mutes the speaker
+            PhoneToggleTile { width: parent.wideW; glyph: q.svc.muted ? "mute" : "volume"; title: "Sound"; on: !q.svc.muted
+                sub: Math.round(q.svc.volume * 100) + "% · mic " + (q.svc.micOn ? Math.round(q.svc.micVolume * 100) + "%" : "off")
+                level: q.svc.volume; levelColor: Theme.leaf; level2: q.svc.micVolume; level2Color: Theme.berry
+                onClicked: q.go("settingsSound"); onRightClicked: q.svc.toggle("mute"); onLevelPicked: v => q.svc.setVolume(v); onLevel2Picked: v => q.svc.setMicVolume(v) }
             PhoneToggleTile { width: parent.wideW; glyph: "cloud"; title: "Cloudflare WARP"; on: q.svc.warp.connected; sub: q.svc.warp.connected ? "Connected" : "Disconnected"; onClicked: q.svc.toggle("warp") }
-            PhoneToggleTile { width: parent.wideW; glyph: "fx"; title: "Easy Effects"; on: q.svc.easyEffects; onClicked: q.svc.toggle("fx") }
 
-        }
-        // gamma / brightness
-        Column {
-            width: parent.width; spacing: 6
-            topPadding: 2
-            Item { width: parent.width; height: 16
-                UiText { x: 4; text: "◐ Gamma " + Math.round(q.svc.gamma * 100) + "%"; px: 13; w: 600 }
-                UiText { anchors.right: parent.right; anchors.rightMargin: 4; text: "☼ Brightness " + Math.round(q.svc.brightness * 100) + "%"; px: 13; w: 600 } }
-            Row {
-                spacing: 10
-                PhoneLevel { width: (q.cw - 10) / 2; height: 12; value: q.svc.gamma; color: "#A08AEA"; onPicked: v => q.svc.setGamma(v) }
-                PhoneLevel { width: (q.cw - 10) / 2; height: 12; value: q.svc.brightness; color: Theme.sunDeep; onPicked: v => q.svc.setBrightness(v) }
-            }
         }
         // notifications
         Item {
