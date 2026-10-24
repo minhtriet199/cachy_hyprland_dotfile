@@ -493,7 +493,7 @@ Singleton {
         onIdle: { s.powerLog("idle → screens off"); s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) } }
     IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
     // "Hibernate" (Prefs keys still say sleep) = hibernate, or screens off if it isn't set up (tools/sleep.sh) — never suspend: this laptop can't wake from it
-    function sleepNow(why) { powerLog(why + " → hibernate"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
+    function sleepNow(why) { if (download.on) download.stop(); powerLog(why + " → hibernate"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
     // timeline of idle / lid / sleep events: ~/.local/state/island/power.log (to check what happened while you were away)
     function powerLog(msg) { run(["sh", "-c", "echo \"$(date '+%F %T') $1\" >> \"$HOME/.local/state/island/power.log\"", "log", msg]) }
     function screensOn() {
@@ -507,18 +507,32 @@ Singleton {
     readonly property string _laptopScreen: { const m = Hyprland.monitors.values.find(m => m.name.startsWith("eDP")); return m ? m.name : "eDP-1" }
     function _laptopDpms(on) { run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + (on ? "on" : "off") + "\", monitor = \"" + _laptopScreen + "\" })"]) }
     property bool lidClosed: false
-    // the real lid state at start (Island may restart with the lid already closed)
+    property bool laptopAway: false          // the laptop screen is switched off as a monitor (lid closed, another screen in use)
+    readonly property string _lidMove: Quickshell.shellDir + "/tools/lid-move.py"
+    // the real lid state at start (Island may restart with the lid already closed); lid open but the laptop screen was
+    // left switched off (Island restarted / crashed) → back on
     Process { running: true; command: ["sh", "-c", "cat /proc/acpi/button/lid/*/state 2>/dev/null"]
-        stdout: StdioCollector { onStreamFinished: s.lidClosed = this.text.includes("closed") } }
+        stdout: StdioCollector { onStreamFinished: { s.lidClosed = this.text.includes("closed"); if (!s.lidClosed) s.run(["python3", s._lidMove, "fix"]) } } }
+    // Close the lid → its setting for plugged in / battery, taken at that moment (unplugging later changes nothing):
+    //   Hibernate: hibernates (Download mode stops) · Nothing: nothing ·
+    //   Screen off / Lock with another screen: the laptop's windows move to new workspaces there (focus stays where it is)
+    //   and the laptop screen is switched off as a monitor — live only, never saved (tools/lid-move.py) ·
+    //   Screen off / Lock without one: just the laptop screen off.
+    // Open the lid → the laptop screen comes back, empty (nothing moves back).
     function lid(closed) {
         lidClosed = closed; powerLog(closed ? "lid closed" : "lid opened");
-        if (!closed) { _laptopDpms(true); return }
-        let a = (Prefs.lidClose || [])[_ix] || "sleep";
-        if (a === "sleep" && Hyprland.monitors.values.length > 1) a = "screen";   // docked: keep working on the other screen
-        if (a === "sleep") sleepNow("lid");
-        else if (a === "lock") { lockRequested(); _laptopDpms(false) }
-        else if (a === "screen") _laptopDpms(false);
+        if (!closed) { laptopAway = false; run(["python3", _lidMove, "fix"]); _laptopDpms(true); return }
+        const a = (Prefs.lidClose || [])[_ix] || "sleep";
+        if (a === "sleep") { sleepNow("lid"); return }
+        if (a === "nothing") return;
+        if (a === "lock") lockRequested();
+        const other = Hyprland.monitors.values.find(m => !m.name.startsWith("eDP"));
+        if (other) { laptopAway = true; powerLog("laptop screen off, its windows → " + other.name); run(["python3", _lidMove, "off", _laptopScreen, other.name]) }
+        else _laptopDpms(false);
     }
+    // no screen left at all (the other screen unplugged while the laptop one is off) → the laptop screen comes back
+    readonly property int _monCount: Hyprland.monitors.values.length
+    on_MonCountChanged: if (_monCount === 0) { laptopAway = false; powerLog("no screen left → laptop screen back on"); run(["python3", _lidMove, "fix"]) }
 
     // ── screen time recorder (Noctalia did this; only runs while Noctalia is off) ──
     property var _stPending: ({})

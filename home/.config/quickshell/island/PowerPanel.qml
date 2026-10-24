@@ -25,7 +25,7 @@ Item {
         PowerTimer { width: parent.width; key: "lidClose"; glyph: "desktop"; title: "Close the lid"
             choices: [["sleep", "Hibernate"], ["screen", "Screen off"], ["lock", "Lock"], ["nothing", "Nothing"]] }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-            text: "Hibernate saves everything and powers off (no battery used); press the power button to come back. With a second screen plugged in, closing the lid only turns off the laptop screen, so you can keep working." }
+            text: "Hibernate saves everything and powers off (no battery used); press the power button to come back. Screen off / Lock with another screen plugged in: the laptop's windows move to that screen and the laptop screen switches off until you open the lid. Unplugging while it's closed changes nothing." }
         Item { width: 1; height: 2 }
         UiRow {
             width: parent.width; glyph: "moon"; title: "Keep awake"; sub: pp.svc.keepAwake ? "Screens stay on, no lock or hibernate" : "Timers above apply"

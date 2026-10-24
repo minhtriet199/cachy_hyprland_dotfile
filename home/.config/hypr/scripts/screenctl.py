@@ -205,7 +205,7 @@ def mon_lua(out, d, st_entry):
     """Build an hl.monitor({...}) call for one output. d: mode,pos,scale,transform,mirror,off."""
     if d.get("off"):
         return 'hl.monitor({output=%s, disabled=true})' % _lua_str(out)
-    parts = ['output=%s' % _lua_str(out),
+    parts = ['output=%s' % _lua_str(out), 'disabled=false',      # explicit: a screen switched off earlier stays off without it
              'mode=%s' % _lua_str(d.get("mode") or "preferred"),
              'position=%s' % _lua_str(d.get("pos") or "auto"),
              'scale=%s' % (d.get("scale") or "1")]

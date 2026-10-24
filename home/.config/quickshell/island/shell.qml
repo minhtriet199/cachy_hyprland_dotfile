@@ -121,8 +121,16 @@ ShellRoot {
         WlSessionLock {
             id: sessionLock
             WlSessionLockSurface {
+                id: lockSurf
                 color: "#A3D0E1"
                 LockScreen { anchors.fill: parent; svc: Services; lock: lockCtl; Component.onCompleted: forceActiveFocus() }
+                // Download mode while locked: the dim download view sits on the lock (a key / mouse wakes → the lock screen)
+                Rectangle {
+                    visible: Services.download.on && Services.download.dim
+                    anchors.fill: parent; color: "#000000"
+                    readonly property real sc: (lockSurf.screen ? lockSurf.screen.height : 1080) / 1080 * Prefs.size
+                    DownloadScreen { width: parent.width / parent.sc; height: parent.height / parent.sc; scale: parent.sc; transformOrigin: Item.TopLeft; svc: Services }
+                }
             }
         }
         Connections { target: Services; function onLockRequested() { lockCtl.lockNow() } }
@@ -712,10 +720,14 @@ ShellRoot {
                     exclusionMode: ExclusionMode.Ignore
                     color: "#000000"
                     WlrLayershell.layer: WlrLayer.Overlay
-                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    // it takes the keys while it shows: the key you press to wake isn't typed into an app, and a key right
+                    // after it dims still wakes (the idle watch only counts input after 2 quiet seconds)
+                    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
                     WlrLayershell.namespace: "island-download"
-                    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }      // clicks don't reach the apps under it
-                    DownloadScreen { width: scr.dw; height: scr.modelData.height / scr.sc; scale: scr.sc; transformOrigin: Item.TopLeft; svc: Services }
+                    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; hoverEnabled: true      // clicks don't reach the apps under it
+                        onPressed: Services.download.dim = false; onPositionChanged: Services.download.dim = false }
+                    DownloadScreen { width: scr.dw; height: scr.modelData.height / scr.sc; scale: scr.sc; transformOrigin: Item.TopLeft; svc: Services
+                        focus: true; Keys.onPressed: e => { Services.download.dim = false; e.accepted = true } }
                 }
                 // … and when it's done: "Downloads finished" + 2 min to shut down, on the screen you're on
                 PanelWindow {

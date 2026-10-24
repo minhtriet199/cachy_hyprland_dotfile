@@ -31,11 +31,11 @@ Scope {
         const lap = ms.find(n => n.startsWith("eDP"));
         return lap && !svc.lidClosed ? lap : (ms.find(n => !n.startsWith("eDP")) || ms[0] || "");
     }
-    property var _saved: null                // power mode / brightness / keyboard light to put back
+    property var _saved: null                // power mode to put back (brightness + keyboard light: brightnessctl -s / -r)
 
     function start() {
         if (on) return;
-        _saved = { profile: svc.powerProfile, brightness: svc.brightness };
+        _saved = { profile: svc.powerProfile };
         svc.run(["sh", "-c", "brightnessctl -d 'asus::kbd_backlight' -s set 0 >/dev/null 2>&1"]);   // -s remembers it
         if (svc.powerProfile !== "Quiet") svc.setProfile("Quiet");
         items = []; speed = 0; saw = false; quiet = 0; names = []; startedAt = Date.now();
@@ -55,7 +55,7 @@ Scope {
         stdout: StdioCollector { onStreamFinished: {
             let v; try { v = JSON.parse(this.text) } catch (e) { return }
             dl.svc.powerLog("Island restarted during download mode → screens and settings put back");
-            dl.svc.screensOn(); if (v.brightness) dl.svc.setBrightness(v.brightness);
+            dl.svc.screensOn(); dl.svc.run(["sh", "-c", "[ \"$(brightnessctl -m | cut -d, -f4)\" = 5% ] && brightnessctl -r"]);   // still at the dim 5% → saved level
             if (v.profile && v.profile !== dl.svc.powerProfile) dl.svc.setProfile(v.profile);
             dl.svc.run(["sh", "-c", "brightnessctl -d 'asus::kbd_backlight' -r >/dev/null 2>&1"]);
         } } }
@@ -72,16 +72,19 @@ Scope {
         onTriggered: { dl.countdown -= 1; if (dl.countdown <= 0) { dl.asking = false; dl.svc.powerLog("no answer in 2 min → shut down"); dl.svc.power("shutdown") } } }
 
     // dim on / off: the other screens off, the dim screen at 5% (its own brightness comes back when you wake it)
+    // the laptop's own brightness is saved / restored by brightnessctl (-s / -r), never from Island's copy (that one
+    // is still the 80% default for a moment after a restart)
+    property bool _dimmedLaptop: false
     onDimChanged: {
-        if (dim) { _saved.brightness = svc.brightness; _applyDim() }
-        else { svc.screensOn(); svc.setBrightness(_saved.brightness) }
+        if (dim) _applyDim();
+        else { svc.screensOn(); if (_dimmedLaptop) { _dimmedLaptop = false; svc.run(["brightnessctl", "-r"]) } }
     }
     // lid opened / closed while dim: the dim view moves to the other screen → that one on, the rest off
     onAodScreenChanged: if (on && dim) _applyDim()
     function _dpms(name, state) { svc.run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + state + "\", monitor = \"" + name + "\" })"]) }
     function _applyDim() {
         for (const m of Hyprland.monitors.values) _dpms(m.name, m.name === aodScreen ? "on" : "off");
-        if (aodScreen.startsWith("eDP")) svc.run(["brightnessctl", "set", "5%"]);
+        if (aodScreen.startsWith("eDP") && !_dimmedLaptop) { _dimmedLaptop = true; svc.run(["brightnessctl", "-s", "set", "5%"]) }
     }
     // dim: any key / mouse wakes (a 2 s idle watch: its "back" is the first input) · awake: 1 min untouched → dim again
     IdleTimer { respectInhibitors: false; minutes: !dl.on ? 0 : dl.dim ? 2 / 60 : 1
