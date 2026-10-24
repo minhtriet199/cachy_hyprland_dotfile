@@ -319,6 +319,8 @@ ShellRoot {
     IpcHandler {
         target: "island"
         function phone(screen: string): void { shell.phone(screen) }
+        // Download mode: "toggle" · "keep" (done dialog → Keep using) — qs -c island ipc call island download toggle
+        function download(what: string): void { if (what === "keep") Services.download.keepUsing(); else Services.toggle("download") }
         function close(): void { shell.phoneClose() }
         // Super+Z: open phone → overlay ↔ window; closed phone → opens as a window
         function phonemode(): void { if (shell.phoneGhost || swapProbe.running) return; if (shell.phoneOpen) Prefs.phoneWindow = !Prefs.phoneWindow; else shell.phone("home", true) }
@@ -700,6 +702,33 @@ ShellRoot {
                         Glyph { anchors.centerIn: parent; name: "reload"; size: 14; stroke: 2.6
                             RotationAnimator on rotation { from: 0; to: 360; duration: 800; loops: Animation.Infinite; running: Services.launching } }
                     }
+                }
+
+                // ── Download mode (SvcDownload.qml): the dim download screen on one screen (the others are off) ──
+                PanelWindow {
+                    visible: Services.download.on && Services.download.dim && Services.download.aodScreen === scr.name
+                    screen: scr.modelData
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    exclusionMode: ExclusionMode.Ignore
+                    color: "#000000"
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    WlrLayershell.namespace: "island-download"
+                    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }      // clicks don't reach the apps under it
+                    DownloadScreen { width: scr.dw; height: scr.modelData.height / scr.sc; scale: scr.sc; transformOrigin: Item.TopLeft; svc: Services }
+                }
+                // … and when it's done: "Downloads finished" + 2 min to shut down, on the screen you're on
+                PanelWindow {
+                    visible: Services.download.asking && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name === scr.name
+                    screen: scr.modelData
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    exclusionMode: ExclusionMode.Ignore
+                    color: Theme.scrim
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                    WlrLayershell.namespace: "island-download-done"
+                    MouseArea { anchors.fill: parent }
+                    DownloadDone { anchors.centerIn: parent; scale: scr.sc; svc: Services }
                 }
 
                 // ── overlay phone open on ANOTHER screen: a see-through catcher here, a click closes the phone

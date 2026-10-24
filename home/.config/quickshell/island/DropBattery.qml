@@ -58,14 +58,16 @@ DropCard {
     Row {
         x: 20; y: 190; spacing: 8
         Repeater {
-            model: [["Silent", "Quiet"], ["Performance", "Balanced"], ["Turbo", "Performance"]]
+            // Download = Download mode (SvcDownload.qml): Silent + dim screens until the download is done
+            model: [["Silent", "Quiet"], ["Performance", "Balanced"], ["Turbo", "Performance"], ["Download", "download"]]
             delegate: UiCandy {
                 required property var modelData
                 required property int index
-                readonly property bool sel: d.svc.powerProfile === modelData[1]
-                width: (d.width - 40 - 16) / 3; height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index)
-                fill: sel ? Theme.inkPhone : Theme.paper; pressable: true
-                onClicked: d.svc.setProfile(modelData[1])
+                readonly property bool dlBtn: modelData[1] === "download"
+                readonly property bool sel: dlBtn ? d.svc.download.on : !d.svc.download.on && d.svc.powerProfile === modelData[1]
+                width: (d.width - 40 - 24) / 4; height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index)
+                fill: sel ? (dlBtn ? Theme.seaDeep : Theme.inkPhone) : Theme.paper; pressable: true
+                onClicked: { if (dlBtn) d.svc.toggle("download"); else { if (d.svc.download.on) d.svc.download.stop(); d.svc.setProfile(modelData[1]) } }
                 UiText { anchors.centerIn: parent; width: parent.width - 8; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                     text: modelData[0]; px: 13; w: 700; color: sel ? "#FFFFFF" : Theme.text }
             }

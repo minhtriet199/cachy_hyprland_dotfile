@@ -231,7 +231,7 @@ Singleton {
     // applied live with hyprctl eval), phone light mode, bar visualizer + spinning record paused. Blur and the
     // power profile are not touched. `calm` = game mode or a game focused (the animation-only part of gaming).
     readonly property bool gameMode: Prefs.gameMode
-    readonly property bool calm: gameMode || gaming
+    readonly property bool calm: gameMode || gaming || download.on
     function applyGameMode() {
         const f = "$HOME/.local/state/hypr/gamemode";
         run(["sh", "-c", gameMode ? "mkdir -p \"$HOME/.local/state/hypr\" && touch " + f + " && hyprctl eval 'hl.config({ animations = { enabled = false } })'"
@@ -487,11 +487,11 @@ Singleton {
     function _mins(a) { return a && a.length > _ix ? Number(a[_ix]) || 0 : 0 }
     // the first key / mouse move after any of them turns the screens back on: Hyprland's own wake-on-input is off
     // (it would also light the laptop panel under a closed lid), so without this the screens stayed black
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleLock); onBack: s.screensOn()
+    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleLock); onBack: s.screensOn()
         onIdle: { s.powerLog("idle → lock"); s.lockRequested() } }
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
+    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
         onIdle: { s.powerLog("idle → screens off"); s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) } }
-    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
+    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
     // "Hibernate" (Prefs keys still say sleep) = hibernate, or screens off if it isn't set up (tools/sleep.sh) — never suspend: this laptop can't wake from it
     function sleepNow(why) { powerLog(why + " → hibernate"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
     // timeline of idle / lid / sleep events: ~/.local/state/island/power.log (to check what happened while you were away)
@@ -507,6 +507,9 @@ Singleton {
     readonly property string _laptopScreen: { const m = Hyprland.monitors.values.find(m => m.name.startsWith("eDP")); return m ? m.name : "eDP-1" }
     function _laptopDpms(on) { run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + (on ? "on" : "off") + "\", monitor = \"" + _laptopScreen + "\" })"]) }
     property bool lidClosed: false
+    // the real lid state at start (Island may restart with the lid already closed)
+    Process { running: true; command: ["sh", "-c", "cat /proc/acpi/button/lid/*/state 2>/dev/null"]
+        stdout: StdioCollector { onStreamFinished: s.lidClosed = this.text.includes("closed") } }
     function lid(closed) {
         lidClosed = closed; powerLog(closed ? "lid closed" : "lid opened");
         if (!closed) { _laptopDpms(true); return }
@@ -671,6 +674,9 @@ Singleton {
 
     // ── PC monitor: CPU / RAM / GPU (SvcSysmon.qml) ──
     SvcSysmon { id: sysmonPart; gaming: s.gaming }
+    // ── Download mode (SvcDownload.qml): dim screens + Silent while something downloads ──
+    SvcDownload { id: dlPart; svc: s }
+    readonly property var download: dlPart
     property alias sysmon: sysmonPart.sysmon
     property alias cpuHist: sysmonPart.cpuHist
     property alias ramHist: sysmonPart.ramHist
@@ -772,6 +778,7 @@ Singleton {
             run(["sh", "-c", nightLight ? "if pgrep -x hyprsunset >/dev/null; then hyprctl hyprsunset temperature " + nightTemp + "; else hyprsunset -t " + nightTemp + " -g " + g + " >/dev/null 2>&1 & fi"
                                         : g < 100 ? "hyprctl hyprsunset temperature 6000; hyprctl hyprsunset identity" : "pkill -x hyprsunset"]) }
         else if (what === "awake") keepAwake = !keepAwake;
+        else if (what === "download") download.on ? download.stop() : download.start();
         else if (what === "hotspot") hotspotRun([hotspot ? "off" : "on", Prefs.hotspotBand]);
         else if (what === "game") Prefs.flip("gameMode");
         else if (what === "mute") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);

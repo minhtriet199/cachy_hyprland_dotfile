@@ -237,6 +237,7 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] Adding a website display image wallpaper
 - [ ] Check the git install  work for all system  and my fresh system
 - [ ] Island task manager in the System card: top apps grouped (Helium = 1 row), icon, CPU %, RAM (PSS), End button; lazy, only polls while open; keep Open btop for full view; helper in C (7 ms/tick vs Python 32 ms, ~0.35% CPU at 2 s), install.sh compiles it
+- [ ] Phone app link for Download mode: live download progress on my phone (like a progress notification); when a download finishes this PC pushes a notification to my phone; from the phone I can pick Shut down, start the game / program, or open the downloaded file
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):
