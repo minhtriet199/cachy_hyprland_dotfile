@@ -1,0 +1,1 @@
+gamer ALL=(root) NOPASSWD: /usr/local/bin/island-hotspot-if add, /usr/local/bin/island-hotspot-if del

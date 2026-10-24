@@ -284,6 +284,7 @@ Singleton {
             "p=\" $(ps -eo comm= | tr '\\n' ' ')\"; for x in obs:obs; do case \"$p\" in *\" ${x#*:} \"*) echo ${x%%:*}=on;; *) echo ${x%%:*}=off;; esac; done",
             // hyprsunset does night light (temperature < 6000) and gamma; only asked while it runs
             "case \"$p\" in *\" hyprsunset \"*) t=$(hyprctl hyprsunset temperature 2>/dev/null); echo night=$([ \"${t:-6000}\" -lt 6000 ] && echo on || echo off); echo gam=$(hyprctl hyprsunset gamma 2>/dev/null);; *) echo night=off; echo gam=100;; esac",
+            "read -r x 2>/dev/null < /sys/class/net/ap0/operstate && echo hs=$x",
             "rx=0; tx=0; { read -r _; read -r _; while read -r l; do set -- ${l/:/ }; [ \"$1\" = lo ] && continue; rx=$((rx + $2)); tx=$((tx + ${10})); done; } < /proc/net/dev; echo \"net=$rx $tx\""
         ].join("; ")]
         stdout: StdioCollector { onStreamFinished: {
@@ -303,6 +304,7 @@ Singleton {
                 s.checkBattery();
             }
             s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
+            s.hotspot = !!v.hs && v.hs !== "down" && !hotspotP.running;
             s.nightLight = v.night === "on"; if (parseInt(v.gam) > 0) s.gamma = parseInt(v.gam) / 100; s.obsUp = v.obs === "on";
             const n = (v.net || "0 0").split(" ").map(Number), t = Date.now();
             if (s._net) { const dt = (t - s._net.t) / 1000; s.netDown = s.speed((n[0] - s._net.r) / dt); s.netUp = s.speed((n[1] - s._net.x) / dt) }
@@ -757,12 +759,30 @@ Singleton {
             run(["sh", "-c", nightLight ? "if pgrep -x hyprsunset >/dev/null; then hyprctl hyprsunset temperature " + nightTemp + "; else hyprsunset -t " + nightTemp + " -g " + g + " >/dev/null 2>&1 & fi"
                                         : g < 100 ? "hyprctl hyprsunset temperature 6000; hyprctl hyprsunset identity" : "pkill -x hyprsunset"]) }
         else if (what === "awake") keepAwake = !keepAwake;
+        else if (what === "hotspot") hotspotRun([hotspot ? "off" : "on", Prefs.hotspotBand]);
         else if (what === "game") Prefs.flip("gameMode");
         else if (what === "mute") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
         else if (what === "mic") run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]);
         statusSoon.restart();
     }
     function setVolume(v) { setSinkVolume(v) }
+    // ── hotspot (tools/hotspot.sh): on / off comes from the status poll (ap0 up); details only while its settings are open ──
+    property bool hotspot: false
+    property var hotspotInfo: ({})
+    property string hotspotMsg: ""
+    function hotspotRun(args) {
+        if (hotspotP.running) return;
+        if (args[0] !== "status") { busy("hotspot"); hotspotMsg = args[0] === "on" ? "Starting…" : "" }
+        hotspotP.command = ["sh", Quickshell.shellDir + "/tools/hotspot.sh"].concat(args); hotspotP.running = true
+    }
+    Process { id: hotspotP
+        stdout: StdioCollector { onStreamFinished: {
+            const v = {}; for (const l of this.text.split("\n")) { const i = l.indexOf("="); if (i > 0) v[l.slice(0, i)] = l.slice(i + 1) }
+            if (v.on !== undefined) s.hotspot = v.on === "1";
+            if (v.err) s.hotspotMsg = v.err; else if (v.on !== undefined || v.saved) s.hotspotMsg = v.saved ? "Saved ✓" : "";
+            if (v.helper !== undefined) s.hotspotInfo = v;
+        } }
+        onExited: { const what = command[2]; s.busyDone("hotspot"); if (what !== "status") { statusSoon.restart(); Qt.callLater(() => s.hotspotRun(["status"])) } } }
     function setMicVolume(v) { micVolume = v; run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", v.toFixed(2)]) }
     function setBrightness(v) { brightness = v; run(["brightnessctl", "set", Math.round(Math.max(0.02, v) * 100) + "%"]) }
     // gamma through hyprsunset (shared with night light): started only when needed, stopped at 100% with night light off

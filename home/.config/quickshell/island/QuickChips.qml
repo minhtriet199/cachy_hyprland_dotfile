@@ -15,7 +15,7 @@ Item {
     readonly property real gap: 10
     readonly property real tw: (width - gap) / 2
     readonly property real th: 50
-    readonly property var all: ["wifi", "bt", "sound", "warp", "airplane", "night", "dnd", "mic", "awake", "game", "power", "ime", "theme", "location"]
+    readonly property var all: ["wifi", "bt", "sound", "warp", "airplane", "night", "dnd", "mic", "awake", "game", "power", "ime", "theme", "location", "hotspot"]
     // order while editing (live as you drag), else the saved one
     property var work: []
     readonly property var picked: editing ? work : (Prefs.quickChips || []).filter(c => all.includes(c))
@@ -40,6 +40,8 @@ Item {
                                sub: ({ Quiet: "Silent", Balanced: "Performance", Performance: "Turbo" })[s.powerProfile] || "…" };
         case "ime": return { glyph: "keyboard", title: "Typing", on: s.imeVi, sub: s.imeVi ? "Vietnamese" : "English", page: "", flip: "ime" };
         case "theme": return { glyph: Prefs.dark ? "moon" : "sun", title: "Dark mode", on: Prefs.dark, sub: "", page: "", flip: "theme" };
+        case "hotspot": { const n = parseInt((s.hotspotInfo || {}).clients) || 0
+            return { glyph: "wifiArcs", title: "Hotspot", on: s.hotspot, sub: s.busyIds.includes("hotspot") ? "Starting…" : s.hotspot ? n + " device" + (n === 1 ? "" : "s") : "Off", page: "settingsWifi", flip: "hotspot" } }
         case "location": return { glyph: "crosshair", title: "Location", on: Prefs.location, sub: "", page: "settingsPrivacy", flip: "location" };
         }
         return { glyph: "box", title: id, on: false, sub: "", page: "", flip: "" };

@@ -20,7 +20,7 @@ for line in ([] if name else nm("-t", "-f", "NAME,TYPE", "con", "show").splitlin
 out = {"ssid": ssid, "name": name, "saved": bool(name)}
 if name:
     keys = ["ipv4.method", "ipv4.addresses", "ipv4.gateway", "ipv4.dns", "ipv4.ignore-auto-dns", "ipv6.method",
-            "connection.autoconnect", "802-11-wireless.cloned-mac-address", "connection.metered", "802-11-wireless-security.key-mgmt"]
+            "connection.autoconnect", "802-11-wireless.cloned-mac-address", "connection.metered", "802-11-wireless-security.key-mgmt", "802-11-wireless.band"]
     vals = nm("-g", ",".join(keys), "con", "show", name).splitlines()
     out.update({k: (vals[i] if i < len(vals) else "") for i, k in enumerate(keys)})
 # live info when this network is the one in use

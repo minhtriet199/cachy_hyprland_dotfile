@@ -63,7 +63,9 @@ Item {
             sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap, recovery: crecovery })[pg.kind] || cWifi
         }
     }
-    Component { id: cWifi; WifiPanel { svc: pg.svc; listH: fl.height - 56 } }
+    Component { id: cWifi; Column { spacing: 18      // networks, then the hotspot (scroll down)
+        WifiPanel { width: parent.width; svc: pg.svc; listH: fl.height - 56 }
+        HotspotPanel { width: parent.width; svc: pg.svc } } }
     Component { id: cBt; BtPanel { svc: pg.svc; listH: fl.height - 50 } }
     Component { id: cSound; SoundPanel { svc: pg.svc; wide: !pg.narrow } }
     Component { id: cPower; PowerPanel { svc: pg.svc } }

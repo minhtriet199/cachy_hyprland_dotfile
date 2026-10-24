@@ -1,0 +1,12 @@
+#!/bin/sh
+# Island hotspot: add / remove the virtual "ap0" Wi-Fi interface next to the normal one (needs root).
+# Install once (then the hotspot never asks for a password):
+#   sudo install -m 755 -o root ~/.config/quickshell/island/tools/hotspot-if.src /usr/local/bin/island-hotspot-if
+#   sudo install -m 440 -o root ~/.config/quickshell/island/tools/hotspot-if.sudoers.src /etc/sudoers.d/island-hotspot
+# Takes exactly: add | del
+W=$(iw dev 2>/dev/null | awk '/Interface/{i=$2} /type managed/{print i; exit}')
+case "$1" in
+    add) [ -e /sys/class/net/ap0 ] || { [ -n "$W" ] && iw dev "$W" interface add ap0 type __ap; } ;;
+    del) [ ! -e /sys/class/net/ap0 ] || iw dev ap0 del ;;
+    *) echo "usage: island-hotspot-if add|del" >&2; exit 2 ;;
+esac

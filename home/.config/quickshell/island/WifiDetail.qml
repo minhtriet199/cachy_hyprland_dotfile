@@ -1,7 +1,7 @@
 import QtQuick
 
 // One Wi-Fi network's settings (opened from the Wi-Fi list): status + IP info, DNS presets, IPv4 auto/manual,
-// IPv6 on/off, auto-connect, private address (MAC), metered, forget. Changes go through nmcli (svc.wifiModify).
+// IPv6 on/off, auto-connect, private address (MAC), metered, band (2.4 / 5 GHz), forget. Changes go through nmcli (svc.wifiModify).
 Item {
     id: wd
     property var svc
@@ -168,6 +168,10 @@ Item {
             visible: !!wd.i && wd.i.saved
             width: parent.width; spacing: 6
             UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18; text: "OPTIONS" }
+            // routers that send one name on 2.4 + 5 GHz: pin the band (5 GHz faster · 2.4 GHz reaches further)
+            SetSeg { width: parent.width; label: "Band"; options: ["Auto", "2.4 GHz", "5 GHz"]
+                current: ({ bg: "2.4 GHz", a: "5 GHz" })[wd.i ? wd.i["802-11-wireless.band"] : ""] || "Auto"
+                onPicked: v => wd.svc.wifiModify(wd.i, ["802-11-wireless.band", ({ "2.4 GHz": "bg", "5 GHz": "a" })[v] || ""]) }
             Repeater {
                 model: wd.i ? [
                     ["IPv6", "Turn off if some sites are slow or don't load", wd.i["ipv6.method"] !== "disabled", ["ipv6.method", wd.i["ipv6.method"] === "disabled" ? "auto" : "disabled"]],

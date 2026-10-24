@@ -76,5 +76,10 @@
   "todoLast": "/home/gamer/Documents/Todo/Rice wish list.md",
   "phoneRemember": false,
   "phoneWinLast": false,
-  "phoneBigLast": false
+  "phoneBigLast": false,
+  "quickChips": [
+    "wifi",
+    "bt"
+  ],
+  "hotspotBand": "5"
 }
