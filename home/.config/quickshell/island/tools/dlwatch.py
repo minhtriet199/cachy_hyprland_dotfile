@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Download mode watcher (only runs while Download mode is on): every 3 s prints one JSON line
 {"items": [{"name", "app", "done", "total"}], "speed": bytes/s, "busy": bool}.
-Steam: appmanifest_*.acf BytesDownloaded / BytesToDownload in every library. Browsers: *.crdownload (Chromium,
-Helium), *.part (Firefox), *.download in ~/Downloads (size only; they don't store the total). Any other app shows
+Steam: appmanifest_*.acf BytesToDownload in every library; done = the manifest's BytesDownloaded, or (Steam only
+saves that every ~10 min) the bytes written so far in steamapps/downloading/<appid> scaled from BytesToStage.
+Browsers: *.crdownload (Chromium, Helium), *.part (Firefox), *.download in ~/Downloads (size only; they don't store the total). Any other app shows
 up in the network speed. busy = something is downloading or the network is still pulling > 150 KB/s."""
 import glob, json, os, re, sys, time
 
@@ -21,6 +22,17 @@ def libraries():
     return libs
 
 
+def written(d):
+    n = 0
+    for root, _, files in os.walk(d):
+        for f in files:
+            try:
+                n += os.lstat(os.path.join(root, f)).st_blocks * 512      # written blocks (files are pre-sized, sparse)
+            except OSError:
+                pass
+    return n
+
+
 def steam_items(libs):
     out = []
     for lib in libs:
@@ -29,8 +41,11 @@ def steam_items(libs):
                 t = open(f, errors="ignore").read()
             except OSError:
                 continue
-            v = dict(re.findall(r'"(name|BytesToDownload|BytesDownloaded)"\s+"([^"]*)"', t))
+            v = dict(re.findall(r'"(name|BytesToDownload|BytesDownloaded|BytesToStage)"\s+"([^"]*)"', t))
             total, done = int(v.get("BytesToDownload") or 0), int(v.get("BytesDownloaded") or 0)
+            stage, appid = int(v.get("BytesToStage") or 0), re.sub(r"\D", "", os.path.basename(f))
+            if total and done < total and stage:
+                done = min(total - 1, max(done, written(os.path.join(lib, "downloading", appid)) * total // stage))
             if total and done < total:
                 out.append({"name": v.get("name", "Steam game"), "app": "Steam", "done": done, "total": total})
     return out

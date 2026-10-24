@@ -7,7 +7,6 @@ this file at `~/.local/state/island/RICE-HANDOFF-full-2026-10-22.md`.
 
 ## 1. Owner rules (follow these)
 
-- **Short, simple explanations.** The owner is not a native English speaker: plain words, tables, bullets.
 - **Ask before any system change. The owner runs `sudo` themselves**: give them the exact command.
 - **Monitor changes: apply live first, never save until confirmed** (rotate/mirror once crashed Hyprland).
 - **After every config change: `dotfiles-sync "short message"`**. No Claude credit / co-author lines there.
@@ -198,17 +197,7 @@ real settings are not touched.
 
 ## 8. Open items
 
-1. **Baseus Bass BP1 Pro mic (headset mode) is broken on Linux** — MT7922 drops voice packets ("SCO packet for unknown
-   connection handle", "corrupted SCO packet") on both kernels. **Fix = USB Bluetooth dongle (Intel/Realtek).**
-   WirePlumber `bluetooth.autoswitch-to-headset-profile = false` so apps don't switch to the broken mode.
-   - Laptop mic instead: default source **"Laptop Mic (clear)"** (`mic_clean`, `~/.config/pipewire/pipewire.conf.d/60-mic-clean.conf`:
-     high-pass 140 Hz, −4 dB @ 300 Hz, +3 dB @ 3.5 kHz). `hypr/scripts/mic-level.sh` sets Capture 23 / Boost 0 at login.
-     Discord AGC must stay off. Don't install the acp6x DMIC driver (`~/.local/src/acp6x-ga402r/`, it's dead on GA402RJ).
-2. **Wi-Fi dead after Windows** — see `WIFI-AFTER-WINDOWS-FIX.md`. Next time in Windows: turn off Wake-on-WLAN.
-3. **Owner to confirm:** double-tap Ctrl rings; monitor hotplug (untested, no spare screen); phone window minimise to a workspace.
-4. **Screen-share hang** after sharing one window: `systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal`, then restart OBS.
-5. Keep: current files over the old `.pacnew` ones in /etc. Owner declined keyring auto-unlock.
-6. **System facts** (don't suggest a cleanup unasked):
+1. **System facts** (don't suggest a cleanup unasked):
    - Never remove (look like orphans, but used): corepack rustup adw-gtk-theme ddcutil gnome-text-editor qview nwg-look swash
      xorg-xhost hyprland kitty uwsm xdg-desktop-portal-hyprland wl-clipboard grim slurp brightnessctl gnome-keyring hyprpicker qt6ct.
    - Owner keeps: firewalld, game launchers, btop, kcalc, LibreOffice, Wine, netctl, coding tools.
