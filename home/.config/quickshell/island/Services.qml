@@ -252,7 +252,9 @@ Singleton {
     property real gamma: 1.0
     property var battery: ({ percent: 100, charging: false, plugged: false, status: "", minutes: -1, health: 100 })
     property string powerProfile: ""                    // asusctl: Quiet · Balanced · Performance
-    function setProfile(p) { powerProfile = p; run(["asusctl", "profile", "set", p]) }
+    // the status poll can still read the old mode for a moment after a change: it is ignored for 4 s (else a quick second change starts from the old one)
+    property real _profAt: 0
+    function setProfile(p) { powerProfile = p; _profAt = Date.now(); run(["asusctl", "profile", "set", p]) }
     // a game opens (steam_app_* / gamescope window) while in Silent: power mode → Performance (asusctl "Balanced");
     // when the last one closes it goes back to Silent — unless you changed it yourself meanwhile
     readonly property bool gameOpen: clients.some(c => isGameCls(c.cls))
@@ -303,7 +305,7 @@ Singleton {
                               minutes: (chg || dis) ? mins : -1, health: e.length >= 3 && e[2] > 0 ? Math.round(e[1] / e[2] * 100) : 100 };
                 s.checkBattery();
             }
-            s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
+            if (Date.now() - s._profAt > 4000) s.powerProfile = ({ quiet: "Quiet", balanced: "Balanced", performance: "Performance" })[v.prof] || s.powerProfile;
             s.hotspot = !!v.hs && v.hs !== "down" && !hotspotP.running;
             s.nightLight = v.night === "on"; if (parseInt(v.gam) > 0) s.gamma = parseInt(v.gam) / 100; s.obsUp = v.obs === "on";
             const n = (v.net || "0 0").split(" ").map(Number), t = Date.now();

@@ -279,7 +279,8 @@ Item {
             Flat3D { m: M.chain(pHolder.view, M.T(0, 0, -26)); Rectangle { width: 390; height: 834; radius: 54; color: Theme.phoneBack } }
             // right side wall with the Pixel keys
             Flat3D {
-                m: M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90))); tex: 2
+                // seen almost edge-on (squeezed to a few px): mipmaps keep the keys smooth instead of jagged (tiny texture)
+                m: M.chain(pHolder.view, M.T(390, 50), M.about(0, 367, M.Ry(90))); tex: 3; layer.mipmap: true
                 Rectangle {
                     width: 26; height: 734; radius: 10; border.width: 3; border.color: Theme.inkPhone
                     gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }
@@ -455,7 +456,7 @@ Item {
             Flat3D { m: M.chain(lHolder.view, M.T(0, 0, -22)); Rectangle { width: 920; height: 430; radius: 54; color: Theme.phoneBack } }
             Flat3D { m: M.chain(lHolder.view, M.T(0, 0, -11)); Rectangle { width: 920; height: 430; radius: 54; color: "#2A4B55" } }
             Flat3D {
-                m: M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90))); tex: 2
+                m: M.chain(lHolder.view, M.T(50, 0), M.about(410, 0, M.Rx(-90))); tex: 3; layer.mipmap: true      // edge-on: mipmaps keep the keys smooth
                 Rectangle {
                     width: 820; height: 22; radius: 10; border.width: 3; border.color: Theme.inkPhone
                     gradient: Gradient { GradientStop { position: 0; color: Theme.phoneWallA } GradientStop { position: 1; color: Theme.phoneWallB } }

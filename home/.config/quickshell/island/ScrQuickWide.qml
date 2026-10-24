@@ -36,8 +36,9 @@ Item {
     // left column
     Column {
         x: q.cx; y: 18 + 44 + 14; width: q.leftW; spacing: 10
-        // brightness (gamma lives in Settings → Displays)
+        // brightness (gamma lives in Settings → Displays) · hidden while editing chips: the tray row needs the room
         Column {
+            visible: !q.editing
             spacing: 4
             UiText { text: "☼ Brightness " + Math.round(q.svc.brightness * 100) + "%"; px: 12; w: 600; height: 14 }
             PhoneLevel { width: q.leftW; height: 12; value: q.svc.brightness; color: Theme.sunDeep; onPicked: v => q.svc.setBrightness(v) }

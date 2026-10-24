@@ -67,11 +67,14 @@ Item {
         const i = picked.indexOf(id), k = i % perPage, p = Math.floor(i / perPage);
         return Qt.point((p - page) * (width + 24) + (k % columns) * (tw + gap), Math.floor(k / columns) * (th + gap))
     }
+    // wheel / touchpad: over the tray it scrolls the tray, elsewhere it turns the page
     WheelHandler {
-        enabled: qc.pages > 1; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         property real acc: 0
-        onWheel: e => { acc += Math.abs(e.angleDelta.x) > Math.abs(e.angleDelta.y) ? -e.angleDelta.x : -e.angleDelta.y
-            if (Math.abs(acc) >= 120) { qc.page = Math.max(0, Math.min(qc.pages - 1, qc.page + (acc > 0 ? 1 : -1))); acc = 0 } }
+        onWheel: e => { const d = Math.abs(e.angleDelta.x) > Math.abs(e.angleDelta.y) ? -e.angleDelta.x : -e.angleDelta.y
+            if (qc.editing && point.position.y > qc.trayTop - 6) { tray.contentX = Math.max(0, Math.min(Math.max(0, tray.contentWidth + tray.rightMargin - tray.width), tray.contentX + d / 2)); return }
+            if (qc.pages < 2) return;
+            acc += d; if (Math.abs(acc) >= 120) { qc.page = Math.max(0, Math.min(qc.pages - 1, qc.page + (acc > 0 ? 1 : -1))); acc = 0 } }
     }
 
     // ── dragging (one drag at a time; the pointer is followed by the chip's grid delegate) ──
@@ -169,21 +172,20 @@ Item {
     ListView {
         id: tray
         visible: qc.editing
-        y: qc.trayTop; width: qc.width; height: qc.th + 4
+        y: qc.trayTop - 6; width: qc.width; height: qc.th + 10; rightMargin: 6      // room above / right for the + badges (it clips)
         orientation: ListView.Horizontal; spacing: qc.gap; clip: true; boundsBehavior: Flickable.StopAtBounds
         interactive: false
         model: qc.trayModel
-        WheelHandler { onWheel: e => tray.contentX = Math.max(0, Math.min(Math.max(0, tray.contentWidth - tray.width), tray.contentX - (e.angleDelta.x || e.angleDelta.y) / 2)) }
         header: Item { width: 0; height: 1 }
         delegate: Item {
             id: tc
             required property string modelData
             readonly property var d: qc.info(modelData)
-            width: qc.tw * 0.8; height: qc.th + 4
+            width: qc.tw * 0.8; height: qc.th + 10
             opacity: qc.dragId === modelData ? 0 : 0.85
-            PhoneToggleTile { y: 4; width: parent.width; glyph: tc.d.glyph; title: tc.d.title; sub: "Add"; on: false }
+            PhoneToggleTile { y: 10; width: parent.width; glyph: tc.d.glyph; title: tc.d.title; sub: "Add"; on: false }
             UiCandy {      // + badge
-                x: parent.width - 18; y: -2; width: 22; height: 22; radius: 11; bw: 2; drop: 0; hi: 0; ink: Theme.inkPhone; fill: Theme.gOn
+                x: parent.width - 18; y: 4; width: 22; height: 22; radius: 11; bw: 2; drop: 0; hi: 0; ink: Theme.inkPhone; fill: Theme.gOn
                 Glyph { anchors.centerIn: parent; name: "plus"; size: 12; stroke: 3 }
             }
             MouseArea {
