@@ -20,7 +20,7 @@ Item {
     property var work: []
     readonly property var picked: editing ? work : (Prefs.quickChips || []).filter(c => all.includes(c))
     readonly property var spare: all.filter(c => !picked.includes(c))
-    onEditingChanged: { if (editing) work = (Prefs.quickChips || []).filter(c => all.includes(c)); page = Math.min(page, pages - 1) }
+    onEditingChanged: { if (editing) work = (Prefs.quickChips || []).filter(c => all.includes(c)); dragId = ""; page = Math.min(page, pages - 1) }
 
     function info(id) {
         const s = svc;
@@ -57,8 +57,8 @@ Item {
     property int page: 0
     readonly property int pages: Math.max(1, Math.ceil(picked.length / perPage))
     onPagesChanged: if (page > pages - 1 && dragId === "") page = pages - 1
-    // as many rows as the chips need (1 – 3; none = no grid); editing keeps at least one row to drop onto
-    readonly property int rows: Math.max(editing ? 1 : 0, Math.min(3, Math.ceil(picked.length / columns)))
+    // as many rows as the chips need (1 – 3; none = no grid); editing keeps room for one more chip to drop in
+    readonly property int rows: Math.min(3, Math.ceil((picked.length + (editing && !work.includes(dragId) ? 1 : 0)) / columns))
     readonly property real gridH: rows ? rows * (th + gap) - gap : 0
     readonly property bool dots: pages > 1 || editing
     readonly property real trayTop: gridH + (dots ? 22 : 0)
@@ -76,6 +76,11 @@ Item {
 
     // ── dragging (one drag at a time; the pointer is followed by the chip's grid delegate) ──
     property string dragId: ""
+    // the tray keeps its chips while one is dragged (else the dragged chip's tray spot — and its drag — would vanish)
+    property var trayModel: []
+    onSpareChanged: if (dragId === "") trayModel = spare
+    onDragIdChanged: if (dragId === "") trayModel = spare
+    Component.onCompleted: trayModel = spare
     property point dragAt: Qt.point(0, 0)          // pointer, in qc coordinates
     function hover(id, p) {
         dragAt = p;
@@ -113,8 +118,8 @@ Item {
             width: qc.tw; height: qc.th; z: held ? 10 : 0
             x: held ? qc.dragAt.x - width / 2 : at.x
             y: held ? qc.dragAt.y - height / 2 : at.y
-            Behavior on x { enabled: !cell.held; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-            Behavior on y { enabled: !cell.held; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on x { enabled: !cell.held && cell.inGrid; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on y { enabled: !cell.held && cell.inGrid; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             scale: held ? 1.06 : 1
             Behavior on scale { NumberAnimation { duration: 120 } }
             rotation: qc.editing && !held ? (index % 2 ? 1.2 : -1.2) : 0      // editing: a slight tilt, like a phone's edit mode
@@ -133,11 +138,13 @@ Item {
                 enabled: qc.editing
                 cursorShape: cell.held ? Qt.ClosedHandCursor : Qt.OpenHandCursor
                 property point down
-                onPressed: m => down = Qt.point(m.x, m.y)
-                onPositionChanged: m => { if (!cell.held && Math.hypot(m.x - down.x, m.y - down.y) > 5) qc.dragId = cell.modelData
+                property bool dragged: false          // a drag's release is not a tap
+                onPressed: m => { down = Qt.point(m.x, m.y); dragged = false }
+                onPositionChanged: m => { if (!cell.held && !dragged && Math.hypot(m.x - down.x, m.y - down.y) > 5) { dragged = true; qc.dragId = cell.modelData }
                     if (cell.held) qc.hover(cell.modelData, mapToItem(qc, m.x, m.y)) }
                 onReleased: if (cell.held) qc.drop()
-                onClicked: if (!cell.held) qc.moveAcross(cell.modelData)
+                onCanceled: if (cell.held) qc.drop()
+                onClicked: if (!dragged) qc.moveAcross(cell.modelData)
             }
         }
     }
@@ -165,7 +172,7 @@ Item {
         y: qc.trayTop; width: qc.width; height: qc.th + 4
         orientation: ListView.Horizontal; spacing: qc.gap; clip: true; boundsBehavior: Flickable.StopAtBounds
         interactive: false
-        model: qc.spare
+        model: qc.trayModel
         WheelHandler { onWheel: e => tray.contentX = Math.max(0, Math.min(Math.max(0, tray.contentWidth - tray.width), tray.contentX - (e.angleDelta.x || e.angleDelta.y) / 2)) }
         header: Item { width: 0; height: 1 }
         delegate: Item {
@@ -183,11 +190,13 @@ Item {
                 anchors.fill: parent
                 cursorShape: qc.dragId === tc.modelData ? Qt.ClosedHandCursor : Qt.OpenHandCursor
                 property point down
-                onPressed: m => down = Qt.point(m.x, m.y)
-                onPositionChanged: m => { if (qc.dragId !== tc.modelData && Math.hypot(m.x - down.x, m.y - down.y) > 5) qc.dragId = tc.modelData
+                property bool dragged: false
+                onPressed: m => { down = Qt.point(m.x, m.y); dragged = false }
+                onPositionChanged: m => { if (!dragged && Math.hypot(m.x - down.x, m.y - down.y) > 5) { dragged = true; qc.dragId = tc.modelData }
                     if (qc.dragId === tc.modelData) qc.hover(tc.modelData, mapToItem(qc, m.x, m.y)) }
                 onReleased: if (qc.dragId === tc.modelData) qc.drop()
-                onClicked: if (qc.dragId !== tc.modelData) qc.moveAcross(tc.modelData)
+                onCanceled: if (qc.dragId === tc.modelData) qc.drop()
+                onClicked: if (!dragged) qc.moveAcross(tc.modelData)
             }
         }
     }
