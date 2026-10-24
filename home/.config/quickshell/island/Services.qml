@@ -485,19 +485,25 @@ Singleton {
     // ── idle timers (Settings → Power): lock, screens off, sleep — plugged-in / battery values from Prefs ──
     readonly property int _ix: battery.plugged ? 0 : 1
     function _mins(a) { return a && a.length > _ix ? Number(a[_ix]) || 0 : 0 }
-    IdleMonitor { id: idleLockM; enabled: s._mins(Prefs.idleLock) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleLock)) * 60; respectInhibitors: true
-        onIsIdleChanged: if (isIdle) s.lockRequested() }
-    IdleMonitor { id: idleScreenM; enabled: s._mins(Prefs.idleScreen) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleScreen)) * 60; respectInhibitors: true
-        onIsIdleChanged: if (isIdle) s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) }
-    IdleMonitor { id: idleSleepM; enabled: s._mins(Prefs.idleSleep) > 0 && !s.keepAwake; timeout: Math.max(1, s._mins(Prefs.idleSleep)) * 60; respectInhibitors: true
-        onIsIdleChanged: if (isIdle) { s.lockRequested(); s.run(["sh", "-c", "sleep 2; systemctl suspend"]) } }   // lock first, then sleep
+    // the first key / mouse move after any of them turns the screens back on: Hyprland's own wake-on-input is off
+    // (it would also light the laptop panel under a closed lid), so without this the screens stayed black
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleLock); onIdle: s.lockRequested(); onBack: s.screensOn() }
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleScreen); onIdle: s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]); onBack: s.screensOn() }
+    IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleSleep); onBack: s.screensOn()
+        onIdle: { s.lockRequested(); s.run(["sh", "-c", "sleep 2; systemctl suspend"]) } }   // lock first, then sleep
+    function screensOn() {
+        for (const m of Hyprland.monitors.values)
+            if (!(lidClosed && m.name.startsWith("eDP"))) run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"on\", monitor = \"" + m.name + "\" })"])
+    }
 
     // ── lid (Settings → Power): Island tells logind it handles the lid (inhibitor lives only while Island runs),
     //    Hyprland's lid switch binds (hypr/config/lid.lua) call lid() through IPC ──
     Process { running: true; command: ["sh", "-c", "exec systemd-inhibit --what=handle-lid-switch --who=Island --why='Island handles the lid' --mode=block tail --pid=$PPID -f /dev/null"] }
     readonly property string _laptopScreen: { const m = Hyprland.monitors.values.find(m => m.name.startsWith("eDP")); return m ? m.name : "eDP-1" }
     function _laptopDpms(on) { run(["hyprctl", "dispatch", "hl.dsp.dpms({ action = \"" + (on ? "on" : "off") + "\", monitor = \"" + _laptopScreen + "\" })"]) }
+    property bool lidClosed: false
     function lid(closed) {
+        lidClosed = closed;
         if (!closed) { _laptopDpms(true); return }
         let a = (Prefs.lidClose || [])[_ix] || "sleep";
         if (a === "sleep" && Hyprland.monitors.values.length > 1) a = "screen";   // docked: keep working on the other screen

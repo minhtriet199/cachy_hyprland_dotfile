@@ -79,7 +79,9 @@
   "phoneBigLast": false,
   "quickChips": [
     "wifi",
-    "bt"
+    "bt",
+    "sound",
+    "warp"
   ],
   "hotspotBand": "5"
 }
