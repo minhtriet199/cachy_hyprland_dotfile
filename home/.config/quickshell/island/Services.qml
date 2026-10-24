@@ -66,7 +66,7 @@ Singleton {
         { title: "Start postgres", sub: "docker compose up -d", glyph: "database", tint: "#3E9A5D", keywords: "docker pg db postgres", cmd: ["sh", "-c", "cd ~/docker/postgres && docker compose up -d"] },
         { title: "System monitor", sub: "btop", glyph: "pulse", tint: "#2F9EAB", keywords: "btop task cpu ram", cmd: ["kitty", "btop"] },
         { title: "Lock screen", sub: "loginctl lock-session", glyph: "lock", tint: "#5E7A84", keywords: "lock", cmd: ["loginctl", "lock-session"] },
-        { title: "Sleep", sub: "Hibernate (or screens off until it's set up)", glyph: "moon", tint: "#A893EC", keywords: "sleep suspend hibernate", cmd: ["sh", Quickshell.shellDir + "/tools/sleep.sh"] },
+        { title: "Hibernate", sub: "Save everything and power off · power button to come back", glyph: "moon", tint: "#A893EC", keywords: "hibernate sleep suspend", cmd: ["sh", Quickshell.shellDir + "/tools/sleep.sh"] },
         { title: "Reboot", sub: "Restart the computer", glyph: "reload", tint: "#EE7D9C", keywords: "restart reboot", cmd: ["systemctl", "reboot"] },
         { title: "Shut down", sub: "Turn the island off", glyph: "power", tint: "#E2607F", keywords: "poweroff shutdown off", cmd: ["systemctl", "poweroff"] }
     ]
@@ -492,8 +492,8 @@ Singleton {
     IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
         onIdle: { s.powerLog("idle → screens off"); s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) } }
     IdleTimer { minutes: s.keepAwake ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
-    // Sleep = hibernate when it's set up, else screens off (tools/sleep.sh) — never suspend: this laptop can't wake from it
-    function sleepNow(why) { powerLog(why + " → sleep"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
+    // "Hibernate" (Prefs keys still say sleep) = hibernate, or screens off if it isn't set up (tools/sleep.sh) — never suspend: this laptop can't wake from it
+    function sleepNow(why) { powerLog(why + " → hibernate"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
     // timeline of idle / lid / sleep events: ~/.local/state/island/power.log (to check what happened while you were away)
     function powerLog(msg) { run(["sh", "-c", "echo \"$(date '+%F %T') $1\" >> \"$HOME/.local/state/island/power.log\"", "log", msg]) }
     function screensOn() {
