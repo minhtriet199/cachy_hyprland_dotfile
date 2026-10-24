@@ -758,6 +758,7 @@ Singleton {
     function powerMenu() { powerMenuRequested() }
     function power(what) {
         if (what === "lock") lockRequested();
+        else if (what === "download") toggle("download");
         else if (what === "logout") run(["sh", "-c", "command -v uwsm >/dev/null && uwsm stop || hyprctl dispatch exit"]);
         else if (what === "suspend") sleepNow("power menu");
         else if (what === "reboot") run(["systemctl", "reboot"]);

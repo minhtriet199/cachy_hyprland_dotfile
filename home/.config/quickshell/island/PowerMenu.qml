@@ -1,12 +1,12 @@
 import QtQuick
 
 // Power menu (bar power button / Super+Esc): Lock · Log out · Suspend · Reboot · Shut down.
-// ← → or 1–5 to choose, Enter to run. Everything but Lock counts down 4 s first: Cancel / Esc stops it,
+// ← → or 1–6 to choose, Enter to run. Everything but Lock counts down 4 s first: Cancel / Esc stops it,
 // Enter or the same tile again does it now, and after 4 s it happens by itself.
 FocusScope {
     id: pm
     property var svc
-    property int sel: 2
+    property int sel: 3                 // Hibernate
     property string armed: ""               // action counting down
     property int secsLeft: 0                // seconds left (not "left": that name is taken by QML)
     signal closed()
@@ -14,9 +14,10 @@ FocusScope {
     function now() { const o = opts.find(x => x.id === armed); cancel(); if (o) { closed(); svc.power(o.id) } }
     Timer { id: countdown; interval: 1000; repeat: true; onTriggered: { pm.secsLeft--; if (pm.secsLeft <= 0) pm.now() } }
     onVisibleChanged: if (!visible) cancel()
-    width: 600; height: 272
+    width: 700; height: 272
     readonly property var opts: [
         { id: "lock",     label: "Lock",      glyph: "lock",       tint: Theme.gSea,   ok: svc.hasLocker, confirm: false, doing: "Locking" },
+        { id: "download", label: svc.download.on ? "Stop download" : "Download", glyph: "download", tint: Theme.gOn, ok: true, confirm: false, doing: "" },   // Download mode
         { id: "logout",   label: "Log out",   glyph: "arrowRight", tint: Theme.gSun,   ok: true, confirm: true, doing: "Logging out" },
         { id: "suspend",  label: "Hibernate", glyph: "moon",       tint: Theme.gLilac, ok: true, confirm: true, doing: "Hibernating" },
         { id: "reboot",   label: "Reboot",    glyph: "reload",     tint: Theme.gLeaf,  ok: true, confirm: true, doing: "Rebooting" },
@@ -29,11 +30,11 @@ FocusScope {
         cancel(); closed(); svc.power(o.id);
     }
     Keys.onEscapePressed: armed ? cancel() : closed()
-    Keys.onLeftPressed: { sel = (sel + 4) % 5; cancel() }
-    Keys.onRightPressed: { sel = (sel + 1) % 5; cancel() }
+    Keys.onLeftPressed: { sel = (sel + opts.length - 1) % opts.length; cancel() }
+    Keys.onRightPressed: { sel = (sel + 1) % opts.length; cancel() }
     Keys.onReturnPressed: pick(sel)
     Keys.onEnterPressed: pick(sel)
-    Keys.onPressed: e => { if (e.key >= Qt.Key_1 && e.key <= Qt.Key_5) { pick(e.key - Qt.Key_1); e.accepted = true } }
+    Keys.onPressed: e => { if (e.key >= Qt.Key_1 && e.key <= Qt.Key_6) { pick(e.key - Qt.Key_1); e.accepted = true } }
 
     DropCard {
         anchors.fill: parent
@@ -55,7 +56,7 @@ FocusScope {
                     required property int index
                     readonly property bool cur: pm.sel === index
                     readonly property bool arm: pm.armed === modelData.id
-                    width: (pm.width - 48 - 4 * 14) / 5; height: 124; radius: 20; bw: cur ? 3 : 2.5; drop: cur ? 5 : 3
+                    width: (pm.width - 48 - 5 * 14) / 6; height: 124; radius: 20; bw: cur ? 3 : 2.5; drop: cur ? 5 : 3
                     hi: 3; fill: arm ? Theme.gBerry : (cur ? modelData.tint : Theme.paper); rotation: Theme.tilt(index)
                     opacity: modelData.ok ? 1 : 0.45
                     pressable: true
@@ -82,7 +83,7 @@ FocusScope {
             }
         }
         UiText { visible: !pm.armed; x: 0; y: parent.height - 34; width: parent.width; horizontalAlignment: Text.AlignHCenter
-            text: "← → choose · Enter · 1–5 · Esc to stay"; fam: "n"; px: 11; w: 800; color: Theme.textSoft }
+            text: "← → choose · Enter · 1–6 · Esc to stay"; fam: "n"; px: 11; w: 800; color: Theme.textSoft }
         // countdown bar: what happens, in how long, Cancel / Do it now
         Row {
             visible: !!pm.armed
