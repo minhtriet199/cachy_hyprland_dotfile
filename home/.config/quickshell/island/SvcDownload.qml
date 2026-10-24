@@ -7,7 +7,9 @@ import Quickshell.Hyprland
 // Silent power mode, keyboard light off, Island calm, the other screens off and one screen at 5% showing a dim clock +
 // download progress (DownloadScreen.qml). A key / mouse move wakes the screens; 1 min untouched → dim again.
 // Done = something was downloading and nothing has for 60 s → everything back to normal + a dialog that shuts the PC
-// down after 2 min unless you pick Keep using. Progress comes from tools/dlwatch.py (runs only while this is on).
+// down after 2 min unless you pick Keep using. Before it starts it asks what to do when done (DownloadAsk.qml):
+// Shut down → that dialog · Keep using → just a notification.
+// Progress comes from tools/dlwatch.py (runs only while this is on).
 Scope {
     id: dl
     property var svc
@@ -24,6 +26,9 @@ Scope {
     property int countdown: 0
     property var doneNames: []
     property string doneTime: ""
+    // asked before starting: what to do when done ("shutdown" | "keep")
+    property bool choosing: false
+    property string after: "shutdown"
 
     // the screen that shows the dim download view: the laptop panel unless its lid is closed
     readonly property string aodScreen: {
@@ -33,8 +38,12 @@ Scope {
     }
     property var _saved: null                // power mode to put back (brightness + keyboard light: brightnessctl -s / -r)
 
-    function start() {
+    function start() { if (!on) choosing = true }
+    function cancelChoose() { choosing = false }
+    function begin(a) {
+        choosing = false;
         if (on) return;
+        after = a;
         _saved = { profile: svc.powerProfile };
         svc.run(["sh", "-c", "brightnessctl -d 'asus::kbd_backlight' -s set 0 >/dev/null 2>&1"]);   // -s remembers it
         if (svc.powerProfile !== "Quiet") svc.setProfile("Quiet");
@@ -42,7 +51,7 @@ Scope {
         on = true; dim = true;
         // a marker with what to put back: if Island reloads / restarts / crashes mid-mode, the next start restores it
         svc.run(["sh", "-c", "printf '%s\\n' \"$1\" > \"$XDG_RUNTIME_DIR/island-download\"", "x", JSON.stringify(_saved)]);
-        svc.powerLog("download mode on");
+        svc.powerLog("download mode on (when done: " + (a === "keep" ? "keep using" : "shut down") + ")");
     }
     function _restore() {
         dim = false;
@@ -62,6 +71,11 @@ Scope {
     function stop() { if (!on) return; _restore(); on = false; svc.powerLog("download mode off (by you)") }
     function finish() {
         _restore(); on = false;
+        if (after === "keep") {
+            svc.run(["notify-send", "-a", "Island", "-i", "download", "Downloads finished", names.slice(0, 6).join("\n")]);
+            svc.powerLog("downloads finished (" + (names.join(", ") || "network") + ") → keep using");
+            return;
+        }
         doneNames = names.slice(0, 6); doneTime = Qt.formatTime(new Date(), svc.h24 ? "HH:mm" : "h:mm AP");
         countdown = 120; asking = true;
         svc.powerLog("downloads finished (" + (names.join(", ") || "network") + ") → asking, shut down in 2 min");

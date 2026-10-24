@@ -729,6 +729,20 @@ ShellRoot {
                     DownloadScreen { width: scr.dw; height: scr.modelData.height / scr.sc; scale: scr.sc; transformOrigin: Item.TopLeft; svc: Services
                         focus: true; Keys.onPressed: e => { Services.download.dim = false; e.accepted = true } }
                 }
+                // before it starts: shut down or keep using when it's done (DownloadAsk.qml), on the screen you're on
+                PanelWindow {
+                    visible: Services.download.choosing && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name === scr.name
+                    onVisibleChanged: if (visible) shell.phoneClose()      // the phone sits above it
+                    screen: scr.modelData
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    exclusionMode: ExclusionMode.Ignore
+                    color: Theme.scrim
+                    WlrLayershell.layer: WlrLayer.Overlay
+                    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                    WlrLayershell.namespace: "island-download-ask"
+                    MouseArea { anchors.fill: parent }
+                    DownloadAsk { anchors.centerIn: parent; scale: scr.sc; svc: Services }
+                }
                 // … and when it's done: "Downloads finished" + 2 min to shut down, on the screen you're on
                 PanelWindow {
                     visible: Services.download.asking && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name === scr.name
