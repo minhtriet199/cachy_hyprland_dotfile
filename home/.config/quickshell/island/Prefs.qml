@@ -24,6 +24,7 @@ Singleton {
     property bool phoneWinLast: false       //   …as a window (else the overlay)
     property bool phoneBigLast: false       //   …big (overlay only; the window is always big)
     property bool phoneWindow: false        // the phone is (or opens as) an app window — not saved: Super+Z opens it so, the other keys open the overlay
+    property var quickChips: ["wifi", "bt", "sound", "warp"]   // Quick panel chips, in order (pencil button → edit)
     property var clipPins: []               // pinned clipboard items (cliphist preview text, so a re-copy stays pinned)
     property int clipDays: 15               // unpinned clipboard items older than this are deleted (tools/clip-prune.sh)
     // idle timers in minutes (0 = never), like Windows: [plugged in, on battery]
@@ -55,7 +56,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/island"
 
     function set(k, v) { p[k] = v; save() }

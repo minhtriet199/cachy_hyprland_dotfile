@@ -6,6 +6,8 @@ Item {
     property var svc
     signal go(string screen)
     readonly property real cw: width - 32
+    property bool editing: false              // pencil button: edit the chips
+    onVisibleChanged: if (!visible) editing = false
     Column {
         x: 16; y: 18; width: q.cw
         spacing: 11
@@ -34,26 +36,15 @@ Item {
                 y: parent.height - 20 - 46 - 4
                 spacing: (width - 4 * 46) / 3
                 PhoneRoundBtn { glyph: "gear"; onClicked: q.go("settings") }
-                PhoneRoundBtn { glyph: "reload"; onClicked: q.svc.reloadShell() }
+                PhoneRoundBtn { glyph: q.editing ? "check" : "pencil"; fill: q.editing ? Theme.gOn : Theme.paper; onClicked: q.editing = !q.editing }   // edit chips (reload lives in Settings → System)
                 PhoneRoundBtn { glyph: q.svc.dnd ? "bellOff" : "bell"; fill: q.svc.dnd ? Theme.gTab : Theme.gChip; hiColor: Qt.rgba(1, 1, 1, 0.5)
                     glyphColor: q.svc.dnd ? "#FFFFFF" : Theme.textDeep; glyphStroke: 2.6; onClicked: q.svc.toggle("dnd") }   // Do not disturb
                 PhoneRoundBtn { glyph: "ring"; onClicked: q.svc.tool("record"); onRightClicked: q.svc.tool("recordPick")
                     Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: q.svc.recording ? "#E2607F" : Theme.berry } }
             }
         }
-        // chips, 2 per row: click opens its settings page, right-click switches it on / off
-        Grid {
-            columns: 2; rowSpacing: 10; columnSpacing: 10
-            readonly property real wideW: (q.cw - 10) / 2
-            PhoneToggleTile { width: parent.wideW; glyph: "wifi"; title: "Wi-Fi"; on: q.svc.wifi.on; sub: q.svc.wifi.on ? (q.svc.wifi.ssid || "On") : "Off"; onClicked: q.go("settingsWifi"); onRightClicked: q.svc.toggle("wifi") }
-            PhoneToggleTile { width: parent.wideW; glyph: "bluetooth"; title: "Bluetooth"; on: q.svc.bluetooth.on; sub: q.svc.bluetooth.on ? (q.svc.bluetooth.name || "On") : "Off"; onClicked: q.go("settingsBt"); onRightClicked: q.svc.toggle("bt") }
-            // Sound = speaker + mic (levels in Settings → Sound); right-click mutes the speaker
-            PhoneToggleTile { width: parent.wideW; glyph: q.svc.muted ? "mute" : "volume"; title: "Sound"; on: !q.svc.muted
-                sub: Math.round(q.svc.volume * 100) + "% · mic " + (q.svc.micOn ? Math.round(q.svc.micVolume * 100) + "%" : "off")
-                onClicked: q.go("settingsSound"); onRightClicked: q.svc.toggle("mute") }
-            PhoneToggleTile { width: parent.wideW; glyph: "cloud"; title: "Cloudflare WARP"; on: q.svc.warp.connected; sub: q.svc.warp.connected ? "Connected" : "Disconnected"; onClicked: q.svc.toggle("warp") }
-
-        }
+        // chips (QuickChips: pages of 2 × 3, pencil = edit)
+        QuickChips { width: parent.width; svc: q.svc; editing: q.editing; onGo: s => q.go(s) }
         // notifications
         Item {
             width: parent.width
