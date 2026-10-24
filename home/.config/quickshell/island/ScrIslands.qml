@@ -173,7 +173,7 @@ Item {
         id: apps
         x: 18; y: topCol.y + topCol.height + 6; width: is.cw
         height: is.height - y - ((is.svc.phoneBig && is.height > is.width) ? 64 : 22)
-        clip: true; spacing: 8; boundsBehavior: Flickable.StopAtBounds
+        clip: true; spacing: 8; bottomMargin: is.svc.phoneHide; boundsBehavior: Flickable.StopAtBounds
         model: is.wins
         // empty space → big phone
         MouseArea { z: -1; width: apps.width; height: Math.max(apps.height, apps.contentHeight)

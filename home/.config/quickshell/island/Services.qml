@@ -731,6 +731,7 @@ Singleton {
     signal wipePreviewRequested()
     function previewWipe() { wipePreviewRequested() }
     property bool phoneBig: false                  // landscape phone "big mode" (Settings)
+    property real phoneHide: 0                     // small overlay phone: page height hidden below the screen edge (lists end above it)
     signal powerMenuRequested()
     function powerMenu() { powerMenuRequested() }
     function power(what) {

@@ -553,7 +553,10 @@ Item {
     }
     onScreenChanged: { focusSoon.restart(); peek = 0 }
     // ── small overlay phone: how far the page can slide up (the phone's bottom is below the screen edge, less when lifted) ──
-    readonly property real peekMax: shown && !big && !windowed && !wantLand ? Math.max(0, 290 - pHolder.spot) : 0
+    readonly property real hideNow: shown && !big && !windowed && !wantLand ? Math.max(0, 290 - pHolder.spot) : 0
+    Binding { when: stage.shown && !stage.windowed; target: stage.svc; property: "phoneHide"; value: stage.hideNow }
+    // pages whose own lists already end above the edge (svc.phoneHide) don't slide
+    readonly property real peekMax: portShown === "home" || portShown === "islands" || portShown.startsWith("settings") ? 0 : hideNow
     property real peek: 0
     Behavior on peek { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
     onPeekMaxChanged: peek = Math.min(peek, peekMax)

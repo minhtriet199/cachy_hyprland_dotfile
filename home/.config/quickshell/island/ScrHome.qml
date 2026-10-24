@@ -98,7 +98,7 @@ Item {
         x: 18; y: top.y + top.height + 12; width: parent.width - 36
         height: home.height - y - 18 - ((home.svc.phoneBig && home.height > home.width) ? 52 : 4)
         cellWidth: width / Math.max(4, Math.floor(width / 110)); cellHeight: 98     // more columns on the wide (sideways) phone
-        clip: true; boundsBehavior: Flickable.StopAtBounds
+        clip: true; bottomMargin: home.svc.phoneHide; boundsBehavior: Flickable.StopAtBounds
         model: home.svc.entries.slice().sort((a, b) => a.name.localeCompare(b.name))
         delegate: Item {
             required property var modelData
@@ -129,7 +129,7 @@ Item {
         visible: home.q !== ""
         x: 18; y: top.y + top.height + 12; width: parent.width - 36
         height: home.height - y - 18 - ((home.svc.phoneBig && home.height > home.width) ? 52 : 26)          // room for the hint footer
-        clip: true; spacing: 6; boundsBehavior: Flickable.StopAtBounds
+        clip: true; spacing: 6; bottomMargin: home.svc.phoneHide; boundsBehavior: Flickable.StopAtBounds
         model: home.rows
         onCountChanged: positionViewAtBeginning()
         Connections { target: home; function onSelRowChanged() { if (home.selRow >= 0) list.positionViewAtIndex(home.selRow, ListView.Contain) } }

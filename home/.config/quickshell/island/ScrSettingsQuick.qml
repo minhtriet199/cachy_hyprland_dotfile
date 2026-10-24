@@ -17,7 +17,7 @@ Item {
         id: page
         // below the punch hole, above the frame (12) + shadow (10)
         anchors.fill: parent; anchors.topMargin: sq.topPad; anchors.bottomMargin: 22 + (sq.svc && sq.svc.phoneBig && sq.narrow ? 64 : 0)
-        contentHeight: pageCol.height + 36; clip: true; boundsBehavior: Flickable.StopAtBounds
+        contentHeight: pageCol.height + 36; bottomMargin: sq.svc ? sq.svc.phoneHide : 0; clip: true; boundsBehavior: Flickable.StopAtBounds
         WheelHandler { onWheel: e => page.contentY = Math.max(0, Math.min(Math.max(0, page.contentHeight - page.height), page.contentY - e.angleDelta.y / 2)) }
     Column {
         id: pageCol
