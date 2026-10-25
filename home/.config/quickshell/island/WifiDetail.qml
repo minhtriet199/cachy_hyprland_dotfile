@@ -22,6 +22,7 @@ Item {
     function setDns(p) {
         if (!p[1]) svc.wifiModify(i, ["ipv4.dns", "", "ipv4.ignore-auto-dns", "no", "ipv6.dns", "", "ipv6.ignore-auto-dns", "no"]);
         else svc.wifiModify(i, ["ipv4.dns", p[1], "ipv4.ignore-auto-dns", "yes", "ipv6.dns", p[2], "ipv6.ignore-auto-dns", "yes"]);
+        svc.dnsApply([p[0].toLowerCase()]);   // the system list wins over the network's DNS, so set it too
     }
     // Manual / Custom are choices you're still editing: only re-read them from the system when another network opens or after Save
     property bool manual: false
@@ -95,6 +96,13 @@ Item {
                     onClicked: { wd.customDns = true; dns4In.forceActiveFocus() }
                     UiText { id: cl; anchors.centerIn: parent; text: "Custom…"; px: 12; w: 700 }
                 }
+                // restart the DNS service + clear its cache (when sites still resolve the old way)
+                UiCandy {
+                    width: rl.implicitWidth + 40; height: 30; radius: 10; bw: 2; drop: 2; hi: 0; fill: Theme.paper; pressable: true
+                    onClicked: wd.svc.dnsApply(["restart"])
+                    Glyph { x: 9; anchors.verticalCenter: parent.verticalCenter; name: "reload"; size: 13; stroke: 2.6 }
+                    UiText { id: rl; x: 28; anchors.verticalCenter: parent.verticalCenter; text: "Restart DNS"; px: 12; w: 700 }
+                }
             }
             // your own DNS servers (IPv4; IPv6 optional)
             Row {
@@ -113,12 +121,15 @@ Item {
                         const v6 = dns4In.text.split(/[\s,;]+/).filter(x => x.includes(":"));
                         if (!v4.length && !v6.length) return;
                         wd.svc.wifiModify(wd.i, ["ipv4.dns", v4.join(","), "ipv4.ignore-auto-dns", "yes", "ipv6.dns", v6.join(","), "ipv6.ignore-auto-dns", v6.length ? "yes" : "no"]);
+                        wd.svc.dnsApply(["custom"].concat(v4, v6));
                     }
                     UiText { anchors.centerIn: parent; text: "Save"; px: 13; w: 700; color: "#FFFFFF" } }
             }
+            UiText { visible: text !== ""; width: parent.width; fam: "n"; px: 11; w: 900; text: wd.svc.dnsMsg
+                color: wd.svc.dnsMsg.startsWith("Not") ? Theme.berry : Theme.leafDeep }
             UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
                 text: wd.customDns ? "Separate servers with commas. IPv6 addresses (with “:”) can go in the same box."
-                                   : "Auto uses the system DNS: encrypted Cloudflare + Google for every network (gets around ISP blocking)." }
+                                   : "Your pick becomes the system DNS for every network, encrypted (asks your password). Auto = Google first, Cloudflare backup: keeps Steam on the Vietnam server the ISP doesn't block." }
         }
 
         // IPv4

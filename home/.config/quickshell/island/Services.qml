@@ -384,6 +384,19 @@ Singleton {
         stderr: StdioCollector { id: wifiModErr }
         onExited: code => { s.wifiSaveMsg = code === 0 ? "Saved ✓" : "Not saved — " + wifiModErr.text.trim().slice(0, 100); s.loadWifiInfo(ssid); statusSoon.restart(); wifiSaveClear.restart() } }
     Timer { id: wifiSaveClear; interval: 3000; onTriggered: s.wifiSaveMsg = "" }
+    // system-wide DNS (the list that really wins, see tools/dns-apply.sh) + restart resolved; asks the password (PolkitDialog)
+    property string dnsMsg: ""
+    Process { id: dnsP
+        stderr: StdioCollector { id: dnsErr }
+        onExited: code => { s.dnsMsg = code === 0 ? "DNS applied ✓" : code === 126 || code === 127 ? "Cancelled" : "Not applied — " + dnsErr.text.trim().slice(0, 100)
+            statusSoon.restart(); dnsClear.restart() } }
+    Timer { id: dnsClear; interval: 4000; onTriggered: s.dnsMsg = "" }
+    function dnsApply(args) {
+        if (dnsP.running) return;
+        dnsMsg = "Applying…";
+        dnsP.command = ["pkexec", Quickshell.shellDir + "/tools/dns-apply.sh"].concat(args);
+        dnsP.running = true;
+    }
     function wifiModify(info, args) {
         if (!info || !info.name || wifiMod.running) return;
         wifiSaveMsg = "Saving…"; wifiMod.ssid = info.ssid;
