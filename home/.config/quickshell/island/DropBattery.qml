@@ -12,7 +12,7 @@ DropCard {
     readonly property int pct: bat.percent
     property bool showBrightness: true
     readonly property var externals: (svc.screens || []).filter(m => !m.internal && !m.off && !m.mirror && (m.ddc || m.hdr))
-    width: 340; height: showBrightness ? 372 + externals.length * 58 : 310
+    width: 340; height: showBrightness ? 384 + externals.length * 58 : 316
     Component.onCompleted: if (showBrightness) svc.loadScreens()
     headerH: 92
 
@@ -94,13 +94,14 @@ DropCard {
         Repeater {
             model: [["Hybrid", "1"], ["Ultimate", "0"]]
             delegate: UiCandy {
+                id: mb
                 required property var modelData
                 required property int index
                 readonly property bool sel: d.muxSet === modelData[1]
                 width: (d.width - 40 - 16) / (d.muxPending ? 3 : 2); height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index + 1)
                 fill: sel ? Theme.inkPhone : Theme.paper; pressable: !sel && !muxP.running
                 onClicked: { muxP.want = modelData[1]; muxP.command = ["asusctl", "armoury", "set", "gpu_mux_mode", modelData[1]]; muxP.running = true }
-                UiText { anchors.centerIn: parent; text: modelData[0]; px: 13; w: 700; color: parent.sel ? "#FFFFFF" : Theme.text }
+                UiText { anchors.centerIn: parent; text: mb.modelData[0]; px: 13; w: 700; color: mb.sel ? "#FFFFFF" : Theme.text }
             }
         }
         UiCandy {
@@ -112,15 +113,15 @@ DropCard {
     }
 
     // screen brightness (laptop screen)
-    UiText { visible: d.showBrightness; x: 20; y: 304; text: (d.externals.length ? "LAPTOP SCREEN · " : "SCREEN BRIGHTNESS · ") + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
-    UiSlider { visible: d.showBrightness; x: 20; y: 326; width: d.width - 40; value: d.svc.brightness; color: Theme.sunDeep
+    UiText { visible: d.showBrightness; x: 20; y: 316; text: (d.externals.length ? "LAPTOP SCREEN · " : "SCREEN BRIGHTNESS · ") + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
+    UiSlider { visible: d.showBrightness; x: 20; y: 338; width: d.width - 40; value: d.svc.brightness; color: Theme.sunDeep
         onPicked: v => d.svc.setBrightness(Math.max(0.05, v)) }
     Repeater {
         model: d.showBrightness ? d.externals : []
         delegate: Item {
             required property var modelData
             required property int index
-            x: 20; y: 362 + index * 58; width: d.width - 40; height: 50
+            x: 20; y: 374 + index * 58; width: d.width - 40; height: 50
             UiText { width: parent.width; elide: Text.ElideRight; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft
                 text: modelData.model.toUpperCase() + " · " + modelData.pct + "%" + (modelData.hdr ? " · " + modelData.nits + " NITS" : "") }
             UiSlider { y: 22; width: parent.width; value: modelData.pct / 100; color: Theme.sunDeep

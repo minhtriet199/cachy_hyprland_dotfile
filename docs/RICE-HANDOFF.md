@@ -57,7 +57,7 @@ real settings are not touched.
 | | |
 |---|---|
 | Laptop | ASUS ROG Zephyrus G14 (GA402RJ), Ryzen 7 6800HS, 16 GB RAM |
-| GPU | RX 6700S (card1, drives both screens — MUX "Ultimate") + Radeon 680M (card0) |
+| GPU | RX 6700S (card1) + Radeon 680M (card0). MUX: Ultimate = 6700S drives the screen (~10 W more) · Hybrid = 680M drives it, 6700S sleeps. Switch: battery dropdown → Graphics (asusctl armoury set gpu_mux_mode 1/0) + restart. Undo from a TTY: same command with 0 |
 | Screens | ASUS VG27AQ5A **HDMI-A-1** (left, 2560×1440@120, **HDR on**) · laptop **eDP-1** (right, 2560×1600@120, scale 1.25) |
 | OS | CachyOS, kernels `linux-cachyos` 7.2.11 + `linux-cachyos-lts` 6.18 (backup) |
 | Desktop | **Hyprland 0.56, Lua config** · login: greetd + **island-greeter** (`install.sh autologin` = boot into locked session, see island-greeter README) |
