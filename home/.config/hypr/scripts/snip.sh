@@ -5,6 +5,7 @@
 # Grab every screen FIRST, then freeze (hyprpicker draws a still frame over them) so the moment is
 # captured even if a game/video keeps moving. The snip is cut from that first grab: grabbing the frozen
 # frame instead converts the colours twice on an HDR screen and the snip looks burnt (too much contrast).
+snipflag="${XDG_RUNTIME_DIR:-/tmp}/island-snipping"; touch "$snipflag"   # clip-store.sh: ignore stray text until the snip image lands
 tmp=$(mktemp -d); trap 'kill $freeze 2>/dev/null; rm -rf "$tmp"' EXIT
 # remember the pointer: if it gets thrown to the top-left corner (focus jumping between screens), put it back
 pos=$(hyprctl cursorpos)
@@ -23,7 +24,7 @@ sleep 0.15                         # let the frozen frame appear
 unjump
 
 # Dark dim outside the selection, selection itself stays clear, white border
-region=$(slurp -b "#00000080" -s "#00000000" -c "#ffffffcc" -w 2) || { unjump; exit 0; }   # Esc cancels
+region=$(slurp -b "#00000080" -s "#00000000" -c "#ffffffcc" -w 2) || { rm -f "$snipflag"; unjump; exit 0; }   # Esc cancels
 
 # the cut goes to the Island snip editor (SnipEditor.qml): Enter = save to ~/Pictures/screenshot + copy, Esc = copy only
 out="${XDG_RUNTIME_DIR:-/tmp}/island-snip"; mkdir -p "$out"; rm -f "$out"/*

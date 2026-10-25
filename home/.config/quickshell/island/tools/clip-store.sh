@@ -2,10 +2,12 @@
 # Clipboard history saver (autostart: wl-paste --watch this). Same as `cliphist store`, and also writes
 # down when it was copied ("<id> <unix time>" in ~/.cache/island/cliptimes) so the phone can show the time.
 [ "$CLIPBOARD_STATE" = sensitive ] && exit 0      # hidden pins are copied as sensitive: keep them out of the history
-# a Steam game (XWayland/Proton) hands its own clipboard text over whenever it loses focus (e.g. Super+S snip):
-# skip text while a game is focused, keep images (the snip itself)
-case "$(hyprctl activewindow -j 2>/dev/null)" in *'"class": "steam_app_'*)
-    wl-paste --list-types 2>/dev/null | grep -q '^image/' || { cat >/dev/null; exit 0; } ;; esac
+# while a snip runs (snip.sh drops this flag), the window losing focus (XWayland games) re-sends its old clipboard
+# text: skip text then, keep the snip image (which ends the snip)
+snip="${XDG_RUNTIME_DIR:-/tmp}/island-snipping"
+if [ -n "$(find "$snip" -mmin -1 2>/dev/null)" ]; then
+    wl-paste --list-types 2>/dev/null | grep -q '^image/' && rm -f "$snip" || { cat >/dev/null; exit 0; }
+fi
 cliphist store || exit 0
 id=$(cliphist list | head -n 1 | cut -f 1)
 [ -n "$id" ] || exit 0
