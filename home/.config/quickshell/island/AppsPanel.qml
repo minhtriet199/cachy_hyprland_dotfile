@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Apps page: default apps (tap a kind → pick from the apps that can open it) and startup apps
+// Apps page: installed apps (InstalledApps.qml), default apps (tap a kind → pick from the apps that can open it) and startup apps
 // (Island's own list with on/off, add by name + command, remove; the ones Hyprland always starts are shown below).
 // Data + changes: tools/apps.py. Startup list is started by hypr/config/startup_island.lua.
 Item {
@@ -27,6 +27,8 @@ Item {
         id: col
         width: ap.width; spacing: 8
 
+        InstalledApps { width: parent.width; svc: ap.svc }
+        Item { width: 1; height: 4 }
         Label { text: "DEFAULT APPS · WHAT OPENS YOUR FILES" }
         Repeater {
             model: ap.d.defaults

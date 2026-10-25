@@ -2,13 +2,15 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Disk map page: how your home folder uses space as boxes sized by space (tap = look inside, ‹ = back),
+// Disk map page: the whole drive as one bar split by kind (games, apps, snapshots… tap Games / Apps / Snapshots → that page),
+// how your home folder uses space as boxes sized by space (a folder holding most of it is opened up in place; tap = look inside, ‹ = back),
 // the biggest folders (games…), and things that can be cleaned. Safe ones (your own caches) are ticked and
 // cleaned with a double tap; ones that need a password or a look open a terminal / the folder instead.
 // Scans only while the page is open (tools/diskmap.py, ~1 s).
 Item {
     id: dm
     property var svc
+    signal go(string screen)
     readonly property bool wide: width >= 700
     implicitHeight: col.implicitHeight
     readonly property string tool: Quickshell.shellDir + "/tools/diskmap.py"
@@ -58,29 +60,66 @@ Item {
         return out;
     }
 
+    // overview kinds → colour, and where a tap goes
+    readonly property var kindLook: ({ games: [Theme.gPeach, "settingsApps"], apps: [Theme.gChip, "settingsApps"], hidden: [Theme.gBerry, "settingsRecovery"],
+        cache: [Theme.gLeaf, ""], code: [Theme.gSea, ""], media: [Theme.gLilac, ""], docs: [Theme.gSun, ""], data: [[Theme.cream, Theme.paper], ""], other: [[Theme.paper, Theme.cream], ""] })
+    readonly property var ov: d && d.overview ? d.overview : []
     component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
-    component Stat: Column {
-        property string title
-        property string value
-        property color dot: "transparent"
-        width: (col.width - 3 * 8) / (dm.wide ? 4 : 2); spacing: 2
-        Row { spacing: 5
-            Rectangle { visible: parent.parent.dot.a > 0; width: 8; height: 8; radius: 4; color: parent.parent.dot; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: parent.parent.title; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft } }
-        UiText { text: parent.value; px: 22; w: 700 }
-    }
-
     Column {
         id: col
         width: dm.width; spacing: 10
 
-        // ── numbers ──
+        // ── whole drive ──
+        Item {
+            width: parent.width; height: 26
+            UiText { anchors.verticalCenter: parent.verticalCenter; px: 15; w: 700
+                text: dm.d ? dm.gb(dm.d.disk.used) + " used of " + dm.gb(dm.d.disk.size) : "Scanning…" }
+            UiText { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; px: 15; w: 700; color: Theme.leafDeep
+                text: dm.d ? dm.gb(dm.d.disk.free) + " free" : "" }
+        }
+        UiCandy {
+            visible: dm.ov.length > 0
+            width: parent.width; height: 30; radius: 11; bw: 2.5; drop: 3; hi: 0; ink: Theme.inkPhone; fill: Theme.paper
+            Row {
+                x: 4; y: 4; width: parent.width - 8; height: parent.height - 8; spacing: 0; clip: true
+                Repeater {
+                    model: dm.ov
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+                        width: dm.d ? parent.width * modelData.size / dm.d.disk.size : 0; height: parent.height
+                        radius: index === 0 ? 7 : 0
+                        color: dm.kindLook[modelData.id][0][1]
+                        Rectangle { anchors.right: parent.right; width: 1.5; height: parent.height; color: Theme.inkPhone; opacity: 0.5 }
+                    }
+                }
+            }
+        }
+        // the kinds, biggest first; Games / Apps / Snapshots open their page
         Flow {
-            width: parent.width; spacing: 8
-            Stat { title: "Free right now"; value: dm.d ? dm.gb(dm.d.disk.free) : "…" }
-            Stat { title: "Safe to remove"; value: dm.gb(dm.safeSize); dot: Theme.leaf }
-            Stat { title: "Needs a look"; value: dm.gb(dm.reviewSize); dot: Theme.orange }
-            Stat { title: "System & apps"; value: dm.d && dm.trail.length === 0 ? dm.gb(Math.max(0, dm.d.disk.used - dm.d.size)) : "—" }
+            width: parent.width; spacing: 6
+            Repeater {
+                model: dm.ov.slice().sort((a, b) => b.size - a.size)
+                delegate: UiCandy {
+                    id: kc
+                    required property var modelData
+                    readonly property string to: dm.kindLook[modelData.id][1]
+                    width: dm.wide ? (col.width - 12) / 3 : (col.width - 6) / 2; height: 44; radius: 12; bw: 2; drop: to ? 2 : 0; hi: 0
+                    fill: Theme.cream; pressable: to !== ""
+                    onClicked: dm.go(to)
+                    Rectangle { x: 9; anchors.verticalCenter: parent.verticalCenter; width: 12; height: 26; radius: 4; border.width: 1.5; border.color: Theme.inkPhone
+                        color: dm.kindLook[modelData.id][0][1] }
+                    Column { x: 28; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 28 - 18
+                        UiText { width: parent.width; elide: Text.ElideRight; text: modelData.label; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft; height: 14 }
+                        UiText { text: dm.gb(modelData.size) + (dm.d ? "  ·  " + Math.max(1, Math.round(100 * modelData.size / dm.d.disk.size)) + "%" : ""); px: 14; w: 700; height: 18 } }
+                    Glyph { visible: kc.to !== ""; anchors.right: parent.right; anchors.rightMargin: 7; anchors.verticalCenter: parent.verticalCenter; name: "arrowRight"; size: 11; stroke: 2.6 }
+                }
+            }
+        }
+        UiText {
+            visible: dm.ov.some(o => o.id === "hidden" && o.size > 20e9)
+            width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+            text: "Snapshots & hidden is mostly Btrfs snapshots: old copies of files you changed or deleted (game updates, removed games). The space comes back when old snapshots are removed on the Recovery page."
         }
 
         // ── map ──
@@ -108,13 +147,15 @@ Item {
                         id: tile
                         required property var modelData
                         readonly property var it: modelData.it
-                        readonly property var g: dm.kind(it.name, dm.d.path)
+                        readonly property var g: dm.kind(it.name, it.path || dm.d.path)
                         readonly property bool roomy: width > 110 && height > 80 && it.children && it.children.length > 0
                         x: modelData.x + 2; y: modelData.y + 2; width: Math.max(0, modelData.w - 4); height: Math.max(0, modelData.h - 4)
                         radius: 8; border.width: 2; border.color: Theme.inkPhone
                         gradient: Gradient { GradientStop { position: 0; color: tile.g[0] } GradientStop { position: 1; color: tile.g[1] } }
                         opacity: it.more ? 0.6 : 1
-                        UiText { visible: tile.width > 46 && tile.height > 30; x: 7; y: 5; width: tile.width - 14; elide: Text.ElideRight; text: tile.it.name; px: 12; w: 700 }
+                        UiText { visible: tile.width > 46 && tile.height > 30; x: 7; y: 5; width: tile.width - 14; elide: Text.ElideRight; text: tile.it.name; px: tile.width > 160 ? 14 : 12; w: 700 }
+                        UiText { visible: !tile.roomy && tile.width > 70 && tile.height > 66 && !!tile.it.in && tile.it.in !== "."; x: 7; y: 21; width: tile.width - 14
+                            elide: Text.ElideLeft; text: "in " + tile.it.in; fam: "n"; px: 9.5; w: 800; color: Theme.textSoft }
                         UiText { visible: tile.width > 46 && tile.height > 48; x: 7; anchors.bottom: parent.bottom; anchors.bottomMargin: 4
                             text: dm.gb(tile.it.size); px: Math.max(12, Math.min(26, tile.height / 5)); w: 700; color: Theme.textDeep }
                         // what's inside, drawn smaller (only if there is room)
@@ -168,7 +209,7 @@ Item {
 
         // ── clean up ──
         Item { width: 1; height: 2 }
-        Label { text: "CLEAN UP" }
+        Label { text: "CLEAN UP · " + dm.gb(dm.safeSize) + " SAFE · " + dm.gb(dm.reviewSize) + " NEEDS A LOOK" }
         Repeater {
             model: dm.recs
             delegate: UiCandy {

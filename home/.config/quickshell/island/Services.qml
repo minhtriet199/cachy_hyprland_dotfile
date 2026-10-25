@@ -949,7 +949,7 @@ Singleton {
         ["Power & battery", "settingsPower", "battery", "#FFC23C", "power battery brightness sleep turbo silent mode"],
         ["Time & language", "settingsTimeLang", "globe", "#7CC47F", "time date clock timezone zone region language keyboard layout typing vietnamese 24-hour"],
         ["Mouse & touchpad", "settingsMouse", "crosshair", "#8E7BE6", "mouse touchpad trackpad speed sensitivity tap click scroll natural cursor size text size accessibility"],
-        ["Apps", "settingsApps", "box", "#F7A982", "apps default browser open with files video music pdf startup autostart login"],
+        ["Apps", "settingsApps", "box", "#F7A982", "apps installed uninstall remove games size cache default browser open with files video music pdf startup autostart login"],
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
         ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
         ["Recovery", "settingsRecovery", "undo", "#7C83F0", "recovery snapshot backup restore rollback roll back undo"],

@@ -27,7 +27,7 @@ Item {
         ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"],
         ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"],
         ["13", "Mouse & touchpad", "Speed, tap, cursor size", "#8E7BE6", "crosshair", "settingsMouse"],
-        ["14", "Apps", "Default apps, startup", "#F7A982", "box", "settingsApps"],
+        ["14", "Apps", "Installed, default, startup", "#F7A982", "box", "settingsApps"],
         ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"],
         ["16", "Disk map", "What fills your drive", "#FFC23C", "chart", "settingsDiskMap"],
         ["17", "Recovery", "Snapshots, roll back", "#7C83F0", "undo", "settingsRecovery"]

@@ -26,7 +26,7 @@ Item {
         windows: ["Windows", "See-through, borders, corners, gaps", "sliders", Theme.gSea],
         timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf],
         mouse: ["Mouse & touchpad", "Speed, tap, cursor size", "crosshair", Theme.gLilac],
-        apps: ["Apps", "Default apps, startup", "box", Theme.gPeach],
+        apps: ["Apps", "Installed, default, startup", "box", Theme.gPeach],
         privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry],
         diskmap: ["Disk map", "What fills your drive", "chart", Theme.gSun],
         recovery: ["Recovery", "Snapshots, roll back", "undo", Theme.gLilac]
@@ -78,7 +78,7 @@ Item {
     Component { id: cmouse; MousePanel { svc: pg.svc } }
     Component { id: capps; AppsPanel { svc: pg.svc } }
     Component { id: cprivacy; PrivacyPanel { svc: pg.svc } }
-    Component { id: cdiskmap; DiskMapPanel { svc: pg.svc } }
+    Component { id: cdiskmap; DiskMapPanel { svc: pg.svc; onGo: s => pg.go(s) } }
     Component { id: crecovery; RecoveryPanel { svc: pg.svc } }
 
     focus: true
