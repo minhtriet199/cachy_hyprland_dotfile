@@ -1,6 +1,8 @@
 import QtQuick
+import Quickshell.Io
 
-// Battery dropdown: big %, charge state, life gauge (10 cells), power mode (asusctl profiles), screen brightness
+// Battery dropdown: big %, charge state, life gauge (10 cells), power mode (asusctl profiles), graphics (MUX: Hybrid = the
+// built-in GPU drives the screen and the RX 6700S sleeps · Ultimate = the RX 6700S drives it, faster games, ~10 W more; restart to switch), screen brightness
 // (laptop + one slider per plugged-in external screen, from screenctl.py — any brand, DDC/CI or HDR nits).
 // The Power settings page shows its own brightness slider, so it turns ours off (showBrightness).
 DropCard {
@@ -10,7 +12,7 @@ DropCard {
     readonly property int pct: bat.percent
     property bool showBrightness: true
     readonly property var externals: (svc.screens || []).filter(m => !m.internal && !m.off && !m.mirror && (m.ddc || m.hdr))
-    width: 340; height: showBrightness ? 312 + externals.length * 58 : 250
+    width: 340; height: showBrightness ? 372 + externals.length * 58 : 310
     Component.onCompleted: if (showBrightness) svc.loadScreens()
     headerH: 92
 
@@ -74,16 +76,51 @@ DropCard {
         }
     }
 
+    // graphics mode (MUX). set = what the next boot uses (firmware value: 0 Ultimate, 1 Hybrid); now = what this boot uses
+    // (the laptop screen hangs off the RX 6700S = card1 in Ultimate). Read only while the dropdown exists.
+    property string muxSet: ""
+    property string muxNow: ""
+    property string muxMsg: ""
+    Process { running: true; command: ["sh", "-c", "cat /sys/class/firmware-attributes/asus-armoury/attributes/gpu_mux_mode/current_value; grep -qx connected /sys/class/drm/card1-eDP-1/status && echo 0 || echo 1"]
+        stdout: StdioCollector { onStreamFinished: { const v = this.text.trim().split("\n"); d.muxSet = v[0] || ""; d.muxNow = v[1] || "" } } }
+    Process { id: muxP; property string want
+        stderr: StdioCollector { id: muxErr }
+        onExited: code => { if (code === 0) { d.muxSet = want; d.muxMsg = "" } else d.muxMsg = "Not changed: " + muxErr.text.trim().split("\n").pop().slice(0, 60) } }
+    readonly property bool muxPending: muxSet !== "" && muxNow !== "" && muxSet !== muxNow
+    UiText { x: 20; y: 244; fam: "n"; px: 11; w: 900; track: 1.4; color: d.muxMsg ? Theme.berry : Theme.textSoft
+        text: d.muxMsg || ("GRAPHICS · " + (d.muxPending ? "RESTART TO SWITCH" : d.muxNow === "1" ? "LONGER BATTERY" : d.muxNow === "0" ? "FASTER GAMES" : "…")) }
+    Row {
+        x: 20; y: 266; spacing: 8
+        Repeater {
+            model: [["Hybrid", "1"], ["Ultimate", "0"]]
+            delegate: UiCandy {
+                required property var modelData
+                required property int index
+                readonly property bool sel: d.muxSet === modelData[1]
+                width: (d.width - 40 - 16) / (d.muxPending ? 3 : 2); height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index + 1)
+                fill: sel ? Theme.inkPhone : Theme.paper; pressable: !sel && !muxP.running
+                onClicked: { muxP.want = modelData[1]; muxP.command = ["asusctl", "armoury", "set", "gpu_mux_mode", modelData[1]]; muxP.running = true }
+                UiText { anchors.centerIn: parent; text: modelData[0]; px: 13; w: 700; color: parent.sel ? "#FFFFFF" : Theme.text }
+            }
+        }
+        UiCandy {
+            visible: d.muxPending
+            width: (d.width - 40 - 16) / 3; height: 38; radius: 12; bw: 2.5; drop: 3; hi: 3; rotation: Theme.tilt(3); fill: Theme.gGo; pressable: true
+            onClicked: d.svc.power("reboot")
+            UiText { anchors.centerIn: parent; text: "Restart"; px: 13; w: 700; color: "#FFFFFF" }
+        }
+    }
+
     // screen brightness (laptop screen)
-    UiText { visible: d.showBrightness; x: 20; y: 244; text: (d.externals.length ? "LAPTOP SCREEN · " : "SCREEN BRIGHTNESS · ") + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
-    UiSlider { visible: d.showBrightness; x: 20; y: 266; width: d.width - 40; value: d.svc.brightness; color: Theme.sunDeep
+    UiText { visible: d.showBrightness; x: 20; y: 304; text: (d.externals.length ? "LAPTOP SCREEN · " : "SCREEN BRIGHTNESS · ") + Math.round(d.svc.brightness * 100) + "%"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft }
+    UiSlider { visible: d.showBrightness; x: 20; y: 326; width: d.width - 40; value: d.svc.brightness; color: Theme.sunDeep
         onPicked: v => d.svc.setBrightness(Math.max(0.05, v)) }
     Repeater {
         model: d.showBrightness ? d.externals : []
         delegate: Item {
             required property var modelData
             required property int index
-            x: 20; y: 302 + index * 58; width: d.width - 40; height: 50
+            x: 20; y: 362 + index * 58; width: d.width - 40; height: 50
             UiText { width: parent.width; elide: Text.ElideRight; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft
                 text: modelData.model.toUpperCase() + " · " + modelData.pct + "%" + (modelData.hdr ? " · " + modelData.nits + " NITS" : "") }
             UiSlider { y: 22; width: parent.width; value: modelData.pct / 100; color: Theme.sunDeep
