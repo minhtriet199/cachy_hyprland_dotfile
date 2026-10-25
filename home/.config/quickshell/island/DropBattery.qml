@@ -76,12 +76,14 @@ DropCard {
         }
     }
 
-    // graphics mode (MUX). set = what the next boot uses (firmware value: 0 Ultimate, 1 Hybrid); now = what this boot uses
-    // (the laptop screen hangs off the RX 6700S = card1 in Ultimate). Read only while the dropdown exists.
+    // graphics mode (MUX). set = what the next boot uses (0 Ultimate, 1 Hybrid); now = what this boot uses
+    // (the laptop screen hangs off the RX 6700S = card1 in Ultimate). asusd only queues a change and writes it to the
+    // firmware at shutdown (asus-shutdown), so our pick is remembered in ~/.cache/island/mux-queued for this boot.
+    // Read only while the dropdown exists.
     property string muxSet: ""
     property string muxNow: ""
     property string muxMsg: ""
-    Process { running: true; command: ["sh", "-c", "cat /sys/class/firmware-attributes/asus-armoury/attributes/gpu_mux_mode/current_value; grep -qx connected /sys/class/drm/card1-eDP-1/status && echo 0 || echo 1"]
+    Process { running: true; command: ["sh", "-c", "q=$HOME/.cache/island/mux-queued; if [ -n \"$(find \"$q\" -newer /proc/1 2>/dev/null)\" ]; then cat \"$q\"; else cat /sys/class/firmware-attributes/asus-armoury/attributes/gpu_mux_mode/current_value; fi; grep -qx connected /sys/class/drm/card1-eDP-1/status && echo 0 || echo 1"]
         stdout: StdioCollector { onStreamFinished: { const v = this.text.trim().split("\n"); d.muxSet = v[0] || ""; d.muxNow = v[1] || "" } } }
     Process { id: muxP; property string want
         stderr: StdioCollector { id: muxErr }
@@ -98,17 +100,24 @@ DropCard {
                 required property var modelData
                 required property int index
                 readonly property bool sel: d.muxSet === modelData[1]
-                width: (d.width - 40 - 16) / (d.muxPending ? 3 : 2); height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index + 1)
+                width: (d.width - 40 - (d.muxPending ? 24 : 8)) / (d.muxPending ? 4 : 2); height: 38; radius: 12; bw: 2.5; drop: 3; hi: 0; rotation: Theme.tilt(index + 1)
                 fill: sel ? Theme.inkPhone : Theme.paper; pressable: !sel && !muxP.running
-                onClicked: { muxP.want = modelData[1]; muxP.command = ["asusctl", "armoury", "set", "gpu_mux_mode", modelData[1]]; muxP.running = true }
+                onClicked: { muxP.want = modelData[1]; muxP.command = ["sh", "-c", "asusctl armoury set gpu_mux_mode \"$0\" && mkdir -p ~/.cache/island && echo \"$0\" > ~/.cache/island/mux-queued", modelData[1]]; muxP.running = true }
                 UiText { anchors.centerIn: parent; text: mb.modelData[0]; px: 13; w: 700; color: mb.sel ? "#FFFFFF" : Theme.text }
             }
         }
-        UiCandy {
-            visible: d.muxPending
-            width: (d.width - 40 - 16) / 3; height: 38; radius: 12; bw: 2.5; drop: 3; hi: 3; rotation: Theme.tilt(3); fill: Theme.gGo; pressable: true
-            onClicked: d.svc.power("reboot")
-            UiText { anchors.centerIn: parent; text: "Restart"; px: 13; w: 700; color: "#FFFFFF" }
+        // the switch happens at the next boot: restart now, or shut down (it switches when you turn it on)
+        Repeater {
+            model: d.muxPending ? [["Restart", "reboot", Theme.gGo], ["Shut down", "shutdown", [Theme.berry, Theme.berry]]] : []
+            delegate: UiCandy {
+                id: pb
+                required property var modelData
+                required property int index
+                width: (d.width - 40 - 24) / 4; height: 38; radius: 12; bw: 2.5; drop: 3; hi: 3; rotation: Theme.tilt(index + 3); fill: pb.modelData[2]; pressable: true
+                onClicked: d.svc.power(pb.modelData[1])
+                UiText { anchors.centerIn: parent; width: parent.width - 6; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                    text: pb.modelData[0]; px: 13; w: 700; color: "#FFFFFF" }
+            }
         }
     }
 
