@@ -82,7 +82,7 @@ Item {
         Toggle { key: "dwt"; glyph: "keyboard"; title: "Ignore touchpad while typing"; sub: mp.on("dwt") ? "No stray clicks from your palm" : "Off" }
         Slide { key: "tp_scroll"; title: "Scroll speed"; lo: 0.2; hi: 3; step: 0.1; tint: Theme.leaf; fmt: x => x.toFixed(1) + "×" }
         UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-            text: "Gestures: 4 fingers sideways = workspaces, 3 down = close, 3 up = full screen, 3 left = float." }
+            text: "Gestures: 4 fingers sideways = workspaces, 3 down = close, 3 up = full screen, 3 right = back, 3 left = forward (browsers, Dolphin). In the browser 2 fingers sideways also go back / forward." }
 
         Item { width: 1; height: 2 }
         Label { text: "EASY TO SEE" }
