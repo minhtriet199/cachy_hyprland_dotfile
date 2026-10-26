@@ -373,7 +373,7 @@ Item {
     Item {
         id: rail
         readonly property bool land: stage.wantLand
-        readonly property real tick: stage.r + stage.wob + stage.lk + stage.flatP + stage.hand + pHolder.scale + pHolder.y + pHolder.x
+        readonly property real tick: stage.r + stage.wob + stage.lk + stage.flatP + stage.hand + stage.tilt + pHolder.scale + pHolder.y + pHolder.x
                                      + stage.flat + stage.slideIn + stage.ringW + lHolder.scale + stage.cS + cornerMove.x + cornerMove.y + handMove.x + handMove.y
         readonly property point edgeTop: (tick, land ? lBody.mapToItem(stage, 920, 40) : pBody.mapToItem(stage, 390, 120))
         readonly property point edgeBot: (tick, land ? lBody.mapToItem(stage, 920, 400) : pBody.mapToItem(stage, 390, 520))
