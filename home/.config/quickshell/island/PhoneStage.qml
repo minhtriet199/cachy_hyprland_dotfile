@@ -82,12 +82,13 @@ Item {
     property real pv: previewing && svc.wallPreviewFor !== "Phone" && !windowed ? 1 : 0     // steps aside to show the desktop / lock preview
     Behavior on pv { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
     // corner pose: scale k about the phone's middle (o) and move that point to t; shared by both phones so a turn still lines up
-    property real cK: wantLand ? 560 / (920 * (big ? Math.min(width * 0.75 / 1012, height * 0.8 / 484) : 1.12))
-                               : 470 / (844 * (big ? Math.min(1.25, height * 0.9 / 844) : 1.1))
+    // (620 tall upright / 700 wide sideways: small enough to see the preview, big enough to keep using)
+    property real cK: wantLand ? 700 / (920 * (big ? Math.min(width * 0.75 / 1012, height * 0.8 / 484) : 1.12))
+                               : 620 / (844 * (big ? Math.min(1.25, height * 0.9 / 844) : 1.1))
     property real cOx: wantLand || big ? width / 2 : width / 2 - 45
     property real cOy: wantLand ? height / 2 + 30 : big ? height / 2 : height       // small upright phone: keep its bottom on the screen edge
-    property real cTx: width - (wantLand ? 420 : 330)
-    property real cTy: wantLand ? height - 250 : big ? height - 270 : height
+    property real cTx: width - (wantLand ? 440 : 340)
+    property real cTy: wantLand ? height - 270 : big ? height - 340 : height
     Behavior on cK { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
     Behavior on cOx { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
     Behavior on cOy { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
