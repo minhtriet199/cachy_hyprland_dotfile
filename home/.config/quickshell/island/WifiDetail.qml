@@ -1,16 +1,36 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 
 // One Wi-Fi network's settings (opened from the Wi-Fi list): status + IP info, DNS presets, IPv4 auto/manual,
-// IPv6 on/off, auto-connect, private address (MAC), metered, band (2.4 / 5 GHz), forget. Changes go through nmcli (svc.wifiModify).
+// IPv6 on/off, auto-connect, private address (MAC), metered, band (2.4 / 5 GHz), forget, password (👁 / copy) + share QR.
+// Changes go through nmcli (svc.wifiModify).
 Item {
     id: wd
     property var svc
     property string ssid: ""
     signal back()
     readonly property var i: svc.wifiInfo && svc.wifiInfo.ssid === ssid ? svc.wifiInfo : null
+    // password / share QR: read on the first tap, forgotten when you leave the network's page
+    property string pw: ""
+    property string qr: ""
+    property bool pwLoaded: false
+    property bool pwErr: false
+    property bool pwShown: false
+    property bool qrShown: false
+    property bool copied: false
+    readonly property bool pwBusy: pwP.running
+    property var _afterPw: null
+    function withPw(f) { if (pwLoaded) { f(); return } if (pwP.running || !i || !i.name) return; _afterPw = f; pwErr = false
+        pwP.command = ["sh", Quickshell.shellDir + "/tools/wifi-share.sh", i.name, ssid]; pwP.running = true }
+    Process { id: pwP
+        stdout: StdioCollector { id: pwOut }
+        onExited: code => { const l = pwOut.text.split("\n"); if (code !== 0 || l.length < 2) { wd.pwErr = true; return }
+            wd.pw = l[0]; wd.qr = l[1]; wd.pwLoaded = true; if (wd._afterPw) { const f = wd._afterPw; wd._afterPw = null; f() } } }
+    Timer { id: copiedT; interval: 1500; onTriggered: wd.copied = false }
     implicitHeight: col.implicitHeight
     Component.onCompleted: if (svc && ssid) svc.loadWifiInfo(ssid)
-    onSsidChanged: if (svc && ssid) svc.loadWifiInfo(ssid)
+    onSsidChanged: { pw = ""; qr = ""; pwLoaded = false; pwErr = false; pwShown = false; qrShown = false; if (svc && ssid) svc.loadWifiInfo(ssid) }
     Timer { interval: 5000; running: wd.visible && wd.ssid !== ""; repeat: true; onTriggered: wd.svc.loadWifiInfo(wd.ssid) }
 
     // DNS presets: [label, ipv4, ipv6]  ("" = automatic, i.e. the system's encrypted DNS / router)
@@ -71,6 +91,44 @@ Item {
             }
         }
         UiText { visible: !!wd.i && !wd.i.saved; width: parent.width; wrapMode: Text.Wrap; text: "Connect to this network once to change its settings."; fam: "n"; px: 12; w: 800; color: Theme.textSoft }
+
+        // password + share: read only when you tap 👁 / copy / Share (tools/wifi-share.sh); Share = a QR other phones scan to join
+        Column {
+            visible: !!wd.i && wd.i.saved
+            width: parent.width; spacing: 6
+            UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18; text: "PASSWORD & SHARING" }
+            UiCandy {
+                width: parent.width; height: 44; radius: 14; bw: 2; drop: 0; hi: 0; fill: Theme.cream
+                UiText { x: 14; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 14 - pwBtns.width - 22; elide: Text.ElideRight
+                    text: wd.pwBusy ? "Reading…" : wd.pwErr ? "Couldn't read it" : wd.pwLoaded && wd.pw === "" ? "No password (open network)"
+                        : wd.pwShown ? wd.pw : "••••••••••"
+                    px: 14; w: 700; color: wd.pwErr ? Theme.berry : Theme.text }
+                Row {
+                    id: pwBtns; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; spacing: 6
+                    UiCandy { width: 32; height: 30; radius: 10; bw: 2; drop: 2; hi: 0; fill: wd.pwShown ? Theme.gOn : Theme.paper; pressable: true
+                        onClicked: wd.withPw(() => wd.pwShown = !wd.pwShown)
+                        Glyph { anchors.centerIn: parent; name: wd.pwShown ? "eyeOff" : "eye"; size: 15; stroke: 2.6 } }
+                    UiCandy { width: 32; height: 30; radius: 10; bw: 2; drop: 2; hi: 0; fill: wd.copied ? Theme.gOn : Theme.paper; pressable: true
+                        onClicked: wd.withPw(() => { if (!wd.pw) return; Quickshell.execDetached(["sh", "-c", 'printf %s "$0" | wl-copy --sensitive', wd.pw]); wd.copied = true; copiedT.restart() })
+                        Glyph { anchors.centerIn: parent; name: wd.copied ? "check" : "clipboard"; size: 15; stroke: 2.6 } }
+                    UiCandy { width: shT.implicitWidth + 40; height: 30; radius: 10; bw: 2.5; drop: wd.qrShown ? 0 : 3; hi: 3; fill: wd.qrShown ? Theme.gOn : Theme.gLeaf; pressable: true
+                        onClicked: wd.withPw(() => wd.qrShown = !wd.qrShown)
+                        Glyph { x: 9; anchors.verticalCenter: parent.verticalCenter; name: "scan"; size: 14; stroke: 2.6 }
+                        UiText { id: shT; x: 28; anchors.verticalCenter: parent.verticalCenter; text: "Share"; px: 12.5; w: 700 } }
+                }
+            }
+            UiCandy {
+                visible: wd.qrShown && wd.qr !== ""
+                width: parent.width; height: qrCol.implicitHeight + 24; radius: 16; bw: 2.5; drop: 3; hi: 0; fill: "#FFFFFF"
+                Column {
+                    id: qrCol; y: 12; width: parent.width; spacing: 8
+                    Image { anchors.horizontalCenter: parent.horizontalCenter; width: Math.min(220, parent.width - 40); height: width
+                        source: wd.qr; smooth: false; fillMode: Image.PreserveAspectFit }
+                    UiText { width: parent.width - 24; anchors.horizontalCenter: parent.horizontalCenter; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap
+                        text: "Scan with a phone camera to join “" + wd.ssid + "”"; fam: "n"; px: 11.5; w: 800; color: "#3A4A50" }
+                }
+            }
+        }
 
         // DNS
         Column {
