@@ -28,7 +28,6 @@ cachyos-gaming-meta
 cachyos-grub-theme
 cachyos-hooks
 cachyos-keyring
-cachyos-micro-settings
 cachyos-mirrorlist
 cachyos-plymouth-bootanimation
 cachyos-plymouth-theme
@@ -130,7 +129,6 @@ man-pages
 mdadm
 meld
 mesa-utils
-micro
 mkinitcpio
 modemmanager
 mtools

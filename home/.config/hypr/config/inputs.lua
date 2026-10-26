@@ -5,10 +5,10 @@ hl.config({
         -- sensitivity = -0.25,
         accel_profile = "flat",
     },
-    -- Uncomment the section below to enable software cursors; this can help with cursor display or behavior issues
-    -- cursor = {
-    --     no_hardware_cursors = 1,
-    -- },
+    -- gpu-pick.sh made the 6700S primary: eDP on the 680M shows the hardware cursor as a black square
+    cursor = {
+        no_hardware_cursors = os.getenv("AQ_DRM_DEVICES") and 1 or 2,
+    },
 })
 
 hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
