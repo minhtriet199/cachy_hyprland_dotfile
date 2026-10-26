@@ -26,13 +26,10 @@ cachyos-fish-config
 cachyos-gaming-applications
 cachyos-gaming-meta
 cachyos-grub-theme
-cachyos-hello
 cachyos-hooks
-cachyos-kernel-manager
 cachyos-keyring
 cachyos-micro-settings
 cachyos-mirrorlist
-cachyos-packageinstaller
 cachyos-plymouth-bootanimation
 cachyos-plymouth-theme
 cachyos-rate-mirrors
@@ -182,7 +179,6 @@ rog-control-center
 rsync
 s-nail
 sg3_utils
-shelly
 slurp
 smartmontools
 snapper
