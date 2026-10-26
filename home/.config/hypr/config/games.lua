@@ -130,3 +130,21 @@ hl.on("window.open", function(w)
         end
     end)
 end)
+
+-- Proton games often open their main window with NO title. windowrules.lua treats an untitled steam_app window as a
+-- splash / launcher popup (float, not fullscreen), and rules only run when a window opens — so such a game stayed a
+-- floating window (Slay the Spire 2, 2026-10-26). When an untitled game window gets its title and is big (at least half
+-- its screen), it's the real game: make it fullscreen. Small popups (launcher, "Launching...") are left floating.
+local titledFs = {} -- address -> true once handled
+hl.on("window.title", function(w)
+    pcall(function()
+        if not w or titledFs[w.address] or w.initial_title ~= "" or w.title == "" then return end
+        if not w.floating or w.fullscreen ~= 0 or not w.monitor or not isGame(w) then return end
+        local m, s = w.monitor, w.size
+        local ww, wh = s.x or s[1] or 0, s.y or s[2] or 0
+        if ww < m.width / m.scale * 0.5 or wh < m.height / m.scale * 0.5 then return end
+        titledFs[w.address] = true
+        hl.dispatch(hl.dsp.window.fullscreen({ mode = 0, window = "address:" .. w.address }))
+    end)
+end)
+hl.on("window.destroy", function(w) if w then titledFs[w.address] = nil end end)

@@ -37,7 +37,8 @@ hl.window_rule({ match = { class = "^(aquamarine)$" }, opaque = true, no_blur = 
 local gamingApps = "^(steam_app.*|gamescope)$"
 -- Which screen/workspace a game opens on is handled in config/games.lua
 hl.window_rule({ match = { xdg_tag = "^(.*game.*)$" }, fullscreen_state = 2, content = "game", sync_fullscreen = true })
--- Let games skip vsync for the lowest input lag (needs general.allow_tearing)
+-- Let games skip vsync for the lowest input lag (needs general.allow_tearing). Two rules on purpose: Steam games by
+-- class (also the ones that open untitled, see games.lua), other games by their "game" content type.
 hl.window_rule({ match = { class = gamingApps }, immediate = true })
 hl.window_rule({ match = { content = "game" }, immediate = true })
 hl.window_rule({ match = { class = "^(steam)$", title = "^(Friends List)$" }, float = true })
@@ -54,6 +55,8 @@ hl.window_rule({
     size             = { "monitor_w", "monitor_h" },
     sync_fullscreen  = true,
 })
+-- Untitled steam_app windows = splash / launcher popups. A game whose main window opens untitled is made
+-- fullscreen by config/games.lua once it gets its title and is big.
 hl.window_rule({
     match = {
         class         = "^(steam_app.*)$",
@@ -66,12 +69,10 @@ hl.window_rule({
 })
 
 -- Apps
-hl.window_rule({ match = { class = "^(.*\\.exe)$", float = true }, monitor = PRIMARY_MONITOR, center = true, fullscreen_state = 0 })
-hl.window_rule({ match = { class = "^(.*[Ll]auncher.*)$" }, float = true, monitor = PRIMARY_MONITOR })
-hl.window_rule({ match = { class = "^(vesktop|discord)$" }, monitor = PRIMARY_MONITOR })
-hl.window_rule({ match = { class = "^(.*[Cc]alc.*)$" }, float = true, size = { "max(monitor_w, monitor_h)*0.17", "min(monitor_w, monitor_h)*0.43" } })
+-- (which screen an app opens on: Island's launcher puts it on the screen you launched from — config/launch.lua)
+hl.window_rule({ match = { class = "^(.*\\.exe)$", float = true }, center = true, fullscreen_state = 0 })
+hl.window_rule({ match = { class = "^(.*[Ll]auncher.*)$" }, float = true })
 hl.window_rule({ match = { class = "^(org\\.kde\\.keditfiletype)$" }, float = true })
-hl.window_rule({ match = { class = "^(org\\.kde\\.ark)$" }, size = { "max(monitor_w, monitor_h)*0.40", "min(monitor_w, monitor_h)*0.40" } })
 hl.window_rule({ match = { class = "^(.*swash)$", title = "^(Swash)$" }, min_size = { "max(monitor_w, monitor_h)*0.35", "min(monitor_w, monitor_h)*0.35" }, float = true })
 hl.window_rule({
     match = {
@@ -88,8 +89,8 @@ hl.window_rule({
 
 -- Float Utility Windows
 local floatApps = {
-    { class = "^(kvantummanager|qt[56]ct|nwg-look)$" },
-    { class = "^(org.pulseaudio.pavucontrol|blueman-manager|nm-applet|nm-connection-editor)$" },
+    { class = "^(kvantummanager|qt6ct|nwg-look)$" },
+    { class = "^(org.pulseaudio.pavucontrol)$" },
     { title = "^(Winetricks.*|Protontricks.*)$" },
 }
 for _, m in ipairs(floatApps) do hl.window_rule({ match = m, float = true }) end
@@ -100,8 +101,8 @@ local modalMatches = {
     { initial_title = "^(Open File)$" },
     { class = "^([Xx]dg-desktop-portal-gtk)$" },
     { title = "^(File Upload|Choose wallpaper|Library)(.*)$" },
-    { class = "^(.*dialog.*)$" },
-    { title = "^(.*dialog.*)$" },
+    { class = "^(.*[Dd]ialog)$" },      -- ends in "dialog" (a browser tab mentioning a dialog no longer floats the browser)
+    { title = "^(.*[Dd]ialog)$" },
     { class = "^(hyprland-share-picker)$"},
 }
 for _, m in ipairs(modalMatches) do hl.window_rule({ match = m, float = true }) end
