@@ -14,10 +14,14 @@ var eyeR = { cx: 103, cy: 28, r: 18, sx: 5, sy: 4 }
 var muzzle = "M 72 28 C 92 28 106 40 108 58 C 110 72 112 88 100 93 C 88 98 80 92 79 84 L 77 72 C 74 70 70 70 67 72 L 65 84 C 64 92 56 98 44 93 C 32 88 34 72 36 58 C 38 40 52 28 72 28 Z"
 var mouth = "M 62 70 Q 72 75 82 70"
 var nose = ellipse(73, 57, 14, 9)
-// whole Jake for the walk (same box units; the face above sits on top). Head = the orange that was the wallpaper.
-var head = { cx: 72, cy: 44, w: 156, h: 124 }       // rounded box around the face
-var body = ellipse(72, 124, 46, 32)
-var legs = [{ x: 44, y: 144, w: 18, h: 30 }, { x: 82, y: 144, w: 18, h: 30 }]
-var arms = [{ x: 19, y: 100, w: 14, h: 34 }, { x: 111, y: 100, w: 14, h: 34 }]
-var tail = "M 114 132 C 136 130 144 114 135 102"
+// whole Jake (JakeWipe puppet), same box units — the face above sits at the top of a tall bean, eyes poking out on the
+// right like the show. Limbs are two-part noodles that rotate (0° = straight down, + = clockwise on screen).
+var bean = { x: -4, y: -16, w: 122, h: 240 }
+var pivot = { x: 57, y: 104 }                       // middle of the bean: turns and squashes happen around here
+var arms = [{ x: 9, y: 120 }, { x: 109, y: 120 }]   // shoulders (left, right)
+var hips = [{ x: 30, y: 212 }, { x: 84, y: 212 }]
+var arm = { up: 46, low: 38, w: 11, hand: 7 }
+var leg = { len: 92, w: 12, footW: 24, footH: 11 }
+var feet = 212 + 92 + 6                             // y of the soles when standing
+var tail = "M 2 188 C -16 194 -22 212 -14 226"
 var winkLine = "M 87 30 Q 103 40 119 30"            // right eye shut

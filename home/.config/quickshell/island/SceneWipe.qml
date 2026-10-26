@@ -6,9 +6,10 @@ Item {
     id: sw
     property real t: 0
     property string mode: "none"
+    property bool runLeft: false             // Jake runs off to the left (you typed on the left screen)
     readonly property bool jake: Prefs.wipeKind === "jake"
     visible: mode !== "none"
     IrisWipe { anchors.fill: parent; visible: !sw.jake && sw.mode !== "none"; mode: sw.jake ? "none" : sw.mode; t: sw.t }
     Loader { anchors.fill: parent; active: sw.jake
-        sourceComponent: JakeWipe { mode: sw.mode; t: sw.t } }
+        sourceComponent: JakeWipe { mode: sw.mode; t: sw.t; runLeft: sw.runLeft } }
 }

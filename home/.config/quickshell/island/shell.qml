@@ -56,8 +56,14 @@ ShellRoot {
         property real deskT: 0
         property string lockWipe: "none"
         property real lockT: 0
-        readonly property int coverMs: Prefs.wipeKind === "jake" ? 1500 : 560     // desktop side: Jake walks in / out
-        readonly property int revealMs: Prefs.wipeKind === "jake" ? 2800 : 650
+        readonly property int coverMs: Prefs.wipeKind === "jake" ? 2200 : 560     // desktop side: Jake runs in / falls, slams, runs off
+        readonly property int revealMs: Prefs.wipeKind === "jake" ? 3800 : 650
+        // Jake runs off to the left when you unlocked on the leftmost of 2+ screens, else to the right
+        property bool runLeft: false
+        function pickRunSide() {
+            const all = Quickshell.screens, f = all.find(x => x.name === shell.focusedName());
+            runLeft = all.length > 1 && !!f && all.every(x => x.x >= f.x) && all.some(x => x.x > f.x);
+        }
         SequentialAnimation {
             id: toLockAnim                                   // desktop → lock: close on the desktop, open on the lock screen
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
@@ -113,7 +119,7 @@ ShellRoot {
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => {
                 if (result === PamResult.Success) {
-                    lockTestTimer.stop(); toDeskAnim.restart()      // busy until the desktop is back
+                    lockTestTimer.stop(); lockCtl.pickRunSide(); toDeskAnim.restart()      // busy until the desktop is back
                     if (lockCtl.bootLock) { lockCtl.bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) }
                 }
                 else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
@@ -141,7 +147,7 @@ ShellRoot {
         }
         Connections { target: Services; function onLockRequested() { lockCtl.lockNow() } }
         // Settings → Transition → Preview: close and open on the desktop (no lock)
-        Connections { target: Services; function onWipePreviewRequested() { if (!previewAnim.running) previewAnim.restart() } }
+        Connections { target: Services; function onWipePreviewRequested() { if (!previewAnim.running) { lockCtl.pickRunSide(); previewAnim.restart() } } }
         SequentialAnimation {
             id: previewAnim
             ScriptAction { script: { shell.phoneClose(); lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
@@ -428,7 +434,7 @@ ShellRoot {
                     color: "transparent"
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.namespace: "island-wipe"
-                    SceneWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT }
+                    SceneWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT; runLeft: lockCtl.runLeft }
                 }
 
                 // ── wallpaper ──
