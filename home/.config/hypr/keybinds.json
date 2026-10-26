@@ -13,7 +13,7 @@
   "action": "exec",
   "arg": "~/.config/hypr/scripts/pip-toggle.sh",
   "category": "Windows",
-  "desc": "Picture-in-Picture (open / close)",
+  "desc": "Picture-in-Picture (open / hide / show)",
   "locked": false,
   "repeating": false
  },

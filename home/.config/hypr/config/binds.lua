@@ -20,7 +20,7 @@ end)
 
 -- Windows
 hl.bind("SUPER + Escape", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh panel-toggle session"), { description = "Power menu" })
-hl.bind("SUPER + Q", hl.dsp.exec_cmd("~/.config/hypr/scripts/pip-toggle.sh"), { description = "Picture-in-Picture (open / close)" })
+hl.bind("SUPER + Q", hl.dsp.exec_cmd("~/.config/hypr/scripts/pip-toggle.sh"), { description = "Picture-in-Picture (open / hide / show)" })
 hl.bind("SUPER + Z", hl.dsp.exec_cmd("qs -c island ipc call island phonemode"), { description = "Phone: overlay ↔ window" })
 hl.bind("SUPER + D", hl.dsp.exec_cmd("~/.config/hypr/scripts/shell-cmd.sh bar-toggle"), { description = "Show / hide top bar" })
 hl.bind("SUPER + W", hl.dsp.window.close(), { description = "Close window" })

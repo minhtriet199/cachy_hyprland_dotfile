@@ -1,13 +1,18 @@
 #!/bin/sh
-# Super+Q: a Picture-in-Picture window is open → close it (from any app); otherwise ask Helium to pop the playing
-# video out (Google's "Picture-in-Picture Extension", its shortcut Alt+P, sent straight to the Helium window).
-pip=$(hyprctl -j clients | jq -r 'first(.[] | select(.title | test("^[Pp]icture[- ]?[Ii]n[- ]?[Pp]icture")) | .address) // empty')
+# Super+Q: a Picture-in-Picture window is showing → hide it in special:pip (it keeps playing); hidden → bring it back
+# to this workspace, pinned again; none → ask Helium to pop the playing video out (Google's "Picture-in-Picture
+# Extension", its shortcut Alt+P, sent straight to the Helium window). Close a PiP with its own ✕.
+pip=$(hyprctl -j clients | jq -r 'first(.[] | select(.title | test("^[Pp]icture[- ]?[Ii]n[- ]?[Pp]icture")) | "\(.address) \(.workspace.name)") // empty')
 if [ -n "$pip" ]; then
-    prev=$(hyprctl -j activewindow | jq -r '.address // empty')
-    hyprctl dispatch "hl.dsp.focus({ window = \"address:$pip\" })" >/dev/null
-    # close only if the PiP really got focus (close() acts on the focused window)
-    [ "$(hyprctl -j activewindow | jq -r '.address // empty')" = "$pip" ] && hyprctl dispatch 'hl.dsp.window.close()' >/dev/null
-    [ -n "$prev" ] && [ "$prev" != "$pip" ] && hyprctl dispatch "hl.dsp.focus({ window = \"address:$prev\" })" >/dev/null
+    addr=${pip%% *} win="window = \"address:$addr\""
+    if [ "${pip#* }" = special:pip ]; then
+        ws=$(hyprctl -j activeworkspace | jq -r .id)
+        hyprctl dispatch "hl.dsp.window.move({ workspace = $ws, $win, follow = false })" >/dev/null
+        hyprctl dispatch "hl.dsp.window.pin({ action = \"enable\", $win })" >/dev/null
+    else   # a pinned window can't change workspace
+        hyprctl dispatch "hl.dsp.window.pin({ action = \"disable\", $win })" >/dev/null
+        hyprctl dispatch "hl.dsp.window.move({ workspace = \"special:pip\", $win, follow = false })" >/dev/null
+    fi
     exit 0
 fi
 if ! hyprctl -j clients | jq -e 'any(.[]; .class == "helium")' >/dev/null; then
