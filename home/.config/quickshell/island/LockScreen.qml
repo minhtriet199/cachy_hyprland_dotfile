@@ -13,6 +13,7 @@ Item {
     property bool main: true                // phone only on the main screen
     property bool greeter: false            // login screen (island-greeter): "Log in" wording, user pick, no "Locked since"
     property bool reveal: false             // eye button: show the password as text instead of dots
+    property string wall: Prefs.lockWallpaper   // lock wallpaper (Island's wallpaper preview passes another in)
     Connections { target: ls.lock; function onPasswordChanged() { if (ls.lock.password === "") ls.reveal = false } }
     readonly property real sc: height / 1080
     readonly property var users: ls.svc.users || [ls.svc.profile]
@@ -42,8 +43,8 @@ Item {
         Rectangle { x: parent.width * 0.5; y: parent.height - 320 * ls.sc; width: 700 * ls.sc; height: 700 * ls.sc; radius: width / 2; color: Theme.adapt("#E5DDF9") }
         UiDots { anchors.fill: parent; dot: Qt.rgba(1, 1, 1, 0.45); step: 32 * ls.sc; r: 2.4 * ls.sc }
         // chosen lock wallpaper (Wallpapers → Lockscreen) covers the sky
-        Image { anchors.fill: parent; visible: Prefs.lockWallpaper !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
-            source: Prefs.lockWallpaper ? "file://" + Prefs.lockWallpaper : ""; sourceSize: Qt.size(ls.width, ls.height) }
+        Image { anchors.fill: parent; visible: ls.wall !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
+            source: ls.wall ? "file://" + ls.wall : ""; sourceSize: Qt.size(ls.width, ls.height) }
     }
     Rectangle { anchors.fill: parent; color: Theme.inkPhone; opacity: 0.18 * ls.upT }
 

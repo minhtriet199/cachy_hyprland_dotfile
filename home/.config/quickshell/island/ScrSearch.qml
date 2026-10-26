@@ -63,7 +63,7 @@ Item {
                     UiText { visible: field.text === ""; text: "Type to search…"; px: 18; w: 600; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
                 }
                 PhoneKeycap { anchors.right: parent.right; anchors.rightMargin: 8 + 3; anchors.verticalCenter: parent.verticalCenter
-                    text: "Esc"; px: 12; height: 30; radius: 10; ink: Theme.ink; onClicked: s.done() }
+                    text: "Esc"; px: 12; height: 30; radius: 10; ink: Theme.ink; onClicked: s.svc.phoneEsc() }   // = the Esc key: overlay closes, window goes back
             }
             }
         }

@@ -152,6 +152,21 @@ ShellRoot {
         }
     }
 
+    // stand-in lock controller for the lock screen preview: same fields as lockCtl, but it can't unlock or lock anything
+    QtObject {
+        id: lockPreviewCtl
+        property string password: ""
+        property bool busy: false
+        property bool failed: false
+        property bool phoneUp: false
+        property bool leaving: false
+        property string user: ""
+        property var lockedAt: new Date()
+        property string lockWipe: "none"
+        property real lockT: 0
+        function tryUnlock() {}
+    }
+
     // ── screen-share picker: only built while asked ──
     property string shareList: ""
     LazyLoader {
@@ -424,7 +439,27 @@ ShellRoot {
                     WlrLayershell.layer: WlrLayer.Background
                     WlrLayershell.namespace: "island-wallpaper"
                     color: "#D3EAF0"
-                    Wallpaper { anchors.fill: parent; path: Services.wallPreview || Prefs.wallpaper }
+                    Wallpaper { anchors.fill: parent; path: Services.wallPreview && Services.wallPreviewFor === "Desktop" ? Services.wallPreview : Prefs.wallpaper }
+                }
+
+                // ── lock screen preview (wallpaper picker → Lockscreen → 👁): the real lock screen's look with the picked
+                //    wallpaper, nothing locked (a stand-in controller); a click / Esc goes back. Only built while previewing. ──
+                LazyLoader {
+                    active: Services.wallPreview !== "" && Services.wallPreviewFor === "Lockscreen"
+                    PanelWindow {
+                        screen: scr.modelData
+                        anchors { top: true; bottom: true; left: true; right: true }
+                        exclusionMode: ExclusionMode.Ignore
+                        color: "#A3D0E1"
+                        WlrLayershell.layer: WlrLayer.Overlay
+                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None       // the phone keeps the keyboard (Esc stops the preview)
+                        WlrLayershell.namespace: "island-lock-preview"
+                        LockScreen { anchors.fill: parent; svc: Services; lock: lockPreviewCtl; main: scr.isMain; wall: Services.wallPreview }
+                        MouseArea { anchors.fill: parent; z: 200; onPressed: Services.wallPreview = "" }
+                        UiCandy { z: 201; anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top; anchors.topMargin: 24 * scr.sc
+                            width: pvT.implicitWidth + 36; height: 34; radius: 17; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; scale: scr.sc
+                            UiText { id: pvT; anchors.centerIn: parent; text: "Lock screen preview · click or Esc to go back"; fam: "n"; px: 12.5; w: 900 } }
+                    }
                 }
 
                 // ── top bar ──
@@ -518,7 +553,7 @@ ShellRoot {
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.keyboardFocus: show ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
                     WlrLayershell.namespace: "island-power"
-                    Connections { target: Services; function onAppOpened() { shell.phoneClose() } }
+                    Connections { target: Services; function onAppOpened() { if (!Prefs.phoneWindow) shell.phoneClose() } }   // the window phone stays
                     Connections {
                         target: Services
                         function onPowerMenuRequested() { shell.phoneClose(); if (scr.name === shell.focusedName()) shell.powerRequest(scr.name) }

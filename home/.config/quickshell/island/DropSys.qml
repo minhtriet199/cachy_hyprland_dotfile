@@ -1,11 +1,41 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 
-// System dropdown (bar CPU/RAM/GPU pill): live graphs for CPU, RAM and GPU, temperatures, VRAM, fans, btop button.
+// System dropdown (bar CPU/RAM/GPU pill): live graphs for CPU, RAM and GPU, temperatures, VRAM, the 4 apps using the most
+// right now, fans, btop button.
 DropCard {
     id: d
     property var svc
     readonly property var m: svc.sysmon
-    width: 360; height: 84 + 14 + 3 * 92 + 40 + 16 + 36 + 16
+    width: 360; height: 84 + 14 + 3 * 92 + 12 + 18 + 4 * 30 + 40 + 16 + 36 + 16
+
+    // top apps: every process's CPU ticks + memory from /proc (one cat, only while this dropdown is open, every 2 s),
+    // grouped by program name; CPU = share of the whole machine since the last look, RAM = resident memory
+    property var topApps: []
+    property var _prev: ({})
+    property real _prevAt: 0
+    Process { id: topP; command: ["sh", "-c", "cat /proc/[0-9]*/stat 2>/dev/null"]
+        stdout: StdioCollector { onStreamFinished: d.readTop(this.text) } }
+    Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!topP.running) topP.running = true }
+    function readTop(text) {
+        const now = Date.now(), dt = (now - _prevAt) / 1000, prev = _prev, cur = {}, apps = {};
+        for (const line of text.split("\n")) {
+            const m = /^(\d+) \((.*)\) (.*)$/.exec(line); if (!m) continue;
+            const f = m[3].split(" "), ticks = +f[11] + +f[12], rss = +f[21] * 4096;
+            if (!rss) continue;                                              // kernel threads
+            cur[m[1]] = ticks;
+            const nm = d.alias[m[2]] || m[2], a = apps[nm] || (apps[nm] = { name: nm, cpu: 0, ram: 0 });
+            a.ram += rss; if (_prevAt && prev[m[1]] !== undefined) a.cpu += (ticks - prev[m[1]]) / 100 / dt / 16 * 100;
+        }
+        _prev = cur; _prevAt = now;
+        const total = d.m.ramTotal * 1073741824 || 1;
+        topApps = Object.values(apps).sort((a, b) => (b.cpu + b.ram / total * 100) - (a.cpu + a.ram / total * 100)).slice(0, 4);
+    }
+    // program name → app (helpers grouped under the app they belong to)
+    readonly property var alias: ({ steamwebhelper: "steam", "steam-runtime": "steam", "Web Content": "firefox", qs: "Island" })
+    function appOf(n) { const k = alias[n] || n; if (k === "Island") return { name: "Island", icon: "" }
+        const e = DesktopEntries.byId(k) || DesktopEntries.heuristicLookup(k); return e ? { name: e.name, icon: e.icon } : { name: n, icon: "" } }
     headerH: 84
 
     UiCandy { x: 22; y: 20; width: 44; height: 44; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper
@@ -48,6 +78,25 @@ DropCard {
                             }
                         }
                     }
+                }
+            }
+        }
+        Column {
+            width: parent.width; spacing: 4
+            UiText { text: "TOP APPS"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
+            Repeater {
+                model: d.topApps
+                delegate: UiCandy {
+                    id: ta
+                    required property var modelData
+                    required property int index
+                    readonly property var app: d.appOf(modelData.name)
+                    width: parent.width; height: 26; radius: 9; bw: 2; drop: 0; hi: 0; fill: Theme.cream
+                    Image { x: 7; anchors.verticalCenter: parent.verticalCenter; width: 16; height: 16; sourceSize: Qt.size(32, 32); asynchronous: true
+                        source: Quickshell.iconPath(ta.app.icon || ta.modelData.name, "application-x-executable") }
+                    UiText { x: 30; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 30 - stats.width - 14; elide: Text.ElideRight; text: ta.app.name; px: 12.5; w: 700 }
+                    UiText { id: stats; anchors.right: parent.right; anchors.rightMargin: 9; anchors.verticalCenter: parent.verticalCenter; fam: "n"; px: 11; w: 900; color: Theme.textMuted
+                        text: "CPU " + Math.round(ta.modelData.cpu) + "%  ·  " + (ta.modelData.ram >= 1073741824 ? (ta.modelData.ram / 1073741824).toFixed(1) + " GB" : Math.round(ta.modelData.ram / 1048576) + " MB") }
                 }
             }
         }

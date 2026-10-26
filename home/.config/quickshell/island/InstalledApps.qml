@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 
@@ -90,16 +91,28 @@ Item {
             delegate: Column {
                 id: rc
                 required property var modelData
+                required property int index
                 readonly property bool isOpen: ia.openId === modelData.id
                 width: col.width; spacing: 6
                 UiCandy {
                     width: parent.width; height: 50; radius: 15; bw: 2.5; drop: rc.isOpen ? 0 : 3; hi: 0
                     fill: rc.isOpen ? Theme.inkPhone : Theme.cream; pressable: true
                     onClicked: ia.pick(rc.modelData.id)
-                    UiCandy { x: 9; anchors.verticalCenter: parent.verticalCenter; width: 32; height: 32; bw: 2; drop: 0; hi: 0; fill: Theme.paper
-                        Image { anchors.centerIn: parent; width: 22; height: 22; sourceSize: Qt.size(44, 44); asynchronous: true
-                            source: Quickshell.iconPath(rc.modelData.icon, rc.modelData.kind === "game" ? "applications-games" : "application-x-executable") } }
-                    Column { x: 50; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 50 - sz.width - 24
+                    // icon tile (a little tilted): apps sit on paper like the home grid; Steam game art fills the tile, rounded
+                    Item {
+                        id: tile
+                        readonly property bool art: rc.modelData.kind === "game" && rc.modelData.source === "Steam"
+                        x: 8; anchors.verticalCenter: parent.verticalCenter; width: 38; height: 38; rotation: Theme.tilt(rc.index) * 0.7
+                        Rectangle { x: 1; y: 3; width: parent.width; height: parent.height; radius: 12; color: Theme.inkPhone }              // drop
+                        Rectangle { anchors.fill: parent; radius: 12; color: Theme.paper }
+                        Image { id: ico; anchors.centerIn: parent; width: tile.art ? 38 : 28; height: width; sourceSize: Qt.size(76, 76); asynchronous: true
+                            visible: !tile.art; fillMode: Image.PreserveAspectCrop
+                            source: Quickshell.iconPath(rc.modelData.icon, rc.modelData.kind === "game" ? "applications-games" : "application-x-executable") }
+                        Rectangle { id: tileShape; anchors.fill: parent; radius: 12; visible: false; layer.enabled: tile.art }      // rounded mask
+                        MultiEffect { visible: tile.art; anchors.fill: parent; source: ico; maskEnabled: true; maskSource: tileShape }
+                        Rectangle { anchors.fill: parent; radius: 12; color: "transparent"; border.width: 2.5; border.color: Theme.inkPhone }
+                    }
+                    Column { x: 58; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 58 - sz.width - 24
                         UiText { width: parent.width; elide: Text.ElideRight; text: rc.modelData.name; px: 14; w: 700; height: 17; color: rc.isOpen ? "#FFFFFF" : Theme.text }
                         UiText { width: parent.width; elide: Text.ElideRight; fam: "n"; px: 10.5; w: 800; height: 14; color: rc.isOpen ? Qt.rgba(1, 1, 1, 0.75) : Theme.textSoft
                             text: [rc.modelData.source, rc.modelData.version, ia.day(rc.modelData.date)].filter(x => x).join(" · ") } }

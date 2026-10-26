@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 
 // Mouse & touchpad page: pointer speed + acceleration, touchpad (tap, natural scroll, typing guard,
-// scroll speed), and easy-to-see basics (cursor size, text size in apps). Changes show at once and
+// scroll speed), and cursor size. (Text size in apps moved to the Windows page.) Changes show at once and
 // are saved (~/.local/state/hypr/input via hypr/scripts/inputctl.py, read back by config/input_island.lua).
 Item {
     id: mp
@@ -87,13 +87,10 @@ Item {
         Item { width: 1; height: 2 }
         Label { text: "EASY TO SEE" }
         Slide { key: "cursor_size"; title: "Cursor size"; lo: 16; hi: 64; step: 4; tint: Theme.purple; fmt: x => Math.round(x) + " px" }
-        Slide { key: "text_scale"; title: "Text size in apps"; lo: 0.8; hi: 1.6; step: 0.05; tint: Theme.peach; fmt: x => Math.round(x * 100) + "%" }
-        UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-            text: "Text size works in most apps (GTK) after you reopen them. Island's own size is in Shell → Size." }
         UiRow {
-            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "Normal speed, tap to click, 24 px cursor, 100% text"
+            width: parent.width; glyph: "reload"; title: "Reset to default"; sub: "Normal speed, tap to click, 24 px cursor"
             onClicked: { mp.put("sensitivity", 0); mp.put("accel", "flat"); mp.put("tap_to_click", 1); mp.put("natural_scroll", 0)
-                         mp.put("dwt", 1); mp.put("tp_scroll", 1); mp.put("cursor_size", 24); mp.put("text_scale", 1) }
+                         mp.put("dwt", 1); mp.put("tp_scroll", 1); mp.put("cursor_size", 24) }
         }
     }
 }

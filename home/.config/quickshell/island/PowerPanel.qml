@@ -6,7 +6,7 @@ Item {
     property var svc
     readonly property bool narrow: width < 560
     implicitHeight: narrow ? bat.height + 16 + right.implicitHeight : Math.max(bat.height + 6, right.implicitHeight)
-    DropBattery { id: bat; svc: pp.svc; showBrightness: false; width: pp.narrow ? pp.width : Math.min(360, (pp.width - 20) / 2) }
+    DropBattery { id: bat; svc: pp.svc; showBrightness: false; showSettings: false; width: pp.narrow ? pp.width : Math.min(360, (pp.width - 20) / 2) }
     Column {
         id: right
         x: pp.narrow ? 0 : bat.width + 20; y: pp.narrow ? bat.height + 16 : 0; width: pp.narrow ? pp.width : pp.width - bat.width - 20; spacing: 12

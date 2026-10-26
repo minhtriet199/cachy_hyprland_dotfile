@@ -79,7 +79,7 @@ Item {
     // wallpaper live preview (Wallpapers → Preview): the desktop shows the picture and the phone shrinks into the
     // bottom-right corner, still working (keep picking, turn it). A windowed phone just stays where it is.
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
-    property real pv: previewing && !windowed ? 1 : 0
+    property real pv: previewing && svc.wallPreviewFor === "Desktop" && !windowed ? 1 : 0     // steps aside only to show the desktop
     Behavior on pv { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
     // corner pose: scale k about the phone's middle (o) and move that point to t; shared by both phones so a turn still lines up
     property real cK: wantLand ? 560 / (920 * (big ? Math.min(width * 0.75 / 1012, height * 0.8 / 484) : 1.12))
@@ -168,6 +168,10 @@ Item {
     }
     // Esc: closes the overlay phone; as a window it only goes back (close it like a window: ✕ / Super+W)
     function dismiss() { if (windowed) back(); else close() }
+    // a page finished (app started, item copied…): the overlay goes away; a window stays until you close it (✕ / Super+W)
+    function done() { if (!windowed) close() }
+    // phone background: the saved one, or the wallpaper picker's preview while previewing for the Phone
+    readonly property string bgNow: svc && svc.wallPreview && svc.wallPreviewFor === "Phone" ? svc.wallPreview : Prefs.phoneBg
     function riseUp() { riseAnim.from = rise; riseAnim.to = 1; riseAnim.easing.type = Easing.OutBack; riseAnim.restart(); if (lite) wobT = 1; else { wobT = 0; wobAnim.restart() } }
     function close() {
         if (!shown) return;
@@ -295,7 +299,7 @@ Item {
                 m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
                 PhoneBody {
                     id: pBody
-                    showKeys: false
+                    showKeys: false; bg: stage.bgNow
                     Repeater {
                         id: pScreens
                         model: stage.allScreens
@@ -471,7 +475,7 @@ Item {
                 m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
                 PhoneBody {
                     id: lBody
-                    landscape: true; showKeys: false
+                    landscape: true; showKeys: false; bg: stage.bgNow
                     Repeater {
                         id: lScreens
                         model: stage.allScreens
@@ -505,24 +509,24 @@ Item {
     // upright layouts inside a scroller for the short sideways phone
     Component { id: cQuickTall; ScrQuickWide { svc: stage.svc; onGo: s => stage.go(s); onBack: stage.back(); onClose: stage.close() } }
     Component { id: cClipTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
-        ScrClipboard { width: parent.width; height: 760; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
+        ScrClipboard { width: parent.width; height: 760; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } } }
     Component { id: cHidTall; Flickable { clip: true; contentHeight: 760; boundsBehavior: Flickable.StopAtBounds
-        ScrClipboard { width: parent.width; height: 760; focus: true; hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
+        ScrClipboard { width: parent.width; height: 760; focus: true; hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } } }
     Component { id: cProfileTall; Flickable { clip: true; contentHeight: 820; boundsBehavior: Flickable.StopAtBounds
-        ScrProfile { width: parent.width; height: 820; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } } }
-    Component { id: cHome; ScrHome { svc: stage.svc; onGo: s => stage.go(s); onLaunch: a => { stage.svc.launch(a); stage.close() }
+        ScrProfile { width: parent.width; height: 820; focus: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } } }
+    Component { id: cHome; ScrHome { svc: stage.svc; onGo: s => stage.go(s); onLaunch: a => { stage.svc.launch(a); stage.done() }
         onTyped: t => { stage.pendingQuery = t; stage.open("search") } } }
-    Component { id: cSearch; ScrSearch { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close()
+    Component { id: cSearch; ScrSearch { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done()
         Connections { target: stage; function onPendingQueryChanged() { if (stage.pendingQuery !== "") { query = stage.pendingQuery; stage.pendingQuery = "" } } }
         Component.onCompleted: if (stage.pendingQuery !== "") { query = stage.pendingQuery; stage.pendingQuery = "" } } }
     Component { id: cQuick; ScrQuick { svc: stage.svc; onGo: s => s === "quickedit" ? stage.soon("Edit buttons") : stage.go(s) } }
     Component { id: cCalcTall; Flickable { clip: true; contentHeight: 600; boundsBehavior: Flickable.StopAtBounds
-        ScrCalc { width: parent.width; height: 600; focus: true; svc: stage.svc; onDone: stage.close() } } }
-    Component { id: cCalc; ScrCalc { svc: stage.svc; onDone: stage.close() } }
-    Component { id: cProfile; ScrProfile { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
-    Component { id: cClip; ScrClipboard { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
-    Component { id: cHid; ScrClipboard { hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.close() } }
-    Component { id: cIslands; ScrIslands { svc: stage.svc; monitor: stage.monitor; onGo: s => stage.go(s); onDone: stage.close() } }
+        ScrCalc { width: parent.width; height: 600; focus: true; svc: stage.svc; onDone: stage.done() } } }
+    Component { id: cCalc; ScrCalc { svc: stage.svc; onDone: stage.done() } }
+    Component { id: cProfile; ScrProfile { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } }
+    Component { id: cClip; ScrClipboard { svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } }
+    Component { id: cHid; ScrClipboard { hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } }
+    Component { id: cIslands; ScrIslands { svc: stage.svc; monitor: stage.monitor; onGo: s => stage.go(s); onDone: stage.done() } }
     Component { id: cSettings; ScrSettings { svc: stage.svc; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     Component { id: cSettingsQuick; ScrSettingsQuick { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     // Wi-Fi / Bluetooth / Sound / Power pages (kind comes from the screen name: settingsWifi → wifi)

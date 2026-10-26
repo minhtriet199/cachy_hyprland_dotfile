@@ -13,8 +13,9 @@ Item {
     property color ink: Theme.inkPhone
     property color shadowColor: ink
     property var bodyColors: [Theme.phoneA, Theme.phoneB]
-    readonly property bool bgPhoto: Prefs.phoneBg.startsWith("/")
-    readonly property var bgPair: Theme.adapt(Prefs.phoneBgs[Prefs.phoneBg] || Prefs.phoneBgs.cream)
+    property string bg: Prefs.phoneBg      // the phone's background (Island passes the wallpaper preview in)
+    readonly property bool bgPhoto: bg.startsWith("/")
+    readonly property var bgPair: Theme.adapt(Prefs.phoneBgs[bg] || Prefs.phoneBgs.cream)
     property color paper: bgPair[0]
     property color dotColor: bgPair[1]
     Behavior on paper { ColorAnimation { duration: 300 } }
@@ -83,7 +84,7 @@ Item {
         ClippingRectangle {
             visible: f.bgPhoto
             x: 3; y: 3; width: parent.width - 6; height: parent.height - 6; radius: f.screenRadius - 3; color: "transparent"
-            Image { anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; source: f.bgPhoto ? "file://" + Prefs.phoneBg : ""
+            Image { anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; source: f.bgPhoto ? "file://" + f.bg : ""
                 sourceSize: Qt.size(780, 1700) }
             Rectangle { anchors.fill: parent; color: Theme.cream; opacity: 0.62 }
         }

@@ -217,7 +217,8 @@ Singleton {
     property bool airplane: false
     // apps' light / dark (Prefs.appsDark, separate from Island's own Prefs.dark) switches Qt, KDE and GTK apps (tools/appearance.py)
     Connections { target: Prefs; function onAppsDarkChanged() { if (Prefs.ready) s.run(["python3", Quickshell.shellDir + "/tools/appearance.py", Prefs.appsDark ? "dark" : "light"]) } }
-    property string wallPreview: ""               // wallpaper picker "Preview": shown on the desktop until Set / Back                  // every radio (Wi-Fi + Bluetooth) blocked (rfkill)
+    property string wallPreview: ""               // wallpaper picker "Preview": shown until Set / Back / Esc …
+    property string wallPreviewFor: "Desktop"     // … on the desktop, the phone, or as a lock screen preview (Desktop · Phone · Lockscreen)
     // Do not disturb: by hand, for a while (dndFor), or by itself while a game is focused (Prefs.dndGaming)
     readonly property bool dndOn: dnd || (Prefs.dndGaming && gaming)
     property real dndUntil: 0
@@ -962,7 +963,7 @@ Singleton {
         ["Sound", "settingsSound", "volume", "#7CC47F", "sound audio volume speaker mic microphone output input mixer"],
         ["Power & battery", "settingsPower", "battery", "#FFC23C", "power battery brightness sleep turbo silent mode"],
         ["Time & language", "settingsTimeLang", "globe", "#7CC47F", "time date clock timezone zone region language keyboard layout typing vietnamese 24-hour"],
-        ["Mouse & touchpad", "settingsMouse", "crosshair", "#8E7BE6", "mouse touchpad trackpad speed sensitivity tap click scroll natural cursor size text size accessibility"],
+        ["Mouse & touchpad", "settingsMouse", "crosshair", "#8E7BE6", "mouse touchpad trackpad speed sensitivity tap click scroll natural cursor size accessibility"],
         ["Apps", "settingsApps", "box", "#F7A982", "apps installed uninstall remove games size cache default browser open with files video music pdf startup autostart login"],
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
         ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
@@ -971,7 +972,7 @@ Singleton {
         ["Keyboard shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
         ["System", "settingsSystem", "gear", "#5E7A84", "system about charge limit firewall ssh"],
-        ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps"],
+        ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps text size font scale accessibility"],
         ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition theme colour color look box style ring pop glass sakura mint airplane do not disturb phone window overlay"],
         ["Wallpapers", "wallpapers", "wallpaper", "#A08AEA", "wallpaper background picture lockscreen phone"],
         ["Clipboard", "clipboard", "clipboard", "#FFC23C", "clipboard copy paste history"],

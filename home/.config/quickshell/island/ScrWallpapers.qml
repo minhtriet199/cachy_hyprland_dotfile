@@ -18,7 +18,7 @@ Item {
     property bool lockTab: false               // (old name, kept) true when target is Lockscreen
     property string target: "Desktop"          // Desktop · Phone · Lockscreen — what "Set" changes
     readonly property string targetKey: target === "Phone" ? "phoneBg" : target === "Lockscreen" ? "lockWallpaper" : "wallpaper"
-    onTargetChanged: lockTab = target === "Lockscreen"
+    onTargetChanged: { lockTab = target === "Lockscreen"; if (previewing) svc.wallPreviewFor = target }   // switching tab moves the preview
     signal go(string screen)
     signal close()
     signal back()
@@ -69,7 +69,7 @@ Item {
     // Preview: the desktop shows the picture live while you keep spinning (the phone shrinks into a corner and only
     // the string + buttons stay); Esc / Space / click outside ends it. Waits until the string settles before loading.
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
-    function preview() { if (cur) svc.wallPreview = cur.path }
+    function preview() { if (cur) { svc.wallPreviewFor = target; svc.wallPreview = cur.path } }
     onCurChanged: if (previewing && cur) livePick.restart()
     Timer { id: livePick; interval: 220; onTriggered: if (wp.previewing && wp.cur) wp.svc.wallPreview = wp.cur.path }
     // header height above the string (gone while previewing, so the string gets the room)
