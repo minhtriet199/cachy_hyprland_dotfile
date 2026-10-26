@@ -49,14 +49,20 @@ Item {
         if (me.x >= Math.max(...o.map(r => r.x + r.w))) return "right";
         return "";
     }
-    // nearest free spot touching another screen, close to (px, py)
-    function snap(out, px, py) {
+    // nearest free spot touching another screen, close to (px, py). Slides freely along the edge (10 px steps, at
+    // least `ov` px shared so the mouse can cross) and sticks to start / middle / end within `mag` px.
+    function slide(v, a, b, len, olen, mag) {
+        const ov = Math.min(100, len, olen);
+        v = Math.max(a - len + ov, Math.min(a + olen - ov, v));
+        for (const t of [a, a + (olen - len) / 2, a + olen - len]) if (Math.abs(v - t) <= mag) return t;
+        return Math.round(v / 10) * 10;
+    }
+    function snap(out, px, py, mag) {
         const rs = rects(), me = rs.find(r => r.out === out), others = rs.filter(r => r.out !== out);
         let best = null, bd = 1e18;
         for (const o of others) {
-            const c = [];
-            for (const y of [o.y, o.y + (o.h - me.h) / 2, o.y + o.h - me.h]) { c.push([o.x - me.w, y]); c.push([o.x + o.w, y]) }
-            for (const x of [o.x, o.x + (o.w - me.w) / 2, o.x + o.w - me.w]) { c.push([x, o.y - me.h]); c.push([x, o.y + o.h]) }
+            const c = [], y = slide(py, o.y, 0, me.h, o.h, mag), x = slide(px, o.x, 0, me.w, o.w, mag);
+            c.push([o.x - me.w, y]); c.push([o.x + o.w, y]); c.push([x, o.y - me.h]); c.push([x, o.y + o.h]);
             for (const p of c) {
                 const r = { out: out, x: Math.round(p[0]), y: Math.round(p[1]), w: me.w, h: me.h };
                 if (others.some(q => hits(r, q))) continue;
@@ -101,12 +107,23 @@ Item {
     function tryLayout(rs) {
         const now = pairs(rects()), next = pairs(rs);
         if (now.join() === next.join()) return;
+        held = rs;                                     // drawn where it's going until the new layout is read back
         svc.screenTry({ live: now, next: next }, ["poslive"].concat(next));
     }
-    function dropAt(out, px, py) {
-        const r = snap(out, px, py); if (!r) return;
-        tryLayout(compact(rects().map(q => q.out === out ? r : q), out));
+    function landing(out, px, py, mag) {
+        const r = snap(out, px, py, mag);
+        return r ? compact(rects().map(q => q.out === out ? r : q), out) : null;
     }
+    property var held: null                            // layout just dropped (screens list not reloaded yet)
+    property var ghost: null                           // where the dragged screen lands if let go now
+    // the same layout shifted so a screen that isn't being dragged stays where it is on the map (compact() starts at 0,0)
+    function pinned(g, out) {
+        const o = g.find(r => r.out !== out), now = o && base.find(r => r.out === o.out);
+        return now ? g.map(r => ({ out: r.out, x: r.x + now.x - o.x, y: r.y + now.y - o.y, w: r.w, h: r.h })) : g;
+    }
+    Connections { target: dp.svc; function onScreensChanged() { dp.held = null } }
+    readonly property var base: held || rects()
+    readonly property var view: ghost ? pinned(ghost.rs, ghost.out) : base   // what the map draws: while dragging, the landing layout
     // side buttons: put the picked screen on that side of ALL the others
     function place(side) {
         if (!scr) return;
@@ -136,24 +153,27 @@ Item {
         // layout picker
         Item {
             id: lay
-            width: parent.width; height: dp.svc.screens.length > 2 ? 140 : 96
+            clip: true
+            // taller for screens stacked on top of each other, so the boxes stay readable
+            width: parent.width; height: Math.max(dp.svc.screens.length > 2 ? 140 : 96, Math.min(170, bounds.w > 0 ? (width - 20) * bounds.h / bounds.w * 0.6 : 0))
             readonly property var bounds: {
                 let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-                for (const m of dp.svc.screens) { const w = dp.lw(m), h = dp.lh(m); x0 = Math.min(x0, m.x); y0 = Math.min(y0, m.y); x1 = Math.max(x1, m.x + w); y1 = Math.max(y1, m.y + h) }
+                for (const r of dp.view) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h) }
                 return { x0: x0, y0: y0, w: x1 - x0, h: y1 - y0 };
             }
             readonly property real k: bounds.w > 0 ? Math.min((width - 20) / bounds.w, (height - 8) / bounds.h) : 0
+            function mx(x) { return (width - bounds.w * k) / 2 + (x - bounds.x0) * k }
+            function my(y) { return (height - bounds.h * k) / 2 + (y - bounds.y0) * k }
             Repeater {
                 model: dp.svc.screens
                 delegate: UiCandy {
                     id: box
                     required property var modelData
                     readonly property bool cur: dp.scr && modelData.output === dp.scr.output
-                    property real dx: 0
-                    property real dy: 0
-                    x: (lay.width - lay.bounds.w * lay.k) / 2 + (modelData.x - lay.bounds.x0) * lay.k + 3 + dx
-                    y: (lay.height - lay.bounds.h * lay.k) / 2 + (modelData.y - lay.bounds.y0) * lay.k + 2 + dy
-                    z: dragMa.moved ? 5 : 0; opacity: dragMa.moved ? 0.85 : 1
+                    readonly property var at: dp.view.find(r => r.out === modelData.output) || { x: modelData.x, y: modelData.y }
+                    x: lay.mx(at.x) + 3
+                    y: lay.my(at.y) + 2
+                    z: dragMa.moved ? 5 : 0; opacity: dragMa.moved ? 0.7 : 1
                     width: dp.lw(modelData) * lay.k - 6; height: dp.lh(modelData) * lay.k - 6
                     radius: 10; bw: cur ? 3 : 2.5; drop: cur ? 3 : 0; hi: 0; fill: cur ? Theme.gOn : Theme.paper; pressable: false
                     // tap = pick this screen, drag = move it (snaps when let go)
@@ -161,26 +181,31 @@ Item {
                         id: dragMa
                         anchors.fill: parent
                         property point p0
+                        property var a0                            // screen position + map scale when pressed (the map re-fits while dragging)
                         property bool moved: false
                         readonly property bool canDrag: dp.svc.screens.length > 1 && dp.keepLeft === 0
                         cursorShape: canDrag ? (moved ? Qt.ClosedHandCursor : Qt.OpenHandCursor) : Qt.PointingHandCursor
-                        onPressed: e => { p0 = mapToItem(lay, e.x, e.y); moved = false }
+                        onPressed: e => { p0 = mapToItem(lay, e.x, e.y); a0 = { x: box.at.x, y: box.at.y, k: lay.k }; moved = false }
                         onPositionChanged: e => {
                             if (!canDrag) return;
                             const p = mapToItem(lay, e.x, e.y);
                             if (!moved && Math.hypot(p.x - p0.x, p.y - p0.y) < 6) return;
-                            moved = true; box.dx = p.x - p0.x; box.dy = p.y - p0.y;
+                            moved = true;
+                            const g = dp.landing(box.modelData.output, a0.x + (p.x - p0.x) / a0.k, a0.y + (p.y - p0.y) / a0.k, 10 / a0.k);
+                            dp.ghost = g ? { out: box.modelData.output, rs: g } : null;
                         }
                         onReleased: {
                             dp.sel = box.modelData.output; dp.reset();
-                            if (moved) dp.dropAt(box.modelData.output, box.modelData.x + box.dx / lay.k, box.modelData.y + box.dy / lay.k);
-                            box.dx = 0; box.dy = 0; moved = false;
+                            const g = dp.ghost; dp.ghost = null;
+                            if (moved && g) dp.tryLayout(g.rs);
+                            moved = false;
                         }
-                        onCanceled: { box.dx = 0; box.dy = 0; moved = false }
+                        onCanceled: { moved = false; dp.ghost = null }
                     }
-                    Column { anchors.centerIn: parent
-                        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.internal ? "Laptop" : modelData.model; px: 13; w: 700 }
-                        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.output + (modelData.focused ? " · here" : ""); fam: "n"; px: 9.5; w: 800; color: Theme.textSoft } }
+                    Column { anchors.centerIn: parent; width: parent.width - 8
+                        UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
+                            text: modelData.internal ? "Laptop" : modelData.model; px: box.height < 34 ? 11 : 13; w: 700 }
+                        UiText { visible: box.height >= 44; width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: modelData.output + (modelData.focused ? " · here" : ""); fam: "n"; px: 9.5; w: 800; color: Theme.textSoft } }
                 }
             }
         }

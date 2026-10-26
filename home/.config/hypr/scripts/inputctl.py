@@ -64,11 +64,16 @@ def main():
             if not re.fullmatch(r"[a-z0-9_:,]*", val):
                 continue
         v[k] = val
+    # Live first: if Hyprland rejects the Lua, nothing is saved and the next login stays on the old values
+    r = subprocess.run(["hyprctl", "eval", lua(v)], capture_output=True, text=True)
+    if r.returncode:
+        subprocess.run(["hyprctl", "eval", lua(load())], stdout=subprocess.DEVNULL)
+        subprocess.run(["notify-send", "-a", "Island", "Setting not saved", r.stdout.strip()[:200]])
+        sys.exit("%s: Hyprland rejected the change, nothing saved:\n%s" % (os.path.basename(__file__), r.stdout.strip()))
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
     with open(STATE + ".tmp", "w") as f:
         f.writelines(f"{k}={v[k]}\n" for k in DEFAULTS)
     os.replace(STATE + ".tmp", STATE)
-    subprocess.run(["hyprctl", "eval", lua(v)], stdout=subprocess.DEVNULL)
     if v["cursor_size"] != old["cursor_size"]:
         subprocess.run(["hyprctl", "setcursor", CURSOR_THEME, v["cursor_size"]], stdout=subprocess.DEVNULL)
         subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "cursor-size", v["cursor_size"]])

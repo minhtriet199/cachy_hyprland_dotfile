@@ -18,4 +18,5 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("xhost +SI:localuser:root")
     hl.exec_cmd("sleep 3; ~/.config/hypr/scripts/mic-level.sh")   -- laptop mic back to clean level (see script)
     hl.exec_cmd("sleep 20; pgrep -x qs >/dev/null && rm -f ~/.cache/island/gpu-pick-pending")   -- GPU pick safety: desktop came up fine (scripts/gpu-pick.sh)
+    hl.exec_cmd("sleep 25; ~/.config/hypr/scripts/hypr-check.sh login")   -- after a Hyprland update: config / scripts / tools check, notifies on problems
 end)

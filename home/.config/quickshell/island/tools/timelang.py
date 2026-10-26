@@ -6,6 +6,18 @@
 import json, os, re, subprocess, sys, urllib.request
 
 
+def put(path, text):
+    """Rewrite a file other apps own: skip if unchanged, keep the previous copy as <file>.bak-island, temp + rename."""
+    old = open(path).read() if os.path.exists(path) else None
+    if old == text:
+        return
+    if old is not None:
+        with open(path + ".bak-island", "w") as f:
+            f.write(old)
+    with open(path + ".tmp", "w") as f:
+        f.write(text)
+    os.replace(path + ".tmp", path)
+
 def sh(*cmd):
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=8).stdout
@@ -38,7 +50,7 @@ if len(sys.argv) > 2 and sys.argv[1] == "share":
         text = text.replace("[Behavior]", "[Behavior]\nShareInputState=" + val, 1)
     else:
         text += "\n[Behavior]\nShareInputState=" + val + "\n"
-    open(path, "w").write(text)
+    put(path, text)
     sh("fcitx5-remote", "-r")
     sys.exit()
 

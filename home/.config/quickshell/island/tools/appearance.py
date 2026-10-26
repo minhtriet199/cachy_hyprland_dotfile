@@ -10,6 +10,19 @@ H = os.path.expanduser("~")
 dark = len(sys.argv) > 1 and sys.argv[1] == "dark"
 
 
+def put(path, text):
+    """Rewrite a file other apps own: skip if unchanged, keep the previous copy as <file>.bak-island, temp + rename."""
+    old = open(path).read() if os.path.exists(path) else None
+    if old == text:
+        return
+    if old is not None:
+        with open(path + ".bak-island", "w") as f:
+            f.write(old)
+    with open(path + ".tmp", "w") as f:
+        f.write(text)
+    os.replace(path + ".tmp", path)
+
+
 def dk(m):
     r, g, b = (int(m.group(0)[i:i + 2], 16) / 255 for i in (1, 3, 5))
     h, l, s = colorsys.rgb_to_hls(r, g, b)
@@ -28,7 +41,7 @@ def setkey(path, section, key, value):
         text = text[:block.start(1)] + body + text[block.end(1):]
     else:
         text = text.rstrip() + "\n\n[%s]\n%s=%s\n" % (section, key, value)
-    open(path, "w").write(text)
+    put(path, text)
 
 
 # Qt / KDE
@@ -41,13 +54,13 @@ for v in ("3.0", "4.0"):
     if not os.path.exists(d + "/island.css"):
         continue
     light = open(d + "/island.css").read()
-    open(d + "/island-dark.css", "w").write(re.sub(r"#[0-9A-Fa-f]{6}\b", dk, light).replace("Island colours", "Island dark colours", 1))
+    put(d + "/island-dark.css", re.sub(r"#[0-9A-Fa-f]{6}\b", dk, light).replace("Island colours", "Island dark colours", 1))
     css = d + "/gtk.css"
     s = open(css).read() if os.path.exists(css) else ""
     s = re.sub(r'@import url\("(island|island-dark|noctalia)\.css"\);', '@import url("%s");' % ("island-dark.css" if dark else "island.css"), s)
     if "@import" not in s:
         s = '@import url("%s");\n' % ("island-dark.css" if dark else "island.css") + s
-    open(css, "w").write(s)
+    put(css, s)
     ini = d + "/settings.ini"
     if os.path.exists(ini):
         setkey(ini, "Settings", "gtk-application-prefer-dark-theme", "1" if dark else "0")

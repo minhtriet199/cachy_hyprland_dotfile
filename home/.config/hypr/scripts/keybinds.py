@@ -218,15 +218,17 @@ def apply(binds):
     """Write binds.lua, reload, roll back on errors. Returns '' or the error text."""
     old_lua = open(LUA).read() if os.path.exists(LUA) else None
     before = config_errors()
-    with open(LUA, "w") as f:
+    with open(LUA + ".tmp", "w") as f:
         f.write(generate(binds))
+    os.replace(LUA + ".tmp", LUA)
     subprocess.run(["hyprctl", "reload"], capture_output=True)
     time.sleep(0.3)
     err = config_errors()
     if err and err != before:
         if old_lua is not None:
-            with open(LUA, "w") as f:
+            with open(LUA + ".tmp", "w") as f:
                 f.write(old_lua)
+            os.replace(LUA + ".tmp", LUA)
             subprocess.run(["hyprctl", "reload"], capture_output=True)
         return err
     save(binds)

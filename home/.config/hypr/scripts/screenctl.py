@@ -16,7 +16,7 @@
 #   screenctl.py poslive OUT XxY [...]       same, but LIVE only (nothing saved) — try first, save with pos on Keep
 #   screenctl.py order OUT OUT ...         place screens left to right in this order (saved, reload)
 #   screenctl.py up|down|toggle [OUT]      for keybinds (default: focused external screen), notifies
-import glob, json, os, re, subprocess, sys
+import glob, json, os, re, subprocess, sys, time
 
 STATE = os.path.expanduser("~/.local/state/hypr/screens")
 NITS_MIN, NITS_DEFAULT_MAX, NITS_STEP, DDC_STEP = 80, 300, 25, 10
@@ -59,11 +59,18 @@ def load():
     return st
 
 
+_prev = None  # state file text before this run's first save; reload() puts it back if Hyprland reports new errors
+
+
 def save(st):
+    global _prev
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
-    with open(STATE, "w") as f:
+    if _prev is None:
+        _prev = open(STATE).read() if os.path.exists(STATE) else ""
+    with open(STATE + ".tmp", "w") as f:  # temp + rename: a crash mid-write never leaves a half file for the next login
         for key, d in sorted(st.items()):
             f.write(key + "\t" + " ".join(f"{k}={v}" for k, v in d.items()) + "\n")
+    os.replace(STATE + ".tmp", STATE)
 
 
 def entry(st, m):
@@ -189,8 +196,24 @@ def modes(m):
             for (w, h), r in sorted(res.items(), key=lambda kv: kv[0][0] * kv[0][1], reverse=True)]
 
 
+def config_errors():
+    out = run("hyprctl", "configerrors").strip()
+    return "" if out in ("", "no errors") else out
+
+
 def reload():
+    """Reload Hyprland; new config errors → put the previous state file back, reload again and fail."""
+    before = config_errors()
     run("hyprctl", "reload")
+    time.sleep(0.3)
+    err = config_errors()
+    if err and err != before and _prev is not None:
+        with open(STATE + ".tmp", "w") as f:
+            f.write(_prev)
+        os.replace(STATE + ".tmp", STATE)
+        run("hyprctl", "reload")
+        run("notify-send", "-a", "Island", "Screen change not saved", "Hyprland rejected it; the previous screens are back.")
+        sys.exit("screenctl: Hyprland rejected the change, restored the previous screens:\n" + err)
 
 
 # ---------- SAFE live apply (hyprctl eval; nothing saved to disk) ----------
@@ -233,7 +256,10 @@ def apply_live(st, desired):
     calls = [mon_lua(out, d, by_desc.get(out_to_desc.get(out, ""), {}))
              for out, d in sorted(desired.items(), key=key)]
     if calls:
-        run("hyprctl", "eval", "\n".join(calls))
+        r = subprocess.run(["hyprctl", "eval", "\n".join(calls)], capture_output=True, text=True)
+        if r.returncode:
+            run("notify-send", "-a", "Island", "Screen change not applied", r.stdout.strip()[:200])
+            sys.exit("screenctl: Hyprland rejected the live change:\n" + r.stdout.strip())
 
 
 def restore_live(st):

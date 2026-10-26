@@ -82,7 +82,7 @@ Column {
     UiCandy {
         visible: !!ss.up && ss.up.repo.length > 0
         width: ss.width; height: 40; radius: 13; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
-        onClicked: ss.term("System update", "sudo pacman -Syu")
+        onClicked: ss.term("System update", "sudo pacman -Syu; echo; ~/.config/hypr/scripts/hypr-check.sh")
         UiText { anchors.centerIn: parent; text: "Update in terminal · sudo pacman -Syu"; px: 13.5; w: 700; color: "#FFFFFF" }
     }
     // AUR (paru) is separate: pacman doesn't update those

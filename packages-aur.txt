@@ -1,3 +1,4 @@
+hyprmod
 mactahoe-icon-theme-git
 postman-bin
 rider
