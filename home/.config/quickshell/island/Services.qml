@@ -571,6 +571,20 @@ Singleton {
     function loadScreens() { if (!screensP.running) screensP.running = true }
     Process { id: screenAct; onExited: s.loadScreens() }
     function screenCmd(args) { if (screenAct.running) return; screenAct.command = ["python3", s.scripts + "/screenctl.py"].concat(args); screenAct.running = true }
+    // a screen change on trial (Displays page: "Keep (15)"): lives here, not in the page, so every phone (each screen
+    // has its own) shows the same Keep / Go back, and the overlay phone stays open meanwhile (shell.qml phoneAway)
+    property var screenUndo: null                  // { live | pos | order: screenctl args } or { out, mode, scale }
+    property int screenKeepLeft: 0
+    Timer { id: screenKeepT; interval: 1000; repeat: true; onTriggered: { s.screenKeepLeft--; if (s.screenKeepLeft <= 0) s.screenRevert() } }
+    function screenTry(undo, args) { screenUndo = undo; screenCmd(args); screenKeepLeft = 15; screenKeepT.restart() }
+    function screenRevert() {
+        const u = screenUndo; screenKeepT.stop(); screenKeepLeft = 0; screenUndo = null;
+        if (u && u.live) screenCmd(["poslive"].concat(u.live));
+        else if (u && u.pos) screenCmd(["pos"].concat(u.pos));
+        else if (u && u.order) screenCmd(["order"].concat(u.order));
+        else if (u) screenCmd(["mode", u.out, u.mode, String(u.scale)]);
+    }
+    function screenKeep() { const u = screenUndo; screenKeepT.stop(); screenKeepLeft = 0; screenUndo = null; if (u && u.next) screenCmd(["pos"].concat(u.next)) }
 
     property var binds: []                         // keybinds.json
     property string bindMsg: ""

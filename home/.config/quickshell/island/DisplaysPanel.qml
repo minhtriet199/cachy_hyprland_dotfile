@@ -13,8 +13,9 @@ Item {
     property string res: ""
     property real hz: 0
     property real scale: 1
-    property var undo: null
-    property int keepLeft: 0
+    readonly property var undo: svc.screenUndo         // the trial lives in Services (see screenTry there)
+    readonly property int keepLeft: svc.screenKeepLeft
+    readonly property bool layoutTrial: !!undo && (!!undo.live || !!undo.pos || !!undo.order)
     implicitHeight: col.implicitHeight
     Component.onCompleted: svc.loadScreens()
     onScrChanged: if (scr && (!res || scr.output !== sel)) Qt.callLater(reset)
@@ -23,18 +24,10 @@ Item {
     readonly property var rates: { const m = modeList.find(x => x.w + "x" + x.h === res); return m ? m.rates : [] }
     readonly property bool changed: !!scr && (res !== scr.width + "x" + scr.height || Math.abs(hz - scr.refresh) > 0.05 || scale !== scr.scale)
     function apply() {
-        undo = { out: scr.output, mode: scr.width + "x" + scr.height + "@" + scr.refresh, scale: scr.scale };
-        svc.screenCmd(["mode", scr.output, res + "@" + hz, String(scale)]);
-        keepLeft = 15; keepTimer.restart();
+        svc.screenTry({ out: scr.output, mode: scr.width + "x" + scr.height + "@" + scr.refresh, scale: scr.scale },
+                      ["mode", scr.output, res + "@" + hz, String(scale)]);
     }
-    function revert() {
-        keepTimer.stop(); keepLeft = 0;
-        if (undo && undo.live) svc.screenCmd(["poslive"].concat(undo.live));
-        else if (undo && undo.pos) svc.screenCmd(["pos"].concat(undo.pos));
-        else if (undo && undo.order) svc.screenCmd(["order"].concat(undo.order));
-        else if (undo) svc.screenCmd(["mode", undo.out, undo.mode, String(undo.scale)]);
-        undo = null;
-    }
+    function revert() { svc.screenRevert() }
     // ── layout, any number of screens: drag a screen in the map, or use the side buttons. A moved screen snaps
     //    against another (any side, lined up start / middle / end), never overlaps, and loose screens slide back
     //    so there are no gaps. Tried LIVE (screenctl poslive, nothing saved) → Keep saves it, Go back / 15 s undoes. ──
@@ -108,9 +101,7 @@ Item {
     function tryLayout(rs) {
         const now = pairs(rects()), next = pairs(rs);
         if (now.join() === next.join()) return;
-        undo = { live: now, next: next };
-        svc.screenCmd(["poslive"].concat(next));
-        keepLeft = 15; keepTimer.restart();
+        svc.screenTry({ live: now, next: next }, ["poslive"].concat(next));
     }
     function dropAt(out, px, py) {
         const r = snap(out, px, py); if (!r) return;
@@ -128,18 +119,16 @@ Item {
         if (side === "below") { const t = pick(r => r.y + r.h, (p, q) => p > q); me.y = t.y + t.h; me.x = Math.round(t.x + (t.w - me.w) / 2) }
         tryLayout(compact(rs, scr.output));
     }
-    function keep() { keepTimer.stop(); keepLeft = 0; if (undo && undo.next) svc.screenCmd(["pos"].concat(undo.next)); undo = null }
+    function keep() { svc.screenKeep() }
     // left → right order of the screens
     readonly property var order: svc.screens.slice().sort((a, b) => a.x - b.x).map(m => m.output)
     function move(d) {
         const o = order.slice(), i = o.indexOf(scr.output), j = i + d;
         if (i < 0 || j < 0 || j >= o.length) return;
-        undo = { order: order.slice() };
+        const was = order.slice();
         [o[i], o[j]] = [o[j], o[i]];
-        svc.screenCmd(["order"].concat(o));
-        keepLeft = 15; keepTimer.restart();
+        svc.screenTry({ order: was }, ["order"].concat(o));
     }
-    Timer { id: keepTimer; interval: 1000; repeat: true; onTriggered: { dp.keepLeft--; if (dp.keepLeft <= 0) dp.revert() } }
 
     Column {
         id: col
@@ -216,7 +205,7 @@ Item {
             }
         }
         Row {
-            visible: dp.keepLeft > 0 && !!dp.undo && (!!dp.undo.order || !!dp.undo.pos)
+            visible: dp.keepLeft > 0 && dp.layoutTrial
             anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
             UiCandy { width: 150; height: 32; radius: 11; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
                 onClicked: dp.keep()
@@ -290,13 +279,13 @@ Item {
                 UiText { anchors.centerIn: parent; text: "Apply"; px: 14; w: 700; color: dp.changed ? "#FFFFFF" : Theme.text }
             }
             UiCandy {
-                visible: dp.keepLeft > 0
+                visible: dp.keepLeft > 0 && !dp.layoutTrial          // a layout trial has its Keep under the map
                 width: 150; height: 36; radius: 12; bw: 2.5; drop: 3; hi: 3; fill: Theme.gGo; pressable: true
                 onClicked: dp.keep()
                 UiText { anchors.centerIn: parent; text: "Keep (" + dp.keepLeft + ")"; px: 14; w: 700; color: "#FFFFFF" }
             }
             UiCandy {
-                visible: dp.keepLeft > 0 || dp.changed
+                visible: dp.keepLeft > 0 ? !dp.layoutTrial : dp.changed
                 width: 100; height: 36; radius: 12; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; pressable: true
                 onClicked: dp.keepLeft > 0 ? dp.revert() : dp.reset()
                 UiText { anchors.centerIn: parent; text: dp.keepLeft > 0 ? "Go back" : "Cancel"; px: 14; w: 700 }

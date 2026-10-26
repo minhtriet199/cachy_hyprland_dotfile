@@ -201,10 +201,11 @@ ShellRoot {
     property bool phoneLand: false
     property string phoneMon: ""                   // screen of the open overlay phone
     // going to use the other screen (the pointer moves there, so Hyprland focuses it) closes the overlay phone —
-    // after 0.4 s, so just brushing past the edge doesn't (a click there closes it at once: island-phone-away below)
+    // after 0.4 s, so just brushing past the edge doesn't (a click there closes it at once: island-phone-away below).
+    // Not while a screen change waits for Keep: moving a screen can leave the pointer on the other one.
     Connections { target: Hyprland; function onFocusedMonitorChanged() { phoneAway.restart() } }
     Timer { id: phoneAway; interval: 400
-        onTriggered: if (shell.phoneOpen && !Prefs.phoneWindow && !shell.phoneGhost && shell.phoneMon && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name !== shell.phoneMon) shell.phoneClose() }
+        onTriggered: if (shell.phoneOpen && !Prefs.phoneWindow && !shell.phoneGhost && !Services.screenKeepLeft && shell.phoneMon && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name !== shell.phoneMon) shell.phoneClose() }
     property bool phoneGhost: false                // window phone up but hidden (the overlay phone still covers that spot)
     property var swapTo: null                      // where the window goes (global logical px)
     property int swapWait: 0                       // overlay glide done + window up = 2
