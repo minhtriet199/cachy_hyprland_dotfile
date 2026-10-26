@@ -51,6 +51,7 @@ DropCard {
                 required property string modelData
                 required property int index
                 readonly property bool picked: d.pl.sel === index
+                selected: picked
                 width: (d.width - 32 - 24) / 5; height: 74; radius: 12; bw: picked ? 3 : 2.5; drop: picked ? 5 : 3; hi: 0; rotation: Theme.tilt(index)
                 fill: modelData; pressable: true
                 y: picked ? -3 : 0

@@ -141,22 +141,48 @@ Item {
             width: parent.width; spacing: 10
             Pick { key: "anim_speed"; label: "Speed"; pairs: [["Slow", "slow"], ["Normal", "normal"], ["Fast", "fast"]] }
             Pick { key: "anim_feel"; label: "Feel"; pairs: [["Snappy", "snappy"], ["Smooth", "smooth"], ["Bouncy", "bouncy"], ["Springy", "springy"]] }
-            // preview: a little window moving with the picked feel and speed (tap to play again)
+            Pick { key: "win_style"; label: "Windows"; pairs: [["Slide", "slide"], ["Pop in", "popin"], ["Shrink", "gnomed"]] }
+            // preview, looping while the page is open: a little window opens with the picked style, feel and speed —
+            // the same curves lookctl.py gives Hyprland (springy ≈ a wobble; QML has no spring curve)
             UiCandy {
                 id: feelBox
-                width: parent.width; height: 54; radius: 14; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream; pressable: true
-                onClicked: play()
+                width: parent.width; height: 74; radius: 14; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream; clip: true
                 readonly property int ms: ({ slow: 640, normal: 400, fast: 240 })[wp.v.anim_speed] || 400
-                readonly property int curve: ({ snappy: Easing.OutExpo, smooth: Easing.OutQuint, bouncy: Easing.OutBack, springy: Easing.OutElastic })[wp.v.anim_feel] || Easing.OutQuint
-                function play() { slide.restart() }
-                Connections { target: wp; function onVChanged() { feelBox.play() } }
-                Rectangle { id: dot; x: hint.width + 24; y: 11; width: 46; height: 32; radius: 9; color: Theme.paper; border.width: 2.5; border.color: "#" + wp.v.active1 }
-                NumberAnimation { id: slide; target: dot; property: "x"; from: hint.width + 24; to: feelBox.width - 60; duration: feelBox.ms
-                    easing.type: feelBox.curve; easing.amplitude: 1.0; easing.period: 0.45 }
-                UiText { id: hint; x: 12; anchors.verticalCenter: parent.verticalCenter; text: "Preview ▶"; fam: "n"; px: 10; w: 800; color: Theme.textSoft }
+                property real t: 0                      // 0 = closed, 1 = open
+                readonly property string st: wp.v.win_style
+                Rectangle {
+                    id: mini
+                    readonly property real homeX: (feelBox.width - width) / 2
+                    width: 120; height: 46; y: 14; radius: 9; color: Theme.paper; border.width: 2.5; border.color: "#" + wp.v.active1
+                    x: feelBox.st === "slide" ? -width + (homeX + width) * feelBox.t : homeX
+                    opacity: feelBox.st === "slide" ? 1 : Math.min(1, feelBox.t * 1.6)
+                    transform: Scale {
+                        origin.x: mini.width / 2; origin.y: feelBox.st === "gnomed" ? mini.height : mini.height / 2
+                        xScale: feelBox.st === "popin" ? 0.8 + 0.2 * feelBox.t : feelBox.st === "gnomed" ? 0.3 + 0.7 * feelBox.t : 1
+                        yScale: feelBox.st === "popin" ? 0.8 + 0.2 * feelBox.t : feelBox.st === "gnomed" ? feelBox.t : 1
+                    }
+                    Row { anchors.centerIn: parent; spacing: 4
+                        Repeater { model: 3; delegate: Rectangle { width: 8; height: 8; radius: 4; color: "#" + wp.v.active2; opacity: 0.6 } } }
+                }
+                UiText { x: 10; y: 6; text: "Preview"; fam: "n"; px: 10; w: 900; color: Theme.textSoft }
+                SequentialAnimation {
+                    running: feelBox.visible && wp.v.anim === "1"; loops: Animation.Infinite
+                    PropertyAction { target: feelBox; property: "t"; value: 0 }
+                    PauseAnimation { duration: 350 }
+                    NumberAnimation {
+                        target: feelBox; property: "t"; from: 0; to: 1; duration: wp.v.anim_feel === "springy" ? feelBox.ms * 2 : feelBox.ms
+                        easing.type: wp.v.anim_feel === "springy" ? Easing.OutElastic : Easing.BezierSpline
+                        easing.amplitude: 1; easing.period: 0.4
+                        easing.bezierCurve: ({ snappy: [0.15, 0, 0.1, 1, 1, 1], smooth: [0.65, 0.05, 0.36, 1, 1, 1],
+                                               bouncy: [0.34, 1.56, 0.64, 1, 1, 1] })[wp.v.anim_feel] || [0.15, 0, 0.1, 1, 1, 1]
+                    }
+                    PauseAnimation { duration: 900 }
+                }
             }
-            Pick { key: "win_style"; label: "Windows"; pairs: [["Slide", "slide"], ["Pop in", "popin"], ["Shrink", "gnomed"]] }
             Pick { key: "ws_style"; label: "Desktops"; pairs: [["Slide", "slide"], ["Up / down", "slidevert"], ["Fade", "fade"], ["Slide + fade", "slidefade"]] }
+            UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+                text: ({ slide: "Switching desktops: the screen slides sideways.", slidevert: "Switching desktops: the screen slides up or down.",
+                         fade: "Switching desktops: the old one fades out, the new one fades in.", slidefade: "Switching desktops: a short slide while fading." })[wp.v.ws_style] || "" }
         }
 
         Item { width: 1; height: 2 }

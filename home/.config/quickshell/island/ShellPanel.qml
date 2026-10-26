@@ -73,6 +73,7 @@ Item {
                     required property string modelData
                     readonly property var p: Theme.allPalettes[modelData]
                     readonly property bool on: (sh.prefs.theme || "island") === modelData
+                    selected: on
                     width: (rightCol.width - 16) / 3; height: 50; radius: 14; bw: on ? 3 : 2.5; drop: on ? 0 : 3; hi: 0
                     ink: p.ink || "#3D5A66"; fill: p.gOn || ["#D8F1F4", "#A9DDE4"]; pressable: true
                     onClicked: sh.prefs.set("theme", modelData)
@@ -118,6 +119,7 @@ Item {
                 delegate: UiCandy {
                     required property string modelData
                     readonly property bool picked: sh.prefs.wipeBg === modelData
+                    selected: picked
                     width: 34; height: 30; radius: 10; bw: picked ? 3 : 2; ink: picked ? Theme.purple : Theme.inkPhone; drop: picked ? 2 : 0; hi: 0
                     fill: modelData === "wallpaper" ? sh.prefs.wipeAuto[0] : sh.prefs.wipeBgs[modelData][0]; pressable: true
                     onClicked: sh.prefs.set("wipeBg", modelData)
@@ -133,6 +135,7 @@ Item {
                 delegate: UiCandy {
                     required property string modelData
                     readonly property bool picked: sh.prefs.wipeIcon === modelData
+                    selected: picked
                     width: 38; height: 38; radius: 12; bw: picked ? 3 : 2; ink: picked ? Theme.purple : Theme.inkPhone; drop: picked ? 2 : 0; hi: 0
                     fill: sh.prefs.wipeColors[0]; pressable: true
                     onClicked: sh.prefs.set("wipeIcon", modelData)

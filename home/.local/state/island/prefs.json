@@ -11,8 +11,8 @@
   "avatar": "pulse",
   "phoneBg": "/home/gamer/Pictures/Wallpapers/wallhaven-kx6xl1_1920x1080.png",
   "lockWallpaper": "/home/gamer/Pictures/Wallpapers/1363442.jpeg",
-  "wipeBg": "wallpaper",
-  "wipeIcon": "leaf",
+  "wipeBg": "cream",
+  "wipeIcon": "star",
   "idleLock": [
     15,
     5
@@ -37,7 +37,7 @@
   "autoTz": false,
   "dndGaming": false,
   "theme": "island",
-  "boxStyle": "ring",
+  "boxStyle": "soft",
   "themeHue": 0.78,
   "dark": false,
   "appsDark": true,
@@ -75,7 +75,7 @@
   ],
   "todoLast": "/home/gamer/Documents/Todo/Rice wish list.md",
   "phoneRemember": false,
-  "phoneWinLast": false,
+  "phoneWinLast": true,
   "phoneBigLast": false,
   "quickChips": [
     "wifi",

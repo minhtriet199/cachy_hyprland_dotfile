@@ -14,6 +14,9 @@ Item {
     property var fill: [Theme.paper, Theme.paper]   // [top, bottom] or a single colour
     property bool dashed: false
     property bool pressable: false
+    // picked swatch / choice: a ring just outside the box, drawn the same in every box style (Soft has no outline,
+    // so a thicker outline alone showed nothing there)
+    property bool selected: false
     property bool hoverable: pressable
     property bool down: pressable && ma.pressed
     readonly property bool hovered: ma.containsMouse
@@ -66,6 +69,11 @@ Item {
     Keys.onUpPressed: e => arrow(e, false, true)
     Keys.onLeftPressed: e => arrow(e, false, false)
 
+    Rectangle {
+        visible: r.selected
+        x: -4; y: -4 + body.y; width: r.width + 8; height: r.height + 8 + Math.max(0, r.ed - 1); z: -1
+        radius: r.radius >= 999 ? height / 2 : r.radius + 4; color: "transparent"; border.width: 2.5; border.color: Theme.purple
+    }
     Item {
         id: body
         width: r.width; height: r.height

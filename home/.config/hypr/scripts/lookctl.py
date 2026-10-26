@@ -33,9 +33,11 @@ CHOICE = {
 }
 TINT = {"dark": (0.5, 0.9), "light": (1.05, 0.8)}           # blur brightness / contrast behind see-through windows
 SPEED = {"slow": 1.6, "normal": 1.0, "fast": 0.6}           # × animation time
-FEEL = {"snappy": 'bezier = "quick"', "smooth": 'bezier = "easeOutQuint"',   # curves from config/animations.lua
-        "bouncy": 'bezier = "overshoot"', "springy": 'spring = "easy"'}
-WS_FEEL = {"snappy": "quick", "smooth": "easeOutQuint", "bouncy": "overshoot", "springy": "quick"}   # workspaces: no spring
+# four clearly different feels (the Island preview uses the same curves): fast start · slow start and end ·
+# overshoot and settle back · wobble
+FEEL = {"snappy": 'bezier = "quick"', "smooth": 'bezier = "easeInOutCubic"',
+        "bouncy": 'bezier = "islandBounce"', "springy": 'spring = "rubber"'}
+WS_FEEL = {"snappy": "quick", "smooth": "easeInOutCubic", "bouncy": "islandBounce", "springy": "islandBounce"}   # workspaces: no spring
 WIN_STYLE = {"slide": "slide", "popin": "popin 80%", "gnomed": "gnomed"}
 WS_STYLE = {"slide": "slide", "slidevert": "slidevert", "fade": "fade", "slidefade": "slidefade 20%"}
 
@@ -75,10 +77,10 @@ def lua(v):
         "if gm then gm:close() end",
         # the curves used below (same as config/animations.lua), so this file works on its own
         'hl.curve("quick", { type = "bezier", points = { {0.15, 0}, {0.1, 1} } })',
-        'hl.curve("easeOutQuint", { type = "bezier", points = { {0.23, 1}, {0.32, 1} } })',
-        'hl.curve("overshoot", { type = "bezier", points = { {0.5, 0.9}, {0.1, 1.1} } })',
+        'hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1} } })',
+        'hl.curve("islandBounce", { type = "bezier", points = { {0.34, 1.56}, {0.64, 1} } })',
+        'hl.curve("rubber", { type = "spring", mass = 1, stiffness = 200, dampening = 15 })',
         'hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })',
-        'hl.curve("easy", { type = "spring", mass = 1, stiffness = 500, dampening = 35 })',
         "hl.config({ decoration = { active_opacity = %s, inactive_opacity = %s, rounding = %d," % (
             float(v["active_opacity"]), float(v["inactive_opacity"]), int(v["rounding"])),
         "    blur = { enabled = %s, size = %d, passes = %d, brightness = %s, contrast = %s }," % (

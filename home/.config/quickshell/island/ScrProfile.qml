@@ -58,6 +58,7 @@ Item {
                 required property string modelData
                 readonly property bool photo: modelData.startsWith("/")
                 readonly property bool picked: Prefs.phoneBg === modelData
+                selected: picked
                 width: 44; height: 44; radius: 12; bw: picked ? 3 : 2.5; ink: picked ? Theme.purple : Theme.inkPhone; drop: picked ? 3 : 0; hi: 0
                 fill: photo ? Theme.paper : Prefs.phoneBgs[modelData][0]; pressable: true
                 onClicked: Prefs.set("phoneBg", modelData)
