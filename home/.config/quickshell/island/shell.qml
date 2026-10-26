@@ -185,6 +185,17 @@ ShellRoot {
 
     // ── phone as a normal app window (Settings → Look → Open as: Window): one for all screens, built on first open,
     //    let go 3 min after it closes; closing the window (X / your close key) removes it at once ──
+    // ── pop-ups that ask something (password, keyring, Bluetooth pair) open on the screen you're on when they come,
+    //    and stay there while asking (the pointer crossing screens doesn't move them); main screen if that one is gone ──
+    property var askMon: ({ authFlow: "", keyAsk: "", btAsk: "" })
+    function pinAsk(k) { const m = Object.assign({}, askMon); m[k] = Services[k] ? focusedName() : ""; askMon = m }
+    function askHere(mon, name, isMain) { return Quickshell.screens.some(x => x.name === mon) ? mon === name : isMain }
+    Connections {
+        target: Services
+        function onAuthFlowChanged() { shell.pinAsk("authFlow") }
+        function onKeyAskChanged() { shell.pinAsk("keyAsk") }
+        function onBtAskChanged() { shell.pinAsk("btAsk") }
+    }
     property bool phoneWinLive: false
     property var phoneWinPending: null             // a page name, or a take-over request (below)
     Timer { id: phoneWinIdle; interval: 180000; onTriggered: shell.phoneWinLive = false }
@@ -645,9 +656,9 @@ ShellRoot {
                     }
                 }
 
-                // ── password prompt for system changes (polkit), main monitor top middle, only while asking ──
+                // ── password prompt for system changes (polkit), top middle of the screen you're on, only while asking ──
                 LazyLoader {
-                    active: scr.isMain && !!Services.authFlow
+                    active: !!shell.askMon.authFlow && shell.askHere(shell.askMon.authFlow, scr.name, scr.isMain)
                     PanelWindow {
                         screen: scr.modelData
                         anchors.top: true
@@ -663,9 +674,9 @@ ShellRoot {
                     }
                 }
 
-                // ── keyring password pop-up (main monitor, top middle, only while asking) ──
+                // ── keyring password pop-up (screen you're on, top middle, only while asking) ──
                 LazyLoader {
-                    active: scr.isMain && !!Services.keyAsk
+                    active: !!shell.askMon.keyAsk && shell.askHere(shell.askMon.keyAsk, scr.name, scr.isMain)
                     PanelWindow {
                         screen: scr.modelData
                         anchors.top: true
@@ -681,9 +692,9 @@ ShellRoot {
                     }
                 }
 
-                // ── Bluetooth pair / connect request (main monitor, top middle): only exists while asking ──
+                // ── Bluetooth pair / connect request (screen you're on, top middle): only exists while asking ──
                 LazyLoader {
-                    active: scr.isMain && !!Services.btAsk
+                    active: !!shell.askMon.btAsk && shell.askHere(shell.askMon.btAsk, scr.name, scr.isMain)
                     PanelWindow {
                         screen: scr.modelData
                         anchors.top: true
