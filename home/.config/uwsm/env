@@ -1,0 +1,25 @@
+export BROWSER=helium-browser
+export TERM=xterm-kitty
+export QT_QPA_PLATFORM="wayland;xcb"
+export QT_QPA_PLATFORMTHEME="qt6ct"
+export ELECTRON_OZONE_PLATFORM_HINT=auto
+export HYPRCURSOR_THEME="Bibata-Modern-Ice"
+export HYPRCURSOR_SIZE=24
+export XCURSOR_THEME="Bibata-Modern-Ice"
+export XCURSOR_SIZE=24
+
+# If you have an NVIDIA GPU uncommment the following lines
+# export GBM_BACKEND=nvidia-drm # force GBM as a backend
+# export __GLX_VENDOR_LIBRARY_NAME=nvidia # force GBM as a backend
+# export LIBVA_DRIVER_NAME=nvidia # Hardware acceleration on NVIDIA GPUs
+# export __GL_GSYNC_ALLOWED=1 # Controls if G-Sync capable monitors should use Variable Refresh Rate (VRR)
+
+# Vietnamese input (fcitx5 + bamboo). GTK_IM_MODULE left unset on purpose (Wayland text-input)
+export XMODIFIERS=@im=fcitx
+export QT_IM_MODULE=fcitx
+export SDL_IM_MODULE=fcitx
+
+# GPU Hyprland draws on, picked at each login: RX 6700S when a screen is plugged into it (no copies between GPUs),
+# else Hyprland's own pick (680M in Hybrid, battery). Empty / any error → normal start. See ~/.config/hypr/scripts/gpu-pick.sh
+_aq=$(sh "$HOME/.config/hypr/scripts/gpu-pick.sh" 2>/dev/null) && [ -n "$_aq" ] && export AQ_DRM_DEVICES="$_aq"
+unset _aq

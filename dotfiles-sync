@@ -33,6 +33,7 @@ mkdir -p docs && cp -a "$HOME/Documents/Md_File/RICE-HANDOFF.md" docs/ 2>/dev/nu
 # Dolphin look (icon view, previews, panels, Island Dark colours)
 cp -a "$HOME/.config/dolphinrc" "home/.config/" 2>/dev/null
 cp -a "$HOME/.config/xdg-terminals.list" "home/.config/" 2>/dev/null   # terminal for Terminal=true apps (uwsm)
+mkdir -p home/.config/uwsm && cp -a "$HOME/.config/uwsm/env" home/.config/uwsm/   # session env: fcitx, browser, GPU pick (scripts/gpu-pick.sh)
 mkdir -p home/.config/kitty && rsync -a --delete --exclude='*.bak*' "$HOME/.config/kitty/" "home/.config/kitty/"   # kitty (opacity set from Island → Windows)
 mkdir -p home/.local/share/dolphin/view_properties/global && cp -a "$HOME/.local/share/dolphin/view_properties/global/.directory" "home/.local/share/dolphin/view_properties/global/" 2>/dev/null
 cp -a "$HOME/.config/qt6ct/qt6ct.conf" "home/.config/qt6ct/" 2>/dev/null
