@@ -236,7 +236,7 @@ Singleton {
     function applyGameMode() {
         const f = "$HOME/.local/state/hypr/gamemode";
         run(["sh", "-c", gameMode ? "mkdir -p \"$HOME/.local/state/hypr\" && touch " + f + " && hyprctl eval 'hl.config({ animations = { enabled = false } })'"
-                                  : "rm -f " + f + " && hyprctl eval 'hl.config({ animations = { enabled = true } })'"]);
+                                  : "rm -f " + f + " && python3 \"$HOME/.config/hypr/scripts/lookctl.py\" apply >/dev/null"]);   // back to your Windows → Motion settings
     }
     onGameModeChanged: if (Prefs.ready) applyGameMode()
     Connections { target: Prefs; function onReadyChanged() { if (Prefs.ready) s.applyGameMode() } }
@@ -976,7 +976,7 @@ Singleton {
         ["Shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
         ["System", "settingsSystem", "gear", "#5E7A84", "system about storage disk space updates update pacman reload"],
-        ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps"],
+        ["Windows", "settingsWindows", "sliders", "#55BFC6", "window opacity transparent see-through border colour color thickness corner radius rounding gap gaps blur shadow dim inactive spinning animation animations speed bouncy motion effects"],
         ["Shell, bar & dock", "settingsQuick", "barIcon", "#EE7D9C", "shell bar dock notifications size transition theme colour color look box style ring pop glass sakura mint do not disturb quiet game mode phone height window overlay reopen"],
         ["Wallpapers", "wallpapers", "wallpaper", "#A08AEA", "wallpaper background picture lockscreen phone"],
         ["Clipboard", "clipboard", "clipboard", "#FFC23C", "clipboard copy paste history"],

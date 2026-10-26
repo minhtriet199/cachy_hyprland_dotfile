@@ -23,7 +23,7 @@ Item {
         keys: ["Shortcuts", "Click a shortcut to change it", "keyboard", Theme.gPeach],
         time: ["Screen time", "How long you used each app", "chart", Theme.gOn],
         system: ["System", "About, storage, updates", "gear", Theme.gChip],
-        windows: ["Windows", "See-through, borders, corners, gaps", "sliders", Theme.gSea],
+        windows: ["Windows", "Look, blur, animations", "sliders", Theme.gSea],
         timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf],
         mouse: ["Mouse & touchpad", "Speed, tap, cursor size", "crosshair", Theme.gLilac],
         apps: ["Apps", "Installed, default, startup", "box", Theme.gPeach],

@@ -6,6 +6,7 @@ UiCandy {
     property var page                    // the Windows page (values + put())
     property string key
     property bool pct: false
+    property string unit: pct ? "%" : "px"
     property real vmin: 0
     property real vmax: 10
     readonly property int shown: Math.round(page.num(key) * (pct ? 100 : 1))
@@ -29,5 +30,5 @@ UiCandy {
         Keys.onDownPressed: { text = (parseInt(text) || 0) - 1; nbx.apply() }
     }
     UiText { id: unit; anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter
-        text: nbx.pct ? "%" : "px"; fam: "n"; px: 10.5; w: 900; color: Theme.textSoft }
+        text: nbx.unit; fam: "n"; px: 10.5; w: 900; color: Theme.textSoft }
 }

@@ -6,6 +6,7 @@
 # 2. --verify-config really catches a bad option (on a copy of the config)
 # 3. screenctl / inputctl / lookctl: a change Hyprland rejects is rolled back and nothing broken is saved
 # 4. appearance/timelang put(): unchanged = no write, changed = backup + atomic replace
+# 5. lookctl: Lua for every animation / backdrop choice passes Hyprland --verify-config
 S=$HOME/.config/hypr/scripts
 I=$HOME/.config/quickshell/island
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
@@ -73,6 +74,25 @@ put(p, "two\n"); assert open(p).read() == "two\n" and open(p + ".bak-island").re
 assert not os.path.exists(p + ".tmp")
 EOF
 done
+
+echo "5. lookctl: every choice makes Lua that Hyprland accepts"
+mkdir -p "$T/look"
+if python3 - "$S" "$T/look" <<'EOF2'
+import itertools, os, sys
+sys.path.insert(0, sys.argv[1]); os.environ["HOME"] = sys.argv[2]
+import lookctl as L
+v = L.load()
+for i, (sp, fe, wi, ws, bd) in enumerate(itertools.product(*(L.CHOICE[k] for k in ("anim_speed", "anim_feel", "win_style", "ws_style", "backdrop")))):
+    v.update(anim_speed=sp, anim_feel=fe, win_style=wi, ws_style=ws, backdrop=bd, blur=str(i % 2), shadow=str(i // 2 % 2), dim=str(i // 4 % 2), border_spin=str(i // 8 % 2))
+    os.makedirs("%s/c%d" % (sys.argv[2], i)); open("%s/c%d/hyprland.lua" % (sys.argv[2], i), "w").write(L.lua(v) + "\n")
+EOF2
+then
+    bad=0; n=0
+    for c in "$T"/look/c*/hyprland.lua; do n=$((n + 1))
+        Hyprland --verify-config -c "$c" 2>&1 | tail -1 | grep -qx "config ok" || { bad=$((bad + 1)); [ $bad = 1 ] && Hyprland --verify-config -c "$c" 2>&1 | tail -2 | sed 's/^/        /'; }
+    done
+    [ $bad = 0 ] && ok "$n combinations accepted" || fail "$bad of $n combinations rejected"
+else fail "lookctl could not generate"; fi
 
 echo
 [ $fails = 0 ] && echo "All tests passed." || echo "$fails test(s) failed."
