@@ -118,7 +118,11 @@ Item {
     readonly property var warmLand: ["settings", "settingsQuick"]
     property int warmed: 0                       // how many of warmPort + warmLand are built so far
     function isWarm(n, land) { const l = warmPort.concat(warmLand).slice(0, warmed); return land ? warmLand.includes(n) && l.includes(n) : warmPort.includes(n) && l.includes(n) }
-    Timer { interval: 400; repeat: true; running: stage.warmed < stage.warmPort.length + stage.warmLand.length; onTriggered: stage.warmed++ }
+    // starts 4 s after Island does (not during the login transition: building a page blocks the frame it's drawing),
+    // and waits while the phone is open
+    property bool warmGo: false
+    Timer { interval: 4000; running: true; onTriggered: stage.warmGo = true }
+    Timer { interval: 400; repeat: true; running: stage.warmGo && !stage.shown && stage.warmed < stage.warmPort.length + stage.warmLand.length; onTriggered: stage.warmed++ }
     function rotate() {
         if (!shown) return;
         const was = wantLand;
