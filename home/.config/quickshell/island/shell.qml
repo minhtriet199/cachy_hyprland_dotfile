@@ -118,6 +118,10 @@ ShellRoot {
             }
             onError: err => { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
         }
+        // on the lock screen the ASUS (HDR) showed the pointer as a black square (hardware cursor plane), fine once
+        // unlocked → while locked (secure: "locked" never reports the unlock) Hyprland draws the pointer itself (2 = default, auto)
+        Connections { target: sessionLock; function onSecureChanged() { Quickshell.execDetached(["hyprctl", "eval",
+            "hl.config({ cursor = { no_hardware_cursors = " + (sessionLock.secure ? 1 : 2) + " } })"]) } }
         WlSessionLock {
             id: sessionLock
             WlSessionLockSurface {
