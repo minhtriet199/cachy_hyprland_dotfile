@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-// Part of Services: Download mode (Power mode "Download" / Quick chip). Saves power while something downloads:
+// Part of Services: Download mode (power menu "Download" / Quick chip). Saves power while something downloads:
 // Silent power mode, keyboard light off, Island calm, the other screens off and one screen at 5% showing a dim clock +
 // download progress (DownloadScreen.qml). A key / mouse move wakes the screens; 1 min untouched → dim again.
 // Done = something was downloading and nothing has for 60 s → everything back to normal + a dialog that shuts the PC
