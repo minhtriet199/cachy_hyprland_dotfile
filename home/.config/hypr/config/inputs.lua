@@ -5,9 +5,10 @@ hl.config({
         -- sensitivity = -0.25,
         accel_profile = "flat",
     },
-    -- gpu-pick.sh made the 6700S primary: eDP on the 680M shows the hardware cursor as a black square
+    -- Hybrid: a screen on the other GPU than the one drawing (eDP on the 680M, HDMI on the 6700S) shows the hardware
+    -- cursor as a black square. Can't key it off gpu-pick: the HDMI often links up after login, so the pick is skipped.
     cursor = {
-        no_hardware_cursors = os.getenv("AQ_DRM_DEVICES") and 1 or 2,
+        no_hardware_cursors = 1,
     },
 })
 

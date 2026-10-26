@@ -3,3 +3,4 @@ postman-bin
 rider
 samrewritten
 visual-studio-code-bin
+ytermusic
