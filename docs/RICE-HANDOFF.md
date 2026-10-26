@@ -43,6 +43,8 @@ real settings are not touched.
    window rules you are testing, and `hl.on("hyprland.start", function () hl.exec_cmd("qs -p $T/island > $T/qs.log 2>&1") end)`.
    Check with `Hyprland --verify-config -c $T/nest.lua`.
 4. Run (in the background): `dbus-run-session Hyprland -c $T/nest.lua`
+   With 2+ screens its window opens on the screen the owner is NOT using and focus goes back to them
+   (hypr config/nested.lua); with one screen it opens on theirs. Never test lock / pop-ups / focus on the real desktop.
 5. Run commands inside it with `HYPRLAND_INSTANCE_SIGNATURE` + `WAYLAND_DISPLAY` of the newest `hyprctl instances`
    entry: `qs -p $T/island ipc call island …`, `hyprctl clients`, `grim` (screenshots), and
    `hyprctl dispatch 'hl.dsp.send_shortcut({ mods = "CTRL", key = "S", window = "title:^(…)$" })'` for key presses.

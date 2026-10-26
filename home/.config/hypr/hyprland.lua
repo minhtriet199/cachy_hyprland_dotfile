@@ -18,4 +18,5 @@ require("config.monitors")
 require("config.windowrules")
 require("config.games")
 require("config.launch")     -- Island search: apps open on the screen you launched from
+require("config.nested")     -- nested test desktop opens on the screen you are not using
 require("config.workspaces")
