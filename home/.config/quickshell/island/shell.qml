@@ -56,10 +56,12 @@ ShellRoot {
         property real deskT: 0
         property string lockWipe: "none"
         property real lockT: 0
+        readonly property int coverMs: Prefs.wipeKind === "jake" ? 1500 : 560     // desktop side: Jake walks in / out
+        readonly property int revealMs: Prefs.wipeKind === "jake" ? 2800 : 650
         SequentialAnimation {
             id: toLockAnim                                   // desktop → lock: close on the desktop, open on the lock screen
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 560 }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.coverMs }
             ScriptAction { script: { lockCtl.lockWipe = "full"; sessionLock.locked = true } }
             PauseAnimation { duration: 380 }          // leaf moment
             ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL" } }
@@ -77,7 +79,7 @@ ShellRoot {
             ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false } }
             PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.revealMs }
             ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false } }
         }
         // first start: if greetd auto-logged in (island-greeter `island-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin
@@ -98,7 +100,7 @@ ShellRoot {
         Timer { id: bootReveal; interval: 900; onTriggered: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; bootRevealAnim.restart() } }
         NumberAnimation { id: bootRevealAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
         Timer { id: startWipe; interval: 450; onTriggered: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR"; startAnim.restart() } }
-        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.deskWipe = "none" }
+        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: Math.max(850, lockCtl.revealMs); onFinished: lockCtl.deskWipe = "none" }
         Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "full"; sessionAge.running = true }   // covered from the first frame
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
@@ -143,11 +145,11 @@ ShellRoot {
         SequentialAnimation {
             id: previewAnim
             ScriptAction { script: { shell.phoneClose(); lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 560 }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.coverMs }
             ScriptAction { script: lockCtl.deskWipe = "full" }
             PauseAnimation { duration: 600 }
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.revealMs }
             ScriptAction { script: lockCtl.deskWipe = "none" }
         }
     }
@@ -426,7 +428,7 @@ ShellRoot {
                     color: "transparent"
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.namespace: "island-wipe"
-                    IrisWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT }
+                    SceneWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT }
                 }
 
                 // ── wallpaper ──

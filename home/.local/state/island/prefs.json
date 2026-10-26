@@ -10,7 +10,7 @@
   "displayName": "",
   "avatar": "pulse",
   "phoneBg": "/home/gamer/Pictures/Wallpapers/wallhaven-kx6xl1_1920x1080.png",
-  "lockWallpaper": "/home/gamer/Pictures/Wallpapers/1363442.jpeg",
+  "lockWallpaper": "/home/gamer/Pictures/Wallpapers/jake-the-dog-2k.png",
   "wipeBg": "cream",
   "wipeIcon": "star",
   "idleLock": [
@@ -44,15 +44,15 @@
   "gameMode": false,
   "calcHistory": [
     [
-      "12×(3+4)",
+      "12\u00d7(3+4)",
       "84"
     ],
     [
-      "12×(3+4)",
+      "12\u00d7(3+4)",
       "84"
     ],
     [
-      "12×(3+4)",
+      "12\u00d7(3+4)",
       "84"
     ],
     [
@@ -83,5 +83,6 @@
     "sound",
     "warp"
   ],
-  "hotspotBand": "5"
+  "hotspotBand": "5",
+  "wipeKind": "jake"
 }

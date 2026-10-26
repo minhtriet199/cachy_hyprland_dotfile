@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 
 // Shell page (phone): notifications, bar & dock, game mode, phone on the left; look (colours, light / dark, boxes) and the
 // lock / unlock transition on the right. Same rows, labels and spacing as the other settings pages (was its own
@@ -111,7 +112,20 @@ Item {
 
         Item { width: 1; height: 6 }
         Label { text: "LOCK & UNLOCK TRANSITION" }
+        SetSeg { width: parent.width; label: "Type"; options: ["Iris", "Jake"]; current: sh.prefs.wipeKind === "jake" ? "Jake" : "Iris"
+            onPicked: v => sh.prefs.set("wipeKind", v.toLowerCase()) }
+        // Jake: winks, shrinks into himself and walks off when you unlock (JakeWipe) — best with his lock screen picture
+        UiRow {
+            readonly property string pic: Quickshell.env("HOME") + "/Pictures/Wallpapers/jake-the-dog-2k.png"
+            readonly property bool using: sh.prefs.lockWallpaper === pic
+            visible: sh.prefs.wipeKind === "jake"
+            width: parent.width; glyph: "image"; title: "Jake lock screen"; active: using
+            sub: using ? "In use · he steps out of it when you unlock" : "Use his picture so the unlock starts from it"
+            onClicked: if (!using) sh.prefs.set("lockWallpaper", pic)
+            Glyph { visible: !parent.using; name: "arrowRight"; size: 15; stroke: 2.6 }
+        }
         Flow {
+            visible: sh.prefs.wipeKind !== "jake"
             width: parent.width; spacing: 8
             UiText { width: 84; height: 30; verticalAlignment: Text.AlignVCenter; text: "Background"; px: 13; w: 700 }
             Repeater {
@@ -128,6 +142,7 @@ Item {
             }
         }
         Flow {
+            visible: sh.prefs.wipeKind !== "jake"
             width: parent.width; spacing: 8
             UiText { width: 84; height: 38; verticalAlignment: Text.AlignVCenter; text: "Icon"; px: 13; w: 700 }
             Repeater {
@@ -144,7 +159,7 @@ Item {
                 }
             }
         }
-        UiRow { width: parent.width; glyph: "play"; title: "Preview"; sub: "Play the lock / unlock transition"; onClicked: sh.svc.previewWipe()
+        UiRow { width: parent.width; glyph: "play"; title: "Preview"; sub: sh.prefs.wipeKind === "jake" ? "Jake walks in, then winks and walks off" : "Play the lock / unlock transition"; onClicked: sh.svc.previewWipe()
             Glyph { name: "arrowRight"; size: 15; stroke: 2.6 } }
     }
 }

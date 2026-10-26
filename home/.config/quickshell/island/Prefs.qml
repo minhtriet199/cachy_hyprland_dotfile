@@ -44,6 +44,7 @@ Singleton {
     property string boxStyle: "candy"           // "candy" or "ring"
     property bool dark: false                   // Island itself in dark mode (works with every colour theme)
     property bool appsDark: false               // apps (Qt/KDE/GTK, browsers) in dark mode — separate from Island     // plugged in, on battery: sleep / screen / lock / nothing
+    property string wipeKind: "iris"        // lock / unlock scene change: "iris" (circle + icon) or "jake" (JakeWipe)
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
     property var wipeAuto: ["#FFF4E0", "#F1E2C2"]   // wipeBg "wallpaper": pastel of the wallpaper's main colour (SvcPalette keeps it fresh)
@@ -57,7 +58,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): flat phone (no 3D tilt), fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips", "hotspotBand"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeKind", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips", "hotspotBand"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/island"
 
     function set(k, v) { p[k] = v; save() }
