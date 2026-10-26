@@ -8,6 +8,7 @@ import Quickshell.Io
 Column {
     id: ss
     property var svc
+    signal go(string screen)
     spacing: 8
     property var st: ({ disks: [], pkgCache: 0, userCache: 0, lastUpdate: "" })
     property var up: null               // null = not checked yet
@@ -38,6 +39,11 @@ Column {
                     color: modelData.pct > 90 ? Theme.berry : modelData.pct > 75 ? Theme.orange : Theme.sea }
             }
         }
+    }
+    UiRow {
+        width: ss.width; glyph: "chart"; title: "Disk map"; sub: "What fills your drive"
+        onClicked: ss.go("settingsDiskMap")
+        Glyph { name: "arrowRight"; size: 15; stroke: 2.6 }
     }
     UiRow {
         width: ss.width; glyph: "box"; title: "Old app downloads · " + ss.gb(ss.st.pkgCache)

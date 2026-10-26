@@ -44,6 +44,7 @@ cloudflare-warp-bin
 cpupower
 cryptsetup
 dbeaver
+ddcutil
 device-mapper
 diffutils
 discord
@@ -113,6 +114,7 @@ lib32-opencl-mesa
 lib32-vulkan-radeon
 libdvdcss
 libgsf
+libnotify
 libopenraw
 libreoffice-fresh
 libreoffice-fresh-vi
@@ -124,6 +126,7 @@ linux-firmware
 logrotate
 lsb-release
 lsscsi
+lua
 lvm2
 man-db
 man-pages

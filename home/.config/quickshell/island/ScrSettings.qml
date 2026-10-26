@@ -14,23 +14,22 @@ Item {
     readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     // [number, title, line, colour, glyph, phone screen or "app:<name>" for the user's own settings apps]
     readonly property var cats: [
-        ["01", "Wi-Fi", "Networks and passwords", "#55BFC6", "wifi", "settingsWifi"],
+        ["01", "Wi-Fi", "Networks, airplane, firewall", "#55BFC6", "wifi", "settingsWifi"],
         ["02", "Bluetooth", "Earbuds, pads, devices", "#7C83F0", "bluetooth", "settingsBt"],
         ["03", "Sound", "Output, input, app mixer", "#7CC47F", "volume", "settingsSound"],
-        ["04", "Power", "Battery, mode, brightness", "#FFC23C", "battery", "settingsPower"],
+        ["04", "Power", "Battery, charge limit, timers", "#FFC23C", "battery", "settingsPower"],
         ["05", "Shell", "Bar, dock, notifications", "#EE7D9C", "barIcon", "settingsQuick"],
         ["06", "Wallpaper", "Pick your island view", "#A08AEA", "wallpaper", "wallpapers"],
-        ["07", "Displays", "Layout, HDR, refresh", "#8E7BE6", "monitor", "settingsDisplays"],
-        ["08", "Keyboard", "Shortcuts and keys", "#F7A982", "keyboard", "settingsKeys"],
+        ["07", "Displays", "Layout, night light, text size", "#8E7BE6", "monitor", "settingsDisplays"],
+        ["08", "Shortcuts", "Keyboard shortcuts", "#F7A982", "keyboard", "settingsKeys"],
         ["09", "Screen time", "Hours per app", "#2F9EAB", "chart", "settingsTime"],
-        ["10", "System", "Charge limit, firewall, about", "#5E7A84", "gear", "settingsSystem"],
+        ["10", "System", "About, storage, updates", "#5E7A84", "gear", "settingsSystem"],
         ["11", "Windows", "See-through, borders, gaps", "#55BFC6", "sliders", "settingsWindows"],
         ["12", "Time & language", "Clock, time zone, typing", "#7CC47F", "globe", "settingsTimeLang"],
         ["13", "Mouse & touchpad", "Speed, tap, cursor size", "#8E7BE6", "crosshair", "settingsMouse"],
         ["14", "Apps", "Installed, default, startup", "#F7A982", "box", "settingsApps"],
         ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"],
-        ["16", "Disk map", "What fills your drive", "#FFC23C", "chart", "settingsDiskMap"],
-        ["17", "Recovery", "Snapshots, roll back", "#7C83F0", "undo", "settingsRecovery"]
+        ["16", "Recovery", "Snapshots, roll back", "#7C83F0", "undo", "settingsRecovery"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

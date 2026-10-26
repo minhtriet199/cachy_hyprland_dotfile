@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 
 // Windows page: how app windows look in Hyprland — see-through when focused / not focused, dark or light backdrop,
-// border colours and thickness, corner radius, gaps, text size in apps. Changes show at once and are saved
+// border colours and thickness, corner radius, gaps (text size in apps moved to Displays). Changes show at once and are saved
 // (~/.local/state/hypr/look via hypr/scripts/lookctl.py, read back by hypr/config/look.lua).
 Item {
     id: wp
@@ -26,14 +26,6 @@ Item {
         const args = Object.keys(wp.pending).map(k => k + "=" + wp.pending[k]); wp.pending = ({})
         setP.command = [wp.tool, "set"].concat(args); setP.running = true } }
     Process { id: setP }
-    // text size in apps: kept with the input settings (hypr/scripts/inputctl.py text_scale → GTK text-scaling-factor)
-    readonly property string inputTool: Quickshell.env("HOME") + "/.config/hypr/scripts/inputctl.py"
-    property real textScale: 1
-    Process { running: true; command: ["python3", wp.inputTool, "get"]
-        stdout: StdioCollector { onStreamFinished: { try { wp.textScale = parseFloat(JSON.parse(this.text).text_scale) || 1 } catch (e) {} } } }
-    function setTextScale(x) { textScale = x; textT.restart() }
-    Timer { id: textT; interval: 150; onTriggered: { textP.running = false; textP.command = ["python3", wp.inputTool, "set", "text_scale=" + wp.textScale.toFixed(2)]; textP.running = true } }
-    Process { id: textP }
     function hex(c) { return String(c).slice(1, 7) }
 
     component Label: UiText { fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 18 }
@@ -167,19 +159,6 @@ Item {
             }
         }
         WinColorWheel { id: wheel; page: wp; width: parent.width }
-
-        Item { width: 1; height: 2 }
-        Label { text: "TEXT IN APPS" }
-        Column {
-            width: parent.width; spacing: 4
-            Item { width: parent.width; height: 18
-                UiText { text: "Text size"; px: 13; w: 700 }
-                UiText { anchors.right: parent.right; text: Math.round(wp.textScale * 100) + "%"; fam: "n"; px: 11.5; w: 900; color: Theme.textSoft } }
-            UiSlider { width: parent.width; color: Theme.peach; step: 0.05 / 0.8; value: (wp.textScale - 0.8) / 0.8
-                onPicked: x => wp.setTextScale(Math.round((0.8 + x * 0.8) / 0.05) * 0.05) }
-            UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-                text: "Works in most apps (GTK) after you reopen them. Island's own size is in Shell → Size." }
-        }
 
         Item { width: 1; height: 2 }
         UiRow {

@@ -202,8 +202,8 @@ ShellRoot {
         }
     }
 
-    // ── phone as a normal app window (Settings → Look → Open as: Window): one for all screens, built on first open,
-    //    let go 3 min after it closes; closing the window (X / your close key) removes it at once ──
+    // ── phone as a normal app window (Settings → Phone → Open as: Window): one for all screens, built on first open and
+    //    kept (owner wants it smooth over saving RAM, 2026-10-26); closing the window (X / your close key) removes it ──
     // ── pop-ups that ask something (password, keyring, Bluetooth pair) open on the screen you're on when they come,
     //    and stay there while asking (the pointer crossing screens doesn't move them); main screen if that one is gone ──
     property var askMon: ({ authFlow: "", keyAsk: "", btAsk: "" })
@@ -217,7 +217,6 @@ ShellRoot {
     }
     property bool phoneWinLive: false
     property var phoneWinPending: null             // a page name, or a take-over request (below)
-    Timer { id: phoneWinIdle; interval: 180000; onTriggered: shell.phoneWinLive = false }
     Connections {
         target: shell
         function onPhoneRequest(monitor, screen) { if (Prefs.phoneWindow && !shell.phoneWinLive) { shell.phoneWinPending = screen; shell.phoneWinLive = true } }
@@ -319,7 +318,6 @@ ShellRoot {
                 "hl.dsp.window.resize({ x = " + Math.round(phoneApp.implicitWidth) + ", y = " + Math.round(phoneApp.implicitHeight) + ", window = \"title:^(Island Phone)$\" })"]) } }
             minimumSize: Qt.size(320 * sc, 420 * sc)
             visible: wstage.shown || wstage.visibleAmount > 0.001
-            onVisibleChanged: if (visible) phoneWinIdle.stop(); else phoneWinIdle.restart()
             onClosed: { wstage.shown = false; shell.phoneWinLive = false }
             onBackingWindowVisibleChanged: if (backingWindowVisible && shell.phoneGhost) shell.swapStep()
             color: "transparent"          // only the phone shows; Hyprland's border / shadow / blur are off for it (windowrules.lua)
@@ -828,11 +826,10 @@ ShellRoot {
                     MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onPressed: shell.phoneClose() }
                 }
 
-                // ── the phone: built on first open (only on that screen), removed 3 min after it closes ──
-                // (≈ 120 MB per screen while it exists; the first open after removal takes ≈ 0.15–0.45 s)
-                property bool phoneLive: false
+                // ── the phone: built when Island starts, on every screen, and never removed — so every open is instant
+                // (≈ 120 MB per screen; building it on demand made the first open take ≈ 0.15–0.45 s. Owner chose smooth, 2026-10-26)
+                property bool phoneLive: true
                 property var phonePending: null              // a page name, or a take-over request from the window phone
-                Timer { id: phoneIdle; interval: 180000; onTriggered: scr.phoneLive = false }
                 Connections {
                     target: shell
                     function onPhoneRequest(monitor, screen) { if (monitor === scr.name && !scr.phoneLive && !Prefs.phoneWindow) { scr.phonePending = screen; scr.phoneLive = true } }
@@ -842,7 +839,6 @@ ShellRoot {
                 active: scr.phoneLive
                 PanelWindow {
                     id: phoneWin
-                    onVisibleChanged: if (visible) phoneIdle.stop(); else phoneIdle.restart()
                     screen: scr.modelData
                     visible: stage.shown || stage.visibleAmount > 0.001
                     anchors { top: true; bottom: true; left: true; right: true }

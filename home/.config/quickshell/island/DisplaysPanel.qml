@@ -1,6 +1,8 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 
-// Displays page (phone): screen picker drawn as the real layout, brightness, HDR,
+// Displays page (phone): screen picker drawn as the real layout, brightness, HDR, gamma, night light, text size,
 // resolution / refresh / scale with Apply + "Keep?" (goes back by itself after 15 s).
 // Backend: ~/.config/hypr/scripts/screenctl.py (same as the Screen Settings app).
 // No rotate / mirror / disable here — those crashed Hyprland before.
@@ -28,6 +30,14 @@ Item {
                       ["mode", scr.output, res + "@" + hz, String(scale)]);
     }
     function revert() { svc.screenRevert() }
+    // text size in apps: kept with the input settings (hypr/scripts/inputctl.py text_scale → GTK text-scaling-factor)
+    readonly property string inputTool: Quickshell.env("HOME") + "/.config/hypr/scripts/inputctl.py"
+    property real textScale: 1
+    Process { running: true; command: ["python3", dp.inputTool, "get"]
+        stdout: StdioCollector { onStreamFinished: { try { dp.textScale = parseFloat(JSON.parse(this.text).text_scale) || 1 } catch (e) {} } } }
+    function setTextScale(x) { textScale = x; textT.restart() }
+    Timer { id: textT; interval: 150; onTriggered: { textP.running = false; textP.command = ["python3", dp.inputTool, "set", "text_scale=" + dp.textScale.toFixed(2)]; textP.running = true } }
+    Process { id: textP }
     // ── layout, any number of screens: drag a screen in the map, or use the side buttons. A moved screen snaps
     //    against another (any side, lined up start / middle / end), never overlaps, and loose screens slide back
     //    so there are no gaps. Tried LIVE (screenctl poslive, nothing saved) → Keep saves it, Go back / 15 s undoes. ──
@@ -259,6 +269,13 @@ Item {
             UiSlider { y: 22; width: parent.width; value: (dp.svc.gamma - 0.5) / 0.5; color: "#A08AEA"
                 onPicked: v => dp.svc.setGamma(0.5 + v * 0.5) }
         }
+        // night light (hyprsunset, shared with gamma above) — moved here from Shell
+        UiRow {
+            visible: !!dp.scr
+            width: parent.width; glyph: "moon"; title: "Night light"; sub: dp.svc.nightLight ? "Warmer colours on every screen" : "Off"
+            active: dp.svc.nightLight; onClicked: dp.svc.toggle("night")
+            UiSwitch { on: dp.svc.nightLight; onToggled: dp.svc.toggle("night") }
+        }
         // resolution / refresh / scale chips
         Repeater {
             model: dp.scr ? [
@@ -315,6 +332,18 @@ Item {
                 onClicked: dp.keepLeft > 0 ? dp.revert() : dp.reset()
                 UiText { anchors.centerIn: parent; text: dp.keepLeft > 0 ? "Go back" : "Cancel"; px: 14; w: 700 }
             }
+        }
+        Item { width: 1; height: 2 }
+        UiText { text: "TEXT IN APPS"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 16 }
+        Column {
+            width: parent.width; spacing: 4
+            Item { width: parent.width; height: 18
+                UiText { text: "Text size"; px: 13; w: 700 }
+                UiText { anchors.right: parent.right; text: Math.round(dp.textScale * 100) + "%"; fam: "n"; px: 11.5; w: 900; color: Theme.textSoft } }
+            UiSlider { width: parent.width; color: Theme.peach; step: 0.05 / 0.8; value: (dp.textScale - 0.8) / 0.8
+                onPicked: x => dp.setTextScale(Math.round((0.8 + x * 0.8) / 0.05) * 0.05) }
+            UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
+                text: "Works in most apps (GTK) after you reopen them. Island's own size is in Shell → Shell size." }
         }
     }
 }

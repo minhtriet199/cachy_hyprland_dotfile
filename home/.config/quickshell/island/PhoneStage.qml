@@ -112,6 +112,13 @@ Item {
     readonly property var allScreens: ["home", "quick", "islands", "clipboard", "clipHidden", "profile", "calc", "settings", "settingsQuick", "wallpapers",
                                        "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
     readonly property var tallScreens: ["quick", "clipboard", "clipHidden", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
+    // the screens you open most are built in the background after start (one every 0.4 s), so their first open is
+    // instant too; every screen stays built once opened (owner wants smooth over RAM, 2026-10-26)
+    readonly property var warmPort: ["home", "quick", "islands"]
+    readonly property var warmLand: ["settings", "settingsQuick"]
+    property int warmed: 0                       // how many of warmPort + warmLand are built so far
+    function isWarm(n, land) { const l = warmPort.concat(warmLand).slice(0, warmed); return land ? warmLand.includes(n) && l.includes(n) : warmPort.includes(n) && l.includes(n) }
+    Timer { interval: 400; repeat: true; running: stage.warmed < stage.warmPort.length + stage.warmLand.length; onTriggered: stage.warmed++ }
     function rotate() {
         if (!shown) return;
         const was = wantLand;
@@ -311,7 +318,8 @@ Item {
                             readonly property bool prev: stage.prevScreen === modelData && !stage.prevLand && !stage.wantLand
                             width: parent.width; height: parent.height
                             y: cur ? -stage.peek : 0
-                            active: cur || prev || item !== null
+                            property bool kept: false               // built once → stays built
+                            active: cur || prev || kept || stage.isWarm(modelData, false)
                             opacity: cur && !stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
                             visible: opacity > 0
                             enabled: cur && !stage.wantLand
@@ -319,7 +327,7 @@ Item {
                             focus: cur && !stage.wantLand
                             sourceComponent: stage.compFor(modelData, false)
                             onCurChanged: if (cur && item && item.focusField) item.focusField()
-                            onLoaded: if (cur && item.focusField) item.focusField()
+                            onLoaded: { Qt.callLater(() => kept = true); if (cur && item.focusField) item.focusField() }
                         }
                     }
                     // small overlay phone: its bottom sits below the screen edge → the wheel (where the page itself
@@ -487,12 +495,14 @@ Item {
                             width: parent.width; height: parent.height
                             // slide in from the side you're going to (like the upright phone), old screen slides out
                             x: cur && stage.wantLand && stage.swapT < 1 ? (1 - stage.swapT) * 40 * stage.navDir : (prev && stage.swapT < 1 ? -stage.swapT * 40 * stage.navDir : 0)
-                            active: cur || prev || item !== null
+                            property bool kept: false               // built once → stays built
+                            active: cur || prev || kept || stage.isWarm(modelData, true)
                             opacity: cur && stage.wantLand ? stage.swapT : (cur ? 1 : (prev ? 1 - stage.swapT : 0))
                             visible: opacity > 0
                             enabled: cur && stage.wantLand
                             focus: cur && stage.wantLand
                             sourceComponent: stage.compFor(modelData, true)
+                            onLoaded: Qt.callLater(() => kept = true)    // later: setting it while active is evaluated loops
                         }
                     }
                 }
@@ -505,7 +515,7 @@ Item {
     function compFor(n, land) {
         if (land && tallScreens.includes(n)) return n === "quick" ? cQuickTall : n === "clipboard" ? cClipTall : n === "clipHidden" ? cHidTall : n === "calc" ? cCalcTall : cProfileTall;
         return ({ home: cHome, quick: cQuick, islands: cIslands, clipboard: cClip, clipHidden: cHid, profile: cProfile, calc: cCalc, settings: cSettings,
-                  settingsQuick: cSettingsQuick, wallpapers: cWallpapers })[n] || cSetPage;
+                  wallpapers: cWallpapers })[n] || cSetPage;
     }
     // upright layouts inside a scroller for the short sideways phone
     Component { id: cQuickTall; ScrQuickWide { svc: stage.svc; onGo: s => stage.go(s); onBack: stage.back(); onClose: stage.close() } }
@@ -529,10 +539,9 @@ Item {
     Component { id: cHid; ScrClipboard { hidden: true; svc: stage.svc; onGo: s => stage.go(s); onDone: stage.done() } }
     Component { id: cIslands; ScrIslands { svc: stage.svc; monitor: stage.monitor; onGo: s => stage.go(s); onDone: stage.done() } }
     Component { id: cSettings; ScrSettings { svc: stage.svc; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
-    Component { id: cSettingsQuick; ScrSettingsQuick { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     // Wi-Fi / Bluetooth / Sound / Power pages (kind comes from the screen name: settingsWifi → wifi)
     Component { id: cSetPage; ScrSetPage { svc: stage.svc; prefs: stage.prefs
-        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap", settingsRecovery: "recovery" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
+        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap", settingsRecovery: "recovery", settingsQuick: "shell" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
         onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back() } }
     Component { id: cWallpapers; ScrWallpapers { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
 

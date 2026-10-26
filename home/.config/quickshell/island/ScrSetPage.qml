@@ -15,21 +15,22 @@ Item {
     readonly property real cw: width - cx - (narrow ? 18 : 26)
     readonly property real topPad: narrow ? 26 : 0                     // below the punch hole
     readonly property var info: ({
-        wifi:  ["Wi-Fi", "Networks and passwords", "wifi", Theme.gOn],
+        wifi:  ["Wi-Fi", "Networks, airplane, security", "wifi", Theme.gOn],
         bt:    ["Bluetooth", "Earbuds, pads, devices", "bluetooth", Theme.gLilac],
         sound: ["Sound", "Output, input and app mixer", "volume", Theme.gLeaf],
-        power: ["Power", "Battery, mode and brightness", "battery", Theme.gSun],
-        displays: ["Displays", "Layout, brightness, HDR, resolution", "monitor", Theme.gSettings],
-        keys: ["Keyboard", "Click a shortcut to change it", "keyboard", Theme.gPeach],
+        power: ["Power", "Battery, charge limit, timers", "battery", Theme.gSun],
+        displays: ["Displays", "Layout, night light, text size", "monitor", Theme.gSettings],
+        keys: ["Shortcuts", "Click a shortcut to change it", "keyboard", Theme.gPeach],
         time: ["Screen time", "How long you used each app", "chart", Theme.gOn],
-        system: ["System", "Charge limit, firewall, about", "gear", Theme.gChip],
+        system: ["System", "About, storage, updates", "gear", Theme.gChip],
         windows: ["Windows", "See-through, borders, corners, gaps", "sliders", Theme.gSea],
         timelang: ["Time & language", "Clock, time zone, typing", "globe", Theme.gLeaf],
         mouse: ["Mouse & touchpad", "Speed, tap, cursor size", "crosshair", Theme.gLilac],
         apps: ["Apps", "Installed, default, startup", "box", Theme.gPeach],
         privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry],
         diskmap: ["Disk map", "What fills your drive", "chart", Theme.gSun],
-        recovery: ["Recovery", "Snapshots, roll back", "undo", Theme.gLilac]
+        recovery: ["Recovery", "Snapshots, roll back", "undo", Theme.gLilac],
+        shell: ["Shell", "Bar, dock, look, phone", "barIcon", Theme.gSettings]
     })[kind] || ["", "", "gear", Theme.gOn]
 
     // header
@@ -60,25 +61,30 @@ Item {
             focus: true
             width: fl.width
             height: item ? item.implicitHeight : 0
-            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap, recovery: crecovery })[pg.kind] || cWifi
+            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap, recovery: crecovery, shell: cshell })[pg.kind] || cWifi
         }
     }
     Component { id: cWifi; Column { spacing: 18      // networks, then the hotspot (scroll down)
-        WifiPanel { width: parent.width; svc: pg.svc; listH: fl.height - 56 }
-        HotspotPanel { width: parent.width; svc: pg.svc } } }
+        UiRow { width: parent.width; glyph: "wifiOff"; title: "Airplane mode"; sub: pg.svc.airplane ? "Wi-Fi + Bluetooth off" : "Off"
+            active: pg.svc.airplane; onClicked: pg.svc.toggle("airplane")
+            UiSwitch { on: pg.svc.airplane; onToggled: pg.svc.toggle("airplane") } }
+        WifiPanel { width: parent.width; svc: pg.svc; listH: fl.height - 56 - 66 }   // 66 = airplane row
+        HotspotPanel { width: parent.width; svc: pg.svc }
+        NetSecurity { width: parent.width; svc: pg.svc } } }
     Component { id: cBt; BtPanel { svc: pg.svc; listH: fl.height - 50 } }
     Component { id: cSound; SoundPanel { svc: pg.svc; wide: !pg.narrow } }
-    Component { id: cPower; PowerPanel { svc: pg.svc } }
+    Component { id: cPower; PowerPanel { svc: pg.svc; onGo: s => pg.go(s) } }
     Component { id: cDisplays; DisplaysPanel { svc: pg.svc } }
     Component { id: cKeys; KeysPanel { svc: pg.svc; listH: fl.height - 46; focus: true } }
     Component { id: cTime; TimePanel { svc: pg.svc } }
-    Component { id: cSystem; SystemPanel { svc: pg.svc } }
+    Component { id: cSystem; SystemPanel { svc: pg.svc; onGo: s => pg.go(s) } }
     Component { id: cWindows; WindowsPanel { svc: pg.svc } }
     Component { id: ctimelang; TimeLangPanel { svc: pg.svc } }
     Component { id: cmouse; MousePanel { svc: pg.svc } }
     Component { id: capps; AppsPanel { svc: pg.svc } }
     Component { id: cprivacy; PrivacyPanel { svc: pg.svc } }
     Component { id: cdiskmap; DiskMapPanel { svc: pg.svc; onGo: s => pg.go(s) } }
+    Component { id: cshell; ShellPanel { svc: pg.svc; prefs: pg.prefs } }
     Component { id: crecovery; RecoveryPanel { svc: pg.svc } }
 
     focus: true
