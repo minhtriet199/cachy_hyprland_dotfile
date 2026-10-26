@@ -197,13 +197,15 @@ Item {
             delegate: Item {
                 required property var modelData
                 width: col.width; height: 30
-                Rectangle { y: 2; width: parent.width; height: 26; radius: 8; color: Theme.cream; border.width: 2; border.color: Theme.inkPhone
+                // tap = open the folder (↗ next to the size, thicker accent border on hover)
+                Rectangle { y: 2; width: parent.width; height: 26; radius: 8; color: Theme.cream; border.width: bigMa.containsMouse ? 3 : 2; border.color: bigMa.containsMouse ? Theme.seaDeep : Theme.inkPhone
                     Rectangle { x: 2; y: 2; height: parent.height - 4; radius: 6; width: Math.max(8, (parent.width - 4) * modelData.size / Math.max(1, dm.d.biggest[0].size))
                         gradient: Gradient { orientation: Gradient.Horizontal; GradientStop { position: 0; color: dm.kind("", modelData.path)[1] } GradientStop { position: 1; color: dm.kind("", modelData.path)[0] } } }
-                    UiText { x: 10; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 90; elide: Text.ElideMiddle
+                    UiText { x: 10; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 110; elide: Text.ElideMiddle
                         text: modelData.path.split("/").pop() + "  ·  " + dm.short(modelData.path).split("/").slice(0, -1).join("/"); px: 12; w: 700 }
-                    UiText { anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; text: dm.gb(modelData.size); px: 12.5; w: 700 } }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dm.svc.openApp("dolphin " + JSON.stringify(modelData.path)) }
+                    UiText { anchors.right: parent.right; anchors.rightMargin: 28; anchors.verticalCenter: parent.verticalCenter; text: dm.gb(modelData.size); px: 12.5; w: 700 }
+                    Glyph { anchors.right: parent.right; anchors.rightMargin: 9; anchors.verticalCenter: parent.verticalCenter; name: "external"; size: 12; stroke: 2.4; color: bigMa.containsMouse ? Theme.seaDeep : Theme.textSoft } }
+                MouseArea { id: bigMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: dm.svc.openPath(modelData.path) }
             }
         }
 
@@ -220,7 +222,7 @@ Item {
                 onClicked: {
                     if (modelData.safe) { const p = Object.assign({}, dm.picked); p[modelData.id] = !p[modelData.id]; dm.picked = p; dm.confirm = false }
                     else if (modelData.cmd.startsWith("sudo")) Quickshell.execDetached(["kitty", "--title", modelData.label, "sh", "-c", modelData.cmd + "; echo; echo 'Done — press Enter to close'; read x"])
-                    else dm.svc.openApp(modelData.cmd.startsWith("dolphin") ? modelData.cmd : "dolphin " + modelData.cmd.replace(/^rm -rf /, "").replace(/\/\*.*$/, ""))
+                    else dm.svc.openPath(modelData.cmd.replace(/^(dolphin|rm -rf) /, "").replace(/\/\*.*$/, "").replace(/^~/, Quickshell.env("HOME")))   // look before you delete
                 }
                 // tick box (safe) or a "look" mark
                 Rectangle { x: 12; anchors.verticalCenter: parent.verticalCenter; width: 22; height: 22; radius: 7; border.width: 2; border.color: Theme.inkPhone

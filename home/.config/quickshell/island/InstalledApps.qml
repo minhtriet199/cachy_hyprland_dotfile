@@ -116,13 +116,18 @@ Item {
                         UiText { visible: !ia.info; text: "Measuring…"; fam: "n"; px: 11; w: 800; color: Theme.textSoft }
                         Repeater {
                             model: rc.isOpen && ia.info ? ia.info.dirs : []
+                            // a folder: tap = open it in your Files app (folder mark + ↗, highlight on hover)
                             delegate: Item {
                                 required property var modelData
-                                width: det.width; height: 22
-                                UiText { width: parent.width - 80; elide: Text.ElideMiddle; anchors.verticalCenter: parent.verticalCenter; px: 12; w: 700
+                                width: det.width; height: 26
+                                Rectangle { anchors.fill: parent; radius: 8; color: Theme.cream; border.width: 2; border.color: Theme.inkPhone; visible: pathMa.containsMouse }
+                                Glyph { x: 6; anchors.verticalCenter: parent.verticalCenter; name: "folder"; size: 13; stroke: 2.4; color: pathMa.containsMouse ? Theme.seaDeep : Theme.textSoft }
+                                UiText { x: 26; width: parent.width - 26 - 84; elide: Text.ElideMiddle; anchors.verticalCenter: parent.verticalCenter; px: 12; w: 700
+                                    color: pathMa.containsMouse ? Theme.seaDeep : Theme.text
                                     text: modelData.label + "  ·  " + modelData.path.replace(Quickshell.env("HOME"), "~") }
-                                UiText { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: ia.gb(modelData.size); px: 12; w: 700 }
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: ia.svc.openApp("dolphin " + JSON.stringify(modelData.path)) }
+                                UiText { anchors.right: parent.right; anchors.rightMargin: 26; anchors.verticalCenter: parent.verticalCenter; text: ia.gb(modelData.size); px: 12; w: 700 }
+                                Glyph { anchors.right: parent.right; anchors.rightMargin: 7; anchors.verticalCenter: parent.verticalCenter; name: "external"; size: 12; stroke: 2.4; color: pathMa.containsMouse ? Theme.seaDeep : Theme.textSoft }
+                                MouseArea { id: pathMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ia.svc.openPath(modelData.path) }
                             }
                         }
                         UiText { visible: !!ia.info && ia.info.dirs.length === 0 && rc.modelData.source !== "Steam"; text: "No folders of its own in your home"; fam: "n"; px: 11; w: 800; color: Theme.textSoft }
@@ -132,7 +137,7 @@ Item {
                         Flow {
                             width: parent.width; spacing: 6
                             readonly property real cache: ia.info ? ia.info.dirs.filter(d => d.cache).reduce((s, d) => s + d.size, 0) : 0
-                            Chip { t: ia.info && ia.info.running ? "Running · Open" : "Open"; on: false; visible: !!rc.modelData.exec; onClicked: ia.svc.openApp(rc.modelData.exec) }
+                            Chip { t: ia.info && ia.info.running ? "Running · Open" : "Open"; on: false; visible: !!rc.modelData.exec; onClicked: ia.svc.openApp(["sh", "-c", rc.modelData.exec]) }   // exec has arguments (steam steam://…)
                             // a running app keeps writing its cache: close it first
                             Chip { readonly property bool busy: !!ia.info && ia.info.running
                                 t: busy ? "Close it to clear cache" : ia.confirm === "cache" ? "Tap again · clear " + ia.gb(parent.cache) : "Clear cache " + ia.gb(parent.cache)
