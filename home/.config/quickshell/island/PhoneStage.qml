@@ -101,7 +101,6 @@ Item {
     // light mode = a flat phone: no 3D tilt (lighter to draw, e.g. while a game keeps the GPU busy); turning still works
     property real tilt: lite ? 0 : 1
     Behavior on tilt { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-    readonly property bool flatFace: tilt === 0 && !turning      // face drawn straight, without the smoothing layer
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
@@ -293,7 +292,7 @@ Item {
                 }
             }
             Flat3D {
-                m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite; smoothed: !stage.flatFace
+                m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
                 PhoneBody {
                     id: pBody
                     showKeys: false
@@ -469,7 +468,7 @@ Item {
                 }
             }
             Flat3D {
-                m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite; smoothed: !stage.flatFace
+                m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
                 PhoneBody {
                     id: lBody
                     landscape: true; showKeys: false
