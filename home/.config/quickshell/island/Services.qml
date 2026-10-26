@@ -645,10 +645,12 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             const parts = this.text.split("\n@@\n"), times = {};
             for (const l of (parts[1] || "").split("\n")) { const p = l.split(" "); if (p.length === 2) times[p[0]] = parseInt(p[1]) * 1000 }
+            const seen = new Set();
             const list = parts[0].split("\n").filter(l => l.includes("\t")).map(l => {
                 const i = l.indexOf("\t"), id = l.slice(0, i);
                 return s.clipItem(id, l.slice(i + 1), times[id] || 0);
-            }).filter((c, i) => i < 300 || c.pinned);      // pinned ones stay even when old
+            }).filter(c => !seen.has(c.key) && seen.add(c.key))   // same text copied twice → one row (the newest)
+              .filter((c, i) => i < 300 || c.pinned);      // pinned ones stay even when old
             // pins no longer in cliphist come from their own copy (no id)
             const have = new Set(list.map(c => c.key));
             s.clips = list.concat(Prefs.clipPins.filter(k => !have.has(k)).map(k => s.clipItem("", k, 0)));
@@ -674,7 +676,7 @@ Singleton {
     // hidden pins are copied as "sensitive" → cliphist skips them, they never show in the normal history
     function clipCopy(c) { run(c.id ? ["sh", "-c", "cliphist decode \"$0\" | wl-copy", c.id] : ["sh", "-c", "wl-copy $1 < \"$0\"", c.file, c.hidden ? "--sensitive" : ""]) }
     function clipDelete(c) { if (c.hidden) { hidAct.command = ["rm", "-f", c.file]; hidAct.running = true; return }
-        if (clipAct.running) return; if (c.pinned) clipPin(c); if (!c.id) return; clipAct.command = ["sh", "-c", "cliphist list | grep -m1 \"^$0\t\" | cliphist delete", c.id]; clipAct.running = true }
+        if (clipAct.running) return; if (c.pinned) clipPin(c); if (!c.id) return; clipAct.command = ["sh", "-c", "cliphist list | awk -F'\\t' -v id=\"$0\" '$1 == id { t = substr($0, index($0, \"\\t\") + 1) } { l[NR] = $0 } END { for (i = 1; i <= NR; i++) if (substr(l[i], index(l[i], \"\\t\") + 1) == t) print l[i] }' | cliphist delete", c.id]; clipAct.running = true }   // every copy with that text (rows are merged)
     // wipe keeps pinned items (deletes every line whose text is not in the pins)
     function clipWipe() { if (clipAct.running) return
         clipAct.command = ["bash", "-c", "cliphist list | awk -F'\\t' 'NR==FNR{p[$0];next} !(substr($0,index($0,\"\\t\")+1) in p)' <(printf '%s\\n' \"$@\") - | cliphist delete", "_"].concat(Prefs.clipPins)
