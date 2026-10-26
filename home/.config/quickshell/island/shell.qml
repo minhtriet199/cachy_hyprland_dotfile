@@ -443,7 +443,8 @@ ShellRoot {
                 }
 
                 // ── lock screen preview (wallpaper picker → Lockscreen → 👁): the real lock screen's look with the picked
-                //    wallpaper, nothing locked (a stand-in controller); a click / Esc goes back. Only built while previewing. ──
+                //    wallpaper, nothing locked (a stand-in controller); a click / Esc goes back. Only built while previewing.
+                //    Under the overlay phone (it steps into the corner, keep flipping pictures); a window phone can't be above it. ──
                 LazyLoader {
                     active: Services.wallPreview !== "" && Services.wallPreviewFor === "Lockscreen"
                     PanelWindow {
@@ -451,14 +452,14 @@ ShellRoot {
                         anchors { top: true; bottom: true; left: true; right: true }
                         exclusionMode: ExclusionMode.Ignore
                         color: "#A3D0E1"
-                        WlrLayershell.layer: WlrLayer.Overlay
+                        WlrLayershell.layer: Prefs.phoneWindow ? WlrLayer.Overlay : WlrLayer.Top
                         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None       // the phone keeps the keyboard (Esc stops the preview)
                         WlrLayershell.namespace: "island-lock-preview"
                         LockScreen { anchors.fill: parent; svc: Services; lock: lockPreviewCtl; main: scr.isMain; wall: Services.wallPreview }
                         MouseArea { anchors.fill: parent; z: 200; onPressed: Services.wallPreview = "" }
                         UiCandy { z: 201; anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top; anchors.topMargin: 24 * scr.sc
                             width: pvT.implicitWidth + 36; height: 34; radius: 17; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; scale: scr.sc
-                            UiText { id: pvT; anchors.centerIn: parent; text: "Lock screen preview · click or Esc to go back"; fam: "n"; px: 12.5; w: 900 } }
+                            UiText { id: pvT; anchors.centerIn: parent; text: "Lock screen preview · " + (Prefs.phoneWindow ? "click or Esc to go back" : "pick on the phone · click outside or Esc to go back"); fam: "n"; px: 12.5; w: 900 } }
                     }
                 }
 

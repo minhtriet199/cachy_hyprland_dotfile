@@ -79,7 +79,7 @@ Item {
     // wallpaper live preview (Wallpapers → Preview): the desktop shows the picture and the phone shrinks into the
     // bottom-right corner, still working (keep picking, turn it). A windowed phone just stays where it is.
     readonly property bool previewing: !!svc && svc.wallPreview !== ""
-    property real pv: previewing && svc.wallPreviewFor === "Desktop" && !windowed ? 1 : 0     // steps aside only to show the desktop
+    property real pv: previewing && svc.wallPreviewFor !== "Phone" && !windowed ? 1 : 0     // steps aside to show the desktop / lock preview
     Behavior on pv { NumberAnimation { duration: 320 * stage.dur; easing.type: Easing.OutCubic } }
     // corner pose: scale k about the phone's middle (o) and move that point to t; shared by both phones so a turn still lines up
     property real cK: wantLand ? 560 / (920 * (big ? Math.min(width * 0.75 / 1012, height * 0.8 / 484) : 1.12))
