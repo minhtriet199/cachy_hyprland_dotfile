@@ -56,8 +56,8 @@ ShellRoot {
         property real deskT: 0
         property string lockWipe: "none"
         property real lockT: 0
-        readonly property int coverMs: Prefs.wipeKind === "jake" ? 2200 : 560     // desktop side: Jake runs in / falls, slams, runs off
-        readonly property int revealMs: Prefs.wipeKind === "jake" ? 3800 : 650
+        readonly property int coverMs: Prefs.wipeKind === "jake" ? 1750 : 560     // desktop side: Jake runs in (21 drawings at 12 fps)
+        readonly property int revealMs: Prefs.wipeKind === "jake" ? 3750 : 650    // … winks, falls, splats, runs off (45 drawings)
         // Jake runs off to the left when you unlocked on the leftmost of 2+ screens, else to the right
         property bool runLeft: false
         function pickRunSide() {

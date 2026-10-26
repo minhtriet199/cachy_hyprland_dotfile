@@ -6,9 +6,10 @@ here="$(cd "$(dirname "$0")" && pwd)"
 island="${ISLAND_DIR:-$HOME/.config/quickshell/island}"
 out="$1"
 mkdir -p "$out/fonts"
-for f in LockScreen.qml PhoneBody.qml Theme.qml UiCandy.qml UiText.qml UiStrokeText.qml UiDots.qml UiTag.qml UiDashed.qml Glyph.qml Glyphs.js BarBattery.qml IrisWipe.qml SceneWipe.qml JakeWipe.qml JakeLimb.qml JakeShapes.js WipeIcon.qml; do
+for f in LockScreen.qml PhoneBody.qml Theme.qml UiCandy.qml UiText.qml UiStrokeText.qml UiDots.qml UiTag.qml UiDashed.qml Glyph.qml Glyphs.js BarBattery.qml IrisWipe.qml SceneWipe.qml JakeWipe.qml JakeShapes.js WipeIcon.qml; do
     cp "$island/$f" "$out/$f"
 done
 cp "$island"/fonts/*.ttf "$out/fonts/"
+mkdir -p "$out/assets/jake" && cp "$island"/assets/jake/* "$out/assets/jake/"     # JakeWipe drawings + frames.js
 cp "$here/shell.qml" "$here/Prefs.qml" "$here/Svc.qml" "$here/greeter.lua" "$out/"
 install -m 755 "$here/run-greeter" "$here/island-greeter-session" "$here/island-session" "$here/paint-vt" "$out/"
