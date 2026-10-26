@@ -8,11 +8,12 @@ Item {
     id: p
     property var m                                   // the piece's full 3D matrix (Mat.js array)
     property real tex: 1.5                           // texture sharpness (plain colours only need smooth edges)
+    property bool smoothed: true                     // false = drawn straight (only for a flat, untilted piece: no stair-steps then)
     default property alias content: holder.data
     readonly property real pad: 3
     width: holder.width + 2 * pad; height: holder.height + 2 * pad
     transform: Matrix4x4 { matrix: M.toQt(M.chain(p.m, M.T(-p.pad, -p.pad))) }
-    layer.enabled: true; layer.smooth: true
+    layer.enabled: smoothed; layer.smooth: true
     layer.textureSize: Qt.size(width * tex, height * tex)
     Item { id: holder; x: p.pad; y: p.pad; width: childrenRect.width; height: childrenRect.height }
 }

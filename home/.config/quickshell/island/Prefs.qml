@@ -54,7 +54,7 @@ Singleton {
     readonly property var phoneBgs: ({ cream: ["#FFF9EC", "#F1E2C2"], sky: ["#E2F5F8", "#BFE4EA"], lilac: ["#F1ECFE", "#D9CEFA"],
                                        peach: ["#FDECE3", "#F6CDB9"], mint: ["#E7F6E7", "#C3E6C5"], sun: ["#FFF6D6", "#F5DE95"] })
     property bool gameMode: false           // Game mode (Settings → Quick): Hyprland animations off, phone light mode, bar animations paused
-    property bool phoneLite: false          // phone light mode (side button ⚡): fewer, shorter animations, lighter drawing
+    property bool phoneLite: false          // phone light mode (side button ⚡): flat phone (no 3D tilt), fewer, shorter animations, lighter drawing
     property bool ready: false
 
     readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips", "hotspotBand"]

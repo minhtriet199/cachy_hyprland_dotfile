@@ -98,6 +98,10 @@ Item {
     Translate { id: cornerMove; x: (stage.cTx - stage.cOx) * stage.pv; y: (stage.cTy - stage.cOy) * stage.pv }
     readonly property bool lite: (!!prefs && prefs.phoneLite) || (!!svc && svc.calm)
     readonly property real dur: lite ? 0.45 : 1
+    // light mode = a flat phone: no 3D tilt (lighter to draw, e.g. while a game keeps the GPU busy); turning still works
+    property real tilt: lite ? 0 : 1
+    Behavior on tilt { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    readonly property bool flatFace: tilt === 0 && !turning      // face drawn straight, without the smoothing layer
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
     readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
@@ -271,8 +275,8 @@ Item {
             readonly property real piv: 422 * (1 - stage.lk)
             readonly property var inner: M.about(195, 422, M.chain(
                 M.T(0, (1 - stage.r) * 1150), M.T(51 * stage.lk, (-343.5 - (stage.height - 1080) / 2) * stage.lk + piv)   /* lands exactly on the sideways phone at any shell size */, M.S(1 + 0.213 * stage.lk),
-                M.Ry(-32 * (1 - stage.fp) + 46 * stage.lk), M.Rx(5 * (1 - stage.fp) - 29 * stage.lk),
-                M.Rz(5 * (1 - stage.fp) - (1 - stage.r) * 14 + (stage.wob + stage.ringW) * (1 - stage.lk) - 98 * stage.lk),
+                M.Ry(-32 * (1 - stage.fp) * stage.tilt + 46 * stage.lk), M.Rx(5 * (1 - stage.fp) * stage.tilt - 29 * stage.lk),
+                M.Rz((5 * (1 - stage.fp) - (1 - stage.r) * 14 + (stage.wob + stage.ringW) * (1 - stage.lk)) * stage.tilt - 98 * stage.lk),
                 M.T(0, -piv)))
             readonly property var view: M.chain(M.F(), M.persp(1500 + 700 * stage.lk, 195 + 51 * stage.lk, 422 - 343.5 * stage.lk), inner)
             // back plate
@@ -289,7 +293,7 @@ Item {
                 }
             }
             Flat3D {
-                m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
+                m: pHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite; smoothed: !stage.flatFace
                 PhoneBody {
                     id: pBody
                     showKeys: false
@@ -443,8 +447,8 @@ Item {
             visible: stage.hand > 0.001 || stage.slideIn > 0.001 || stage.turning
             opacity: stage.turning ? 1 : Math.max(stage.hand, Math.min(1, stage.slideIn * 1.5))
             readonly property var inner: M.about(460, 220, stage.hand > 0.001 || stage.turning
-                ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.fl)), M.Rx(-24 * (1 - stage.fl)), M.Rz(-3 * (1 - stage.fl) + stage.ringW))
-                : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14), M.Rx(-24), M.Rz(-3 + (1 - stage.slideIn) * 12)))
+                ? M.chain(M.S(1.1), M.Ry(14 * (1 - stage.fl) * stage.tilt), M.Rx(-24 * (1 - stage.fl) * stage.tilt), M.Rz(-3 * (1 - stage.fl) * stage.tilt + stage.ringW))
+                : M.chain(M.T(0, (1 - stage.slideIn) * 500), M.S(0.8 + 0.3 * stage.slideIn), M.Ry(14 * stage.tilt), M.Rx(-24 * stage.tilt), M.Rz((-3 + (1 - stage.slideIn) * 12) * stage.tilt)))
             readonly property var rest: M.chain(M.F(), M.persp(2200, 460, 220), inner)
             // while turning: lie over the upright phone (a quarter turn round, same size), then ease into its own place
             readonly property var landOnPort: M.chain(M.T(195, 422), M.Rz(90), M.S(844 / 920), M.T(-460, -220))
@@ -465,7 +469,7 @@ Item {
                 }
             }
             Flat3D {
-                m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite
+                m: lHolder.view; tex: stage.texScale; layer.mipmap: !stage.lite; smoothed: !stage.flatFace
                 PhoneBody {
                     id: lBody
                     landscape: true; showKeys: false
