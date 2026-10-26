@@ -8,12 +8,10 @@ DropCard {
     id: d
     property var svc
     readonly property var m: svc.sysmon
-    width: 360; height: 84 + 14 + 20 + 12 + 4 * 92 + 12 + 18 + 4 * 30 + 40 + 16 + 36 + 16
+    width: 360; height: 84 + 14 + 4 * 92 + 12 + 18 + 4 * 30 + 40 + 16 + 36 + 16
     // power: on battery the battery's drain (= the whole laptop); plugged in only the chips report it (CPU + 680M share one sensor)
     readonly property bool batPower: m.onBattery && m.batW > 0
     readonly property string powerWatts: Math.round(batPower ? m.batW : m.apuW + m.gpuW) + " W"
-    readonly property string powerParts: (batPower ? "from battery · " : "") + "CPU+" + d.svc.igpuName + " " + Math.round(m.apuW) + " W · "
-        + d.svc.gpuName + " " + (m.gpuAsleep ? "asleep" : Math.round(m.gpuW) + " W")
 
     // top apps: every process's CPU ticks + memory from /proc (one cat, only while this dropdown is open, every 2 s),
     // grouped by program name; CPU = share of the whole machine since the last look, RAM = resident memory
@@ -47,26 +45,19 @@ DropCard {
         Glyph { anchors.centerIn: parent; name: "pulse"; size: 23; stroke: 2.4 } }
     Column { x: 78; y: 21
         UiText { text: "System"; px: 22; w: 700; height: 26 }
-        UiText { text: "CPU " + d.m.cpuTemp + "°C · GPU " + d.m.gpuTemp + "°C"; fam: "n"; px: 11; w: 800; color: Theme.textMuted }
+        UiText { text: d.batPower ? "from battery · whole laptop" : "power in use · chips"; fam: "n"; px: 11; w: 800; color: Theme.textMuted }
     }
+    UiStrokeText { visible: d.m.ok; anchors.right: parent.right; anchors.rightMargin: 24; y: 24; text: d.powerWatts; px: 34; weight: 700; strokeW: 6; strokeColor: Theme.ink }
 
     Column {
         x: 16; y: 84 + 14; width: d.width - 32; spacing: 12
-        // power, same look as the rows below (no graph): on battery the battery's drain (= the whole laptop),
-        // plugged in only the chips report it (CPU + 680M share one sensor)
-        Item {
-            visible: d.m.ok; width: parent.width; height: 20
-            UiText { id: pwl; text: "POWER"; fam: "n"; px: 11; w: 900; track: 1.4; color: Theme.textSoft; height: 20 }
-            UiText { id: pwv; x: Math.max(42, pwl.implicitWidth + 10); text: d.powerWatts; px: 16; w: 700; height: 20 }
-            UiText { anchors.right: parent.right; width: parent.width - pwv.x - pwv.implicitWidth - 10; horizontalAlignment: Text.AlignRight; elide: Text.ElideLeft
-                text: d.powerParts; fam: "n"; px: 11; w: 800; color: Theme.textMuted; height: 20 }
-        }
         Repeater {
             model: [
-                ["CPU", d.m.cpu + "%", d.m.cpuTemp + "°C · 16 threads", d.svc.cpuHist, Theme.sea],
+                ["CPU", d.m.cpu + "%", d.m.cpuTemp + "°C · " + Math.round(d.m.apuW) + " W", d.svc.cpuHist, Theme.sea],   // W = CPU + 680M (one chip)
                 ["RAM", d.m.ramUsed.toFixed(1) + " GB", d.m.ram + "% of " + d.m.ramTotal.toFixed(1) + " GB", d.svc.ramHist, Theme.purple],
-                ["GPU · " + d.svc.igpuName, d.m.igpu + "%", d.m.igpuTemp + "°C · VRAM " + d.m.igpuVram.toFixed(1) + " / " + d.m.igpuVramTotal.toFixed(1) + " + " + d.m.igpuShared.toFixed(1) + " GB shared", d.svc.igpuHist, Theme.leaf],
-                ["GPU · " + d.svc.gpuName, d.m.gpuAsleep ? "asleep" : d.m.gpu + "%", d.m.gpuAsleep ? "sleeping (saves battery)" : d.m.gpuTemp + "°C · VRAM " + d.m.vramUsed.toFixed(1) + " / " + d.m.vramTotal.toFixed(0) + " GB · " + Math.round(d.m.gpuW) + " W", d.svc.gpuHist, Theme.berry]
+                // GPUs: VRAM as the big number (the graph shows how busy it is)
+                ["GPU · " + d.svc.igpuName, d.m.igpuVram.toFixed(1) + " / " + d.m.igpuVramTotal.toFixed(1) + " GB", d.m.igpuTemp + "°C · in CPU's W", d.svc.igpuHist, Theme.leaf],
+                ["GPU · " + d.svc.gpuName, d.m.gpuAsleep ? "asleep" : d.m.vramUsed.toFixed(1) + " / " + d.m.vramTotal.toFixed(0) + " GB", d.m.gpuAsleep ? "saves battery" : d.m.gpuTemp + "°C · " + Math.round(d.m.gpuW) + " W", d.svc.gpuHist, Theme.berry]
             ]
             delegate: Column {
                 id: sec
