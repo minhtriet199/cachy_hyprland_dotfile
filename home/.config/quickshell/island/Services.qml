@@ -724,6 +724,8 @@ Singleton {
     property alias ramHist: sysmonPart.ramHist
     property alias gpuHist: sysmonPart.gpuHist
     property alias gpuName: sysmonPart.gpuName
+    property alias igpuHist: sysmonPart.igpuHist
+    property alias igpuName: sysmonPart.igpuName
 
     // ── live status for the bar icons (no waiting for the 4 s poll) ──
     PwObjectTracker { objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource] }

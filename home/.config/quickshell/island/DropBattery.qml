@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell.Io
 
-// Battery dropdown: big %, charge state, power use (W), life gauge (10 cells), power mode (asusctl profiles), graphics (MUX: Hybrid = the
+// Battery dropdown: big %, charge state, life gauge (10 cells), power mode (asusctl profiles), graphics (MUX: Hybrid = the
 // built-in GPU drives the screen and the RX 6700S sleeps · Ultimate = the RX 6700S drives it, faster games, ~10 W more; restart to switch), screen brightness
 // (laptop + one slider per plugged-in external screen, from screenctl.py — any brand, DDC/CI or HDR nits).
 // The Power settings page shows its own brightness slider, so it turns ours off (showBrightness).
@@ -21,23 +21,6 @@ DropCard {
     readonly property string line2: bat.minutes > 0
         ? (bat.status === "Charging" ? "full in " + timeText(bat.minutes) : timeText(bat.minutes) + " left")
         : (bat.plugged ? (pct >= 95 ? "Fully charged" : "Not charging · charge limit") : "")
-    // power use, read only while this card is open (every 2 s): each GPU's own sensor (the APU's = CPU + 680M) and, on battery,
-    // the battery's drain (= the whole laptop). A sleeping GPU is never read (that could wake it).
-    property var watts: null                   // { cpu, gpu, gpuAsleep, bat }
-    Process { id: powP; command: ["sh", "-c", "for c in /sys/class/drm/card[0-9]; do d=$c/device; [ -e $d/mem_info_vram_total ] || continue; "
-            + "if [ \"$(cat $d/power/runtime_status 2>/dev/null)\" = suspended ]; then echo \"1e15 z\"; continue; fi; v=$(cat $d/mem_info_vram_total); "
-            + "for h in $d/hwmon/hwmon*; do echo \"$v $(cat $h/power1_average 2>/dev/null || cat $h/power1_input 2>/dev/null)\"; break; done; done; "
-            + "echo \"bat $(cat /sys/class/power_supply/BAT*/power_now 2>/dev/null | head -1)\""]
-        stdout: StdioCollector { onStreamFinished: {
-            const gp = [], w = { cpu: 0, gpu: 0, gpuAsleep: false, bat: 0 };
-            for (const l of this.text.trim().split("\n")) { const [a, b] = l.split(" "); if (a === "bat") w.bat = (+b || 0) / 1e6; else if (b !== undefined) gp.push([+a, b]) }
-            gp.sort((x, y) => x[0] - y[0]);                      // smallest VRAM = the APU, biggest = the RX 6700S
-            if (gp.length) w.cpu = (+gp[0][1] || 0) / 1e6;
-            if (gp.length > 1) { w.gpuAsleep = gp[gp.length - 1][1] === "z"; w.gpu = w.gpuAsleep ? 0 : (+gp[gp.length - 1][1] || 0) / 1e6 }
-            d.watts = w } } }
-    Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!powP.running) powP.running = true }
-    readonly property string line3: !watts ? "" : "⚡ " + (!bat.plugged && watts.bat > 0 ? Math.round(watts.bat) + " W" : "chips " + Math.round(watts.cpu + watts.gpu) + " W")
-        + " · CPU " + Math.round(watts.cpu) + " · GPU " + (watts.gpuAsleep ? "asleep" : Math.round(watts.gpu))
     readonly property var tag: pct >= 80 ? ["GREAT", Theme.berry] : pct >= 50 ? ["GOOD", Theme.sea] : pct >= 20 ? ["LOW", Theme.orange] : ["CHARGE", Theme.berry]
 
     UiStrokeText { id: big; x: 22; y: 20; text: d.pct + "%"; px: 46; weight: 700; strokeW: 7; strokeColor: Theme.ink }
@@ -45,7 +28,6 @@ DropCard {
         x: big.x + big.width + 14; y: 32; spacing: 2
         UiText { text: d.line1; px: 15; w: 700 }
         UiText { text: d.line2; fam: "n"; px: 11; w: 800; color: Theme.textSoft }
-        UiText { visible: text !== ""; text: d.line3; fam: "n"; px: 11; w: 900; color: Theme.textDeep }
     }
     UiTag { x: d.width - width - 24; y: 22; text: d.tag[0]; fill: d.tag[1]; ink: Theme.ink; tilt: 6; px: 13 }
 
