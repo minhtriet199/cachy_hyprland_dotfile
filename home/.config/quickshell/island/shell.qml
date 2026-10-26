@@ -56,18 +56,10 @@ ShellRoot {
         property real deskT: 0
         property string lockWipe: "none"
         property real lockT: 0
-        readonly property int coverMs: Prefs.wipeKind === "jake" ? 1750 : 560     // desktop side: Jake runs in (21 drawings at 12 fps)
-        readonly property int revealMs: Prefs.wipeKind === "jake" ? 3750 : 650    // … winks, falls, splats, runs off (45 drawings)
-        // Jake runs off to the left when you unlocked on the leftmost of 2+ screens, else to the right
-        property bool runLeft: false
-        function pickRunSide() {
-            const all = Quickshell.screens, f = all.find(x => x.name === shell.focusedName());
-            runLeft = all.length > 1 && !!f && all.every(x => x.x >= f.x) && all.some(x => x.x > f.x);
-        }
         SequentialAnimation {
             id: toLockAnim                                   // desktop → lock: close on the desktop, open on the lock screen
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.coverMs }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: { lockCtl.lockWipe = "full"; sessionLock.locked = true } }
             PauseAnimation { duration: 380 }          // leaf moment
             ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL" } }
@@ -85,7 +77,7 @@ ShellRoot {
             ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false } }
             PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.revealMs }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
             ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false } }
         }
         // first start: if greetd auto-logged in (island-greeter `island-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin
@@ -106,7 +98,7 @@ ShellRoot {
         Timer { id: bootReveal; interval: 900; onTriggered: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; bootRevealAnim.restart() } }
         NumberAnimation { id: bootRevealAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
         Timer { id: startWipe; interval: 450; onTriggered: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR"; startAnim.restart() } }
-        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: Math.max(850, lockCtl.revealMs); onFinished: lockCtl.deskWipe = "none" }
+        NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.deskWipe = "none" }
         Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "full"; sessionAge.running = true }   // covered from the first frame
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
@@ -119,7 +111,7 @@ ShellRoot {
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => {
                 if (result === PamResult.Success) {
-                    lockTestTimer.stop(); lockCtl.pickRunSide(); toDeskAnim.restart()      // busy until the desktop is back
+                    lockTestTimer.stop(); toDeskAnim.restart()      // busy until the desktop is back
                     if (lockCtl.bootLock) { lockCtl.bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) }
                 }
                 else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
@@ -147,15 +139,15 @@ ShellRoot {
         }
         Connections { target: Services; function onLockRequested() { lockCtl.lockNow() } }
         // Settings → Transition → Preview: close and open on the desktop (no lock)
-        Connections { target: Services; function onWipePreviewRequested() { if (!previewAnim.running) { lockCtl.pickRunSide(); previewAnim.restart() } } }
+        Connections { target: Services; function onWipePreviewRequested() { if (!previewAnim.running) previewAnim.restart() } }
         SequentialAnimation {
             id: previewAnim
             ScriptAction { script: { shell.phoneClose(); lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.coverMs }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 560 }
             ScriptAction { script: lockCtl.deskWipe = "full" }
             PauseAnimation { duration: 600 }
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
-            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: lockCtl.revealMs }
+            NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
             ScriptAction { script: lockCtl.deskWipe = "none" }
         }
     }
@@ -434,7 +426,7 @@ ShellRoot {
                     color: "transparent"
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.namespace: "island-wipe"
-                    SceneWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT; runLeft: lockCtl.runLeft }
+                    IrisWipe { anchors.fill: parent; mode: lockCtl.deskWipe; t: lockCtl.deskT }
                 }
 
                 // ── wallpaper ──

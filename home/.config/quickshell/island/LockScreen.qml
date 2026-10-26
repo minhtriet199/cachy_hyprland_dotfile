@@ -236,7 +236,7 @@ Item {
     function pwGo() { const id = pwArmed; pwCancel(); if (id) svc.power(id) }
 
     // scene change on top of everything (from the lock controller)
-    SceneWipe { anchors.fill: parent; z: 100; mode: ls.lock.lockWipe || "none"; t: ls.lock.lockT || 0 }
+    IrisWipe { anchors.fill: parent; z: 100; mode: ls.lock.lockWipe || "none"; t: ls.lock.lockT || 0 }
 
     // keyboard: first key brings the phone up (a letter is typed too); then type, Enter unlocks, Backspace deletes,
     // Esc cancels a countdown → clears → hides the phone

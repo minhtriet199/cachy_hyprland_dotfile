@@ -18,7 +18,6 @@ Singleton {
     property real themeHue: 0.85
     property string boxStyle: "candy"
     property bool dark: false
-    property string wipeKind: "iris"
     property string wipeBg: "cream"
     property string wipeIcon: "leaf"
     property var wipeAuto: ["#FFF4E0", "#F1E2C2"]
@@ -26,7 +25,7 @@ Singleton {
                                       mint: ["#E3F4E3", "#C3E6C5"], sun: ["#FFF4CF", "#F5DE95"], night: ["#213F48", "#2F5A65"] })
     readonly property var wipeColors: wipeBg === "wallpaper" ? wipeAuto : (wipeBgs[wipeBg] || wipeBgs.cream)
     property bool ready: false
-    readonly property var keys: ["displayName", "lockWallpaper", "avatar", "phoneBg", "h24", "theme", "themeHue", "boxStyle", "dark", "wipeKind", "wipeBg", "wipeIcon", "wipeAuto"]
+    readonly property var keys: ["displayName", "lockWallpaper", "avatar", "phoneBg", "h24", "theme", "themeHue", "boxStyle", "dark", "wipeBg", "wipeIcon", "wipeAuto"]
     readonly property string dir: Quickshell.env("ISLAND_GREETER_DATA") || "/var/lib/island-greeter"
 
     FileView {
