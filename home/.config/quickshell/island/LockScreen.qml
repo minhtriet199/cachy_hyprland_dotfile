@@ -42,8 +42,10 @@ Item {
         Rectangle { x: -260 * ls.sc; y: parent.height - 500 * ls.sc; width: 1160 * ls.sc; height: 1000 * ls.sc; radius: width / 2; color: "#C7E7EF" }
         Rectangle { x: parent.width * 0.5; y: parent.height - 320 * ls.sc; width: 700 * ls.sc; height: 700 * ls.sc; radius: width / 2; color: Theme.adapt("#E5DDF9") }
         UiDots { anchors.fill: parent; dot: Qt.rgba(1, 1, 1, 0.45); step: 32 * ls.sc; r: 2.4 * ls.sc }
-        // chosen lock wallpaper (Wallpapers → Lockscreen) covers the sky
-        Image { anchors.fill: parent; visible: ls.wall !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
+        // chosen lock wallpaper (Wallpapers → Lockscreen) covers the sky: black while it loads, then it fades in (no sky flash)
+        Rectangle { anchors.fill: parent; visible: ls.wall !== "" && wallImg.status !== Image.Error; color: "black" }
+        Image { id: wallImg; anchors.fill: parent; visible: ls.wall !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
+            opacity: status === Image.Ready ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 250 } }
             source: ls.wall ? "file://" + ls.wall : ""; sourceSize: Qt.size(ls.width, ls.height) }
     }
     Rectangle { anchors.fill: parent; color: Theme.inkPhone; opacity: 0.18 * ls.upT }

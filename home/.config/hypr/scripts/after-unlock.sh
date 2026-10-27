@@ -5,6 +5,9 @@ m="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin"
 [ -e "$m" ] || exit 0
 rm -f "$m"
 hyprctl dispatch 'hl.dsp.submap("reset")' >/dev/null
+# boot background was black (config/misc.lua) → back to the cover colour for Island's scene changes
+c=$(tr -d '#\n' <"$HOME/.local/state/hypr/cover" 2>/dev/null)
+echo "$c" | grep -qE '^[0-9A-Fa-f]{6}$' && hyprctl eval "hl.config({ misc = { background_color = \"rgb($c)\" } })" >/dev/null
 grep '^1|' "$HOME/.local/state/hypr/startup" 2>/dev/null | cut -d'|' -f3- | while IFS= read -r cmd; do
     setsid -f sh -c "$cmd" >/dev/null 2>&1
 done

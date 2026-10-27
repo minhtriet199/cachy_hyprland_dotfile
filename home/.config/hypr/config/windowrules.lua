@@ -133,3 +133,6 @@ hl.window_rule({
 
 
 
+
+-- Island scene-change cover: no fade-in, it must cover at once (a fading black cover at login let the desktop show through)
+hl.layer_rule({ match = { namespace = "^island-wipe$" }, no_anim = true })

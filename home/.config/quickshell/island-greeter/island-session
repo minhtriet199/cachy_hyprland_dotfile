@@ -13,6 +13,7 @@ if [ "${1:-}" = autologin ]; then
 else
     rm -f "$m"
 fi
-"$here/paint-vt" "$HOME/.local/state/hypr/cover"
+# auto-login: black (Hyprland is black too until the login screen is up: hypr config/misc.lua)
+if [ "${1:-}" = autologin ]; then "$here/paint-vt" "#000000"; else "$here/paint-vt" "$HOME/.local/state/hypr/cover"; fi
 mkdir -p "$HOME/.local/state/island"
 exec uwsm start -e -D Hyprland hyprland.desktop >"$HOME/.local/state/island/session.log" 2>&1

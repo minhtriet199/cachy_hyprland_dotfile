@@ -8,6 +8,10 @@ if cf then
     if hex then cover = "rgb(" .. hex .. ")" end
     cf:close()
 end
+-- auto-login boot (island-session autologin, until the first unlock): black, so the screen goes black → login screen
+-- instead of cover colour → login screen (scripts/after-unlock.sh puts the cover colour back)
+local al = io.open((os.getenv("XDG_RUNTIME_DIR") or "") .. "/isla-autologin")
+if al then al:close(); cover = "rgb(000000)" end
 
 hl.config({
     dwindle = {

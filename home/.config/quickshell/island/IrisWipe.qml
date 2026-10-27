@@ -4,7 +4,7 @@ import QtQuick.Shapes
 // Animal Crossing–style scene change: the screen closes into a shrinking circle onto cream,
 // a leaf pops in the middle, then the circle opens onto the next screen.
 // t: 0 → 1. mode: "coverL"/"coverR" = closing · "revealL"/"revealR" = opening · "full" = cream + leaf · "none"
-// (same mode names as the old stripe wipe, so shell.qml drives it unchanged) · "blank" = plain lock-screen sky, no icon
+// (same mode names as the old stripe wipe, so shell.qml drives it unchanged) · "blank" = plain black (first frame at start, before the lock / reveal), no icon
 // (Island starting into the login / lock screen: nothing that looks like a transition before you log in)
 Item {
     id: iw
@@ -36,7 +36,7 @@ Item {
     }
     // fully closed: a plain cover (the ring can't draw a hole of size 0)
     Rectangle { anchors.fill: parent; visible: iw.hole < 10; color: iw.fill }
-    Rectangle { anchors.fill: parent; visible: iw.mode === "blank"; color: "#A3D0E1" }
+    Rectangle { anchors.fill: parent; visible: iw.mode === "blank"; color: "black" }
     // soft dots on the cream, like ACNH paper
     // painted once ahead of time at normal size (painting a huge canvas at the closing moment stalled the screen)
     UiDots { anchors.fill: parent; res: 1; opacity: iw.hole < 4 ? 1 : 0; dot: iw.bg[1]; step: 34; r: 3 }
