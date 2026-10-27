@@ -901,12 +901,14 @@ Singleton {
     // you're in a game (Steam / Proton / gamescope window focused) → the bar stops its moving bits so the GPU stays with the game
     readonly property bool gaming: { try { const t = Hyprland.activeToplevel
         return !!t && s.isGameCls(String((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject.class) || "")) } catch (e) { return false } }
-    // ── music visualizer (cava, only while something is playing, not while gaming) ──
+    // ── music visualizer (cava, only while something is playing, not while gaming, not while the phone is open:
+    //    its 20 redraws a second on every screen ran on the same thread that draws the phone → phone stutter) ──
+    property bool phoneOpen: false                 // set by shell.qml
     property var viz: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Process {
         id: cava
         command: ["cava", "-p", Quickshell.shellDir + "/cava.conf"]
-        running: !!s.media && s.media.playing && !s.calm
+        running: !!s.media && s.media.playing && !s.calm && !s.phoneOpen
         onRunningChanged: if (!running) s.viz = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         stdout: SplitParser { onRead: line => { const v = line.split(";").filter(x => x !== "").map(Number); if (v.length) s.viz = v } }
     }

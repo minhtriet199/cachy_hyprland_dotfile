@@ -224,6 +224,7 @@ ShellRoot {
     //   phone's size; meanwhile the window opens hidden on the same page, is put exactly there, shown, then the overlay goes.
     // window → overlay: the overlay phone appears right on top of the window phone, the window goes, the phone glides home.
     property bool phoneOpen: false
+    onPhoneOpenChanged: Services.phoneOpen = phoneOpen     // Services pauses the bar visualizer meanwhile
     property string phonePage: "home"
     property bool phoneLand: false
     property string phoneMon: ""                   // screen of the open overlay phone
