@@ -90,16 +90,16 @@ ShellRoot {
             id: sessionAge
             command: ["sh", "-c", "[ -e \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/isla-autologin\" ] && echo lock"]
             stdout: StdioCollector { onStreamFinished: {
-                if (this.text.trim() === "lock") { lockCtl.bootLock = true; lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "full"; sessionLock.locked = true; bootReveal.start() }
-                else startWipe.start()
+                if (this.text.trim() === "lock") { lockCtl.bootLock = true; lockCtl.lockedAt = new Date(); lockCtl.lockWipe = "none"; sessionLock.locked = true; bootReveal.start() }
+                else { lockCtl.deskWipe = "full"; startWipe.start() }
             } }
         }
-        // lock surfaces need a moment to be on screen; the cream + leaf cover holds until then, then the desktop cover goes away
-        Timer { id: bootReveal; interval: 900; onTriggered: { lockCtl.deskWipe = "none"; lockCtl.lockT = 0; lockCtl.lockWipe = "revealL"; bootRevealAnim.restart() } }
-        NumberAnimation { id: bootRevealAnim; target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.lockWipe = "none" }
+        // boot: the login (lock) screen shows as it is — no scene change before it, the change plays after you log in.
+        // The desktop cover stays under it until the lock surfaces are up, then goes.
+        Timer { id: bootReveal; interval: 900; onTriggered: lockCtl.deskWipe = "none" }
         Timer { id: startWipe; interval: 450; onTriggered: { lockCtl.deskT = 0; lockCtl.deskWipe = "revealR"; startAnim.restart() } }
         NumberAnimation { id: startAnim; target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 850; onFinished: lockCtl.deskWipe = "none" }
-        Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "full"; sessionAge.running = true }   // covered from the first frame
+        Component.onCompleted: if (!lockPersist.started) { lockPersist.started = true; deskWipe = "blank"; sessionAge.running = true }   // covered from the first frame (plain until we know if it's the login)
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
         function lockTest() { lockNow(); lockTestTimer.restart() }
@@ -118,10 +118,8 @@ ShellRoot {
             }
             onError: err => { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
         }
-        // on the lock screen the ASUS (HDR) showed the pointer as a black square (hardware cursor plane), fine once
-        // unlocked → while locked (secure: "locked" never reports the unlock) Hyprland draws the pointer itself (2 = default, auto)
-        Connections { target: sessionLock; function onSecureChanged() { Quickshell.execDetached(["hyprctl", "eval",
-            "hl.config({ cursor = { no_hardware_cursors = " + (sessionLock.secure ? 1 : 2) + " } })"]) } }
+        // (the pointer is always drawn by Hyprland — hypr config/inputs.lua no_hardware_cursors = 1 — so the lock no longer
+        //  switches it: putting it back to 2 after unlocking brought the black-square cursor back, 2026-10-27)
         WlSessionLock {
             id: sessionLock
             WlSessionLockSurface {
