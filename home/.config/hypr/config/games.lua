@@ -12,22 +12,34 @@
 -- Found classes go to ~/.cache/island/game-classes so Island's Performance switch knows them.
 local classesFile = os.getenv("HOME") .. "/.cache/island/game-classes"
 local gameClass = {} -- class -> true (game) / false (checked, not a game)
+-- Steam's own pop-ups during a launch ("Launching…", shader progress): part of the game while Steam runs them,
+-- but checked per window and never saved as a game class (other apps use zenity too)
+local helpers = { zenity = true }
 do
     local f = io.open(classesFile)
-    if f then for l in f:lines() do if l ~= "" then gameClass[l] = true end end f:close() end
+    if f then for l in f:lines() do if l ~= "" and not helpers[l] then gameClass[l] = true end end f:close() end
 end
 
-local function steamLaunched(pid)
+-- Steam app id of the process (nil = not launched by Steam)
+local function steamAppId(pid)
     local f = pid and io.open("/proc/" .. pid .. "/environ")
-    if not f then return false end
+    if not f then return nil end
     local env = f:read("a") or ""
     f:close()
-    return env:match("%zSteamAppId=[1-9]") ~= nil or env:match("^SteamAppId=[1-9]") ~= nil
+    return env:match("%zSteamAppId=([1-9]%d*)") or env:match("^SteamAppId=([1-9]%d*)")
+end
+local function steamLaunched(pid) return steamAppId(pid) ~= nil end
+
+-- one key per launch: the pop-up and the game window have different classes but the same app id
+local function gameKey(w)
+    local c = w.class or ""
+    return steamAppId(w.pid) or c:match("^steam_app_(%d+)") or c
 end
 
 local function isGame(w)
     local c = w.class or ""
     if c:match("^steam_app_%d+") or c == "gamescope" then return true end
+    if helpers[c] then return steamLaunched(w.pid) end
     if gameClass[c] ~= nil then return gameClass[c] end
     local yes = steamLaunched(w.pid)
     if c ~= "" then
@@ -51,7 +63,7 @@ end
 local lastSteam = { mon = nil, t = 0 }
 local lastUser = nil -- last focused non-game window, to give focus back to
 local playing = false -- a game window has focus right now
-local gameWs = {}    -- game class -> workspace id
+local gameWs = {}    -- gameKey -> workspace id
 
 hl.on("window.active", function(w)
     pcall(function()
@@ -98,7 +110,8 @@ hl.on("window.open", function(w)
     pcall(function()
         if not w or not isGame(w) then return end
 
-        local target = gameWs[w.class]
+        local key = gameKey(w)
+        local target = gameWs[key]
         local existing = target and hl.get_workspace(target)
         local monName
         if existing and existing.monitor then
@@ -111,7 +124,7 @@ hl.on("window.open", function(w)
                 if monName then hl.dispatch(hl.dsp.window.move({ monitor = monName, window = w, follow = false })) end
                 return
             end
-            gameWs[w.class] = target
+            gameWs[key] = target
         end
 
         hl.dispatch(hl.dsp.window.move({ workspace = target, window = w, follow = false }))
