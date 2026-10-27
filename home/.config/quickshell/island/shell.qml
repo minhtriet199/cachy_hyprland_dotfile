@@ -56,6 +56,28 @@ ShellRoot {
         property real deskT: 0
         property string lockWipe: "none"
         property real lockT: 0
+        property real slideT: 0                         // slide style: lock picture 0 = on screen … 1 = slid up off it
+        property int wallLoading: 0                     // lock screens whose picture is still loading (LockScreen counts itself)
+        // slide style: Hyprland draws the desktop under the see-through lock (misc:session_lock_xray) only while it slides,
+        // never while you're locked; `then` runs when hyprctl is done
+        Process { id: xray; property var then: null; onExited: if (then) { const f = then; then = null; f() } }
+        function setXray(on, then) { xray.then = then || null; xray.command = ["hyprctl", "eval", "hl.config({ misc = { session_lock_xray = " + on + " } })"]; xray.running = true }
+        SequentialAnimation {
+            id: slideDown                                    // desktop → lock, slide style: the lock picture comes down over the desktop
+            NumberAnimation { target: lockCtl; property: "slideT"; from: 1; to: 0; duration: 600; easing.type: Easing.OutCubic }
+            ScriptAction { script: lockCtl.setXray(false) }
+        }
+        SequentialAnimation {
+            id: toDeskSlide                                  // lock → desktop, slide style: phone pulled down, then the picture slides up
+            ScriptAction { script: lockCtl.leaving = true }
+            PauseAnimation { duration: 560 }          // phone gone
+            ScriptAction { script: lockCtl.setXray(true, () => slideUp.restart()) }
+        }
+        SequentialAnimation {
+            id: slideUp
+            NumberAnimation { target: lockCtl; property: "slideT"; from: 0; to: 1; duration: 650; easing.type: Easing.InOutCubic }
+            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false; lockCtl.busy = false; lockCtl.slideT = 0; lockCtl.setXray(false) } }
+        }
         SequentialAnimation {
             id: toLockAnim                                   // desktop → lock: close on the desktop, open on the lock screen
             ScriptAction { script: { lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
@@ -103,7 +125,12 @@ ShellRoot {
         // first-time safety test: locks, and unlocks by itself after 30 s if the password box doesn't work
         Timer { id: lockTestTimer; interval: 30000; onTriggered: { sessionLock.locked = false; lockCtl.phoneUp = false } }
         function lockTest() { lockNow(); lockTestTimer.restart() }
-        function lockNow() { if (sessionLock.locked || toLockAnim.running) return; shell.phoneClose(); password = ""; failed = false; phoneUp = false; leaving = false; lockedAt = new Date(); toLockAnim.restart() }
+        function lockNow() {
+            if (sessionLock.locked || toLockAnim.running || slideDown.running || xray.running) return
+            shell.phoneClose(); password = ""; failed = false; phoneUp = false; leaving = false; lockedAt = new Date()
+            if (Prefs.wipeStyle === "slide") { slideT = 1; setXray(true, () => { sessionLock.locked = true; shell.whenWallReady(lockCtl, () => slideDown.restart()) }) }
+            else toLockAnim.restart()
+        }
         function tryUnlock() { if (busy || password === "") return; busy = true; failed = false; if (!pam.start()) { busy = false; failed = true } }
         PamContext {
             id: pam
@@ -111,7 +138,7 @@ ShellRoot {
             onResponseRequiredChanged: if (responseRequired) respond(lockCtl.password)
             onCompleted: result => {
                 if (result === PamResult.Success) {
-                    lockTestTimer.stop(); toDeskAnim.restart()      // busy until the desktop is back
+                    lockTestTimer.stop(); (Prefs.wipeStyle === "slide" ? toDeskSlide : toDeskAnim).restart()      // busy until the desktop is back
                     if (lockCtl.bootLock) { lockCtl.bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) }
                 }
                 else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
@@ -124,7 +151,7 @@ ShellRoot {
             id: sessionLock
             WlSessionLockSurface {
                 id: lockSurf
-                color: "#A3D0E1"
+                color: lockCtl.slideT > 0 ? "transparent" : "#A3D0E1"     // see-through only while the slide transition plays
                 LockScreen { anchors.fill: parent; svc: Services; lock: lockCtl; Component.onCompleted: forceActiveFocus() }
                 // Download mode while locked: the dim download view sits on the lock (a key / mouse wakes → the lock screen)
                 Rectangle {
@@ -137,7 +164,21 @@ ShellRoot {
         }
         Connections { target: Services; function onLockRequested() { lockCtl.lockNow() } }
         // Settings → Transition → Preview: close and open on the desktop (no lock)
-        Connections { target: Services; function onWipePreviewRequested() { if (!previewAnim.running) previewAnim.restart() } }
+        Connections { target: Services; function onWipePreviewRequested() { if (previewAnim.running || slidePreviewAnim.running) return; if (Prefs.wipeStyle === "slide") { if (!lockPreviewCtl.sliding) lockCtl.slidePreview() } else previewAnim.restart() } }
+        // slide style preview: the lock picture comes down, the phone pops up and is pulled down, the picture slides up (a see-through
+        // overlay with the stand-in controller, nothing locked)
+        function slidePreview() { shell.phoneClose(); lockPreviewCtl.slideT = 1; lockPreviewCtl.sliding = true; shell.whenWallReady(lockPreviewCtl, () => slidePreviewAnim.restart()) }
+        SequentialAnimation {
+            id: slidePreviewAnim
+            NumberAnimation { target: lockPreviewCtl; property: "slideT"; to: 0; duration: 600; easing.type: Easing.OutCubic }
+            PauseAnimation { duration: 300 }
+            ScriptAction { script: lockPreviewCtl.phoneUp = true }
+            PauseAnimation { duration: 900 }
+            ScriptAction { script: lockPreviewCtl.leaving = true }
+            PauseAnimation { duration: 560 }
+            NumberAnimation { target: lockPreviewCtl; property: "slideT"; to: 1; duration: 650; easing.type: Easing.InOutCubic }
+            ScriptAction { script: { lockPreviewCtl.sliding = false; lockPreviewCtl.slideT = 0; lockPreviewCtl.phoneUp = false; lockPreviewCtl.leaving = false } }
+        }
         SequentialAnimation {
             id: previewAnim
             ScriptAction { script: { shell.phoneClose(); lockCtl.deskT = 0; lockCtl.deskWipe = "coverR" } }
@@ -149,6 +190,12 @@ ShellRoot {
             ScriptAction { script: lockCtl.deskWipe = "none" }
         }
     }
+
+    // slide transition: wait (≤ ~0.7 s) until the lock's picture is drawn before it slides in
+    //  ("ready" a few frames in a row: a new lock surface draws the loaded picture a frame later)
+    Timer { id: wallWait; interval: 16; repeat: true; property var ctl; property var then; property int n: 0; property int ok: 0
+        onTriggered: { ok = ctl.wallLoading === 0 ? ok + 1 : 0; if (ok > 3 || ++n > 45) { stop(); then() } } }
+    function whenWallReady(ctl, then) { wallWait.ctl = ctl; wallWait.then = then; wallWait.n = 0; wallWait.ok = 0; wallWait.restart() }
 
     // stand-in lock controller for the lock screen preview: same fields as lockCtl, but it can't unlock or lock anything
     QtObject {
@@ -162,6 +209,9 @@ ShellRoot {
         property var lockedAt: new Date()
         property string lockWipe: "none"
         property real lockT: 0
+        property real slideT: 0
+        property bool sliding: false                    // slide transition preview playing
+        property int wallLoading: 0
         function tryUnlock() {}
     }
 
@@ -457,6 +507,21 @@ ShellRoot {
                         UiCandy { z: 201; anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top; anchors.topMargin: 24 * scr.sc
                             width: pvT.implicitWidth + 36; height: 34; radius: 17; bw: 2.5; drop: 3; hi: 0; fill: Theme.paper; scale: scr.sc
                             UiText { id: pvT; anchors.centerIn: parent; text: "Lock screen preview · " + (Prefs.phoneWindow ? "click or Esc to go back" : "pick on the phone · click outside or Esc to go back"); fam: "n"; px: 12.5; w: 900 } }
+                    }
+                }
+
+                // ── slide transition preview (Settings → Shell → Preview with Style: Slide); only built while it plays ──
+                LazyLoader {
+                    active: lockPreviewCtl.sliding
+                    PanelWindow {
+                        screen: scr.modelData
+                        anchors { top: true; bottom: true; left: true; right: true }
+                        exclusionMode: ExclusionMode.Ignore
+                        color: "transparent"
+                        WlrLayershell.layer: WlrLayer.Overlay
+                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                        WlrLayershell.namespace: "island-wipe"           // no fade-in (hypr windowrules.lua)
+                        LockScreen { anchors.fill: parent; svc: Services; lock: lockPreviewCtl; main: scr.isMain }
                     }
                 }
 

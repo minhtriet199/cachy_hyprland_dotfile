@@ -46,6 +46,7 @@ Singleton {
     property bool appsDark: false               // apps (Qt/KDE/GTK, browsers) in dark mode — separate from Island     // plugged in, on battery: sleep / screen / lock / nothing
     property string wipeBg: "cream"         // lock / unlock scene change: background (key of wipeBgs)
     property string wipeIcon: "leaf"        // … and the icon in the middle (WipeIcon names)
+    property string wipeStyle: "circle"     // lock / unlock: "circle" (iris + icon) · "slide" (phone pulled down, the lock picture slides up off the desktop)
     property var wipeAuto: ["#FFF4E0", "#F1E2C2"]   // wipeBg "wallpaper": pastel of the wallpaper's main colour (SvcPalette keeps it fresh)
     readonly property var wipeBgs: ({ cream: ["#FFF4E0", "#F1E2C2"], sky: ["#D3EAF0", "#B9DDE6"], lilac: ["#EEE8FD", "#D9CEFA"], peach: ["#FDE7DC", "#F6CDB9"],
                                       mint: ["#E3F4E3", "#C3E6C5"], sun: ["#FFF4CF", "#F5DE95"], night: ["#213F48", "#2F5A65"] })
@@ -57,7 +58,7 @@ Singleton {
     property bool phoneLite: false          // phone light mode (side button ⚡): flat phone (no 3D tilt), fewer, shorter animations, lighter drawing
     property bool ready: false
 
-    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips", "hotspotBand"]
+    readonly property var keys: ["notifications", "dock", "bar", "size", "barStyle", "barPos", "wallpaper", "wallDir", "displayName", "avatar", "phoneBg", "lockWallpaper", "wipeBg", "wipeIcon", "wipeStyle", "idleLock", "idleScreen", "idleSleep", "phoneLite", "lidClose", "h24", "location", "weatherAuto", "city", "autoTz", "dndGaming", "theme", "boxStyle", "themeHue", "dark", "appsDark", "gameMode", "calcHistory", "clipPins", "clipDays", "phoneSpot", "wipeAuto", "todoLast", "phoneRemember", "phoneWinLast", "phoneBigLast", "quickChips", "hotspotBand"]
     readonly property string dir: Quickshell.env("HOME") + "/.local/state/island"
 
     function set(k, v) { p[k] = v; save() }

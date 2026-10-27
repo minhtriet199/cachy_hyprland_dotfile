@@ -111,7 +111,10 @@ Item {
 
         Item { width: 1; height: 6 }
         Label { text: "LOCK & UNLOCK TRANSITION" }
+        SetSeg { width: parent.width; label: "Style"; options: ["Circle", "Slide"]; current: sh.prefs.wipeStyle === "slide" ? "Slide" : "Circle"
+            onPicked: v => sh.prefs.set("wipeStyle", v.toLowerCase()) }
         Flow {
+            visible: sh.prefs.wipeStyle !== "slide"      // colour + icon belong to the circle
             width: parent.width; spacing: 8
             UiText { width: 84; height: 30; verticalAlignment: Text.AlignVCenter; text: "Background"; px: 13; w: 700 }
             Repeater {
@@ -128,6 +131,7 @@ Item {
             }
         }
         Flow {
+            visible: sh.prefs.wipeStyle !== "slide"
             width: parent.width; spacing: 8
             UiText { width: 84; height: 38; verticalAlignment: Text.AlignVCenter; text: "Icon"; px: 13; w: 700 }
             Repeater {

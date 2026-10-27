@@ -19,7 +19,18 @@ Item {
     readonly property var users: ls.svc.users || [ls.svc.profile]
     readonly property var who: ls.users.find(u => u.user === ls.lock.user) || ls.users[0] || ({ user: "", full: "" })
     focus: true
-    Component.onCompleted: svc.loadProfile()
+    Component.onCompleted: { svc.loadProfile(); tellWall() }
+    // slide transition (Prefs.wipeStyle "slide"): 0 = on screen, 1 = slid up off it (the desktop shows below)
+    transform: Translate { y: -ls.height * (ls.lock.slideT || 0) }
+    // every screen counts itself in the controller while its picture loads, so the slide doesn't bring down a black screen
+    readonly property bool wallReady: ls.wall === "" || wallImg.status === Image.Ready || wallImg.status === Image.Error
+    property bool counted: false
+    function tellWall() {
+        if (ls.lock.wallLoading === undefined || counted === !ls.wallReady) return
+        counted = !ls.wallReady; ls.lock.wallLoading += counted ? 1 : -1
+    }
+    onWallReadyChanged: tellWall()
+    Component.onDestruction: if (counted && ls.lock) ls.lock.wallLoading--
 
     // 0 = clock, 1 = phone up; the blur, clock and phone all follow it
     property real upT: ls.lock.phoneUp ? 1 : 0
@@ -35,6 +46,7 @@ Item {
     Item {
         id: bg
         anchors.fill: parent
+        clip: true                          // the sky's blobs reach past the edges (seen while the slide transition moves it)
         layer.enabled: ls.upT > 0
         layer.effect: MultiEffect { blurEnabled: true; blur: ls.upT; blurMax: 48; autoPaddingEnabled: false }
         Rectangle { anchors.fill: parent; color: "#A3D0E1" }
@@ -45,7 +57,7 @@ Item {
         // chosen lock wallpaper (Wallpapers → Lockscreen) covers the sky: black while it loads, then it fades in (no sky flash)
         Rectangle { anchors.fill: parent; visible: ls.wall !== "" && wallImg.status !== Image.Error; color: "black" }
         Image { id: wallImg; anchors.fill: parent; visible: ls.wall !== "" && status === Image.Ready; fillMode: Image.PreserveAspectCrop; asynchronous: true
-            opacity: status === Image.Ready ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 250 } }
+            opacity: status === Image.Ready ? 1 : 0; Behavior on opacity { enabled: !(ls.lock.slideT > 0); NumberAnimation { duration: 250 } }   // no fade when it slides in
             source: ls.wall ? "file://" + ls.wall : ""; sourceSize: Qt.size(ls.width, ls.height) }
     }
     Rectangle { anchors.fill: parent; color: Theme.inkPhone; opacity: 0.18 * ls.upT }
