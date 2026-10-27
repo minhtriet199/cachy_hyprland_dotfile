@@ -175,12 +175,14 @@ Item {
             fill: Theme.gChip; gap: 12; padL: 12; padR: 12; pressable: true
             onClicked: bar.drop("sys", sysPill)
             Repeater {
-                // [icon, % (bar fill), colour, temperature (°C, 0 = none), text]
-                model: [["cpu", bar.svc.sysmon.cpu, Theme.seaDeep, bar.svc.sysmon.cpuTemp, bar.svc.sysmon.cpu + "%"],
-                        ["ram", bar.svc.sysmon.ram, Theme.purple, 0, bar.svc.sysmon.ramUsed.toFixed(1) + " GB"],
-                        ["gpu", bar.svc.sysmon.gpu, Theme.berry, bar.svc.sysmon.gpuTemp, bar.svc.sysmon.gpu + "%"]]
+                // fixed 3 items: an array model was rebuilt on every 2 s update, destroying the items under the mouse (crash 2026-10-27)
+                model: 3
                 delegate: Row {
-                    required property var modelData
+                    required property int index
+                    // [icon, % (bar fill), colour, temperature (°C, 0 = none), text]
+                    readonly property var modelData: index === 0 ? ["cpu", bar.svc.sysmon.cpu, Theme.seaDeep, bar.svc.sysmon.cpuTemp, bar.svc.sysmon.cpu + "%"]
+                        : index === 1 ? ["ram", bar.svc.sysmon.ram, Theme.purple, 0, bar.svc.sysmon.ramUsed.toFixed(1) + " GB"]
+                        : ["gpu", bar.svc.sysmon.gpu, Theme.berry, bar.svc.sysmon.gpuTemp, bar.svc.sysmon.gpu + "%"]
                     spacing: 5
                     Glyph { anchors.verticalCenter: parent.verticalCenter; name: modelData[0]; size: 18; stroke: 2.2 }
                     Column {
