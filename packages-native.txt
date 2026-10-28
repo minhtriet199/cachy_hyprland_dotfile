@@ -4,6 +4,7 @@ alsa-firmware
 alsa-plugins
 alsa-utils
 amd-ucode
+android-tools
 ark
 aspnet-runtime
 aspnet-targeting-pack
@@ -81,6 +82,7 @@ git
 github-cli
 gnome-keyring
 gnome-sound-recorder
+go
 grim
 grub
 grub-btrfs-support
@@ -102,6 +104,7 @@ hyprpicker
 hyprsunset
 inetutils
 iwd
+jdk21-openjdk
 jfsutils
 jq
 kdegraphics-thumbnailers

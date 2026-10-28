@@ -224,11 +224,13 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] More themes (wait until I pick them): a theme sets UI style + widget style; Presets = saved layouts
 - [x] New lock / login flow
 - [ ] Making Phone app and for this system to connect them light weight when running in the background  connect phone notification to this system  connect let me control this system one the phone
+    - [ISLAND-LINK.md](</home/gamer/Documents/Md_File/ISLAND-LINK.md>) — in progress as Island Link (Flutter app + Go helper): pairing, link, cozy UI, file sharing done
 - [ ] check update diskmap currently it kinda bad
 - [ ] Adding a website display image wallpaper
 - [ ] Check the git install  work for all system  and my fresh system
 - [ ] Island task manager in the System card: top apps grouped (Helium = 1 row), icon, CPU %, RAM (PSS), End button; lazy, only polls while open; keep Open btop for full view; helper in C (7 ms/tick vs Python 32 ms, ~0.35% CPU at 2 s), install.sh compiles it
 - [ ] Phone app link for Download mode: live download progress on my phone (like a progress notification); when a download finishes this PC pushes a notification to my phone; from the phone I can pick Shut down, start the game / program, or open the downloaded file
+    - [ISLAND-LINK.md](</home/gamer/Documents/Md_File/ISLAND-LINK.md>) — planned in Island Link after phone notifications (step 3)
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):
@@ -241,6 +243,11 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
    several styles each. Also from widget-sheet-examples.png: "Started recording this monitor" pill, "Mic in use by … — click to mute" pill.
 4. **More themes — WAIT until the owner picks them.** A theme sets UI style + widget style; Presets = saved layouts.
 5. ~~New lock / login flow~~ **done 2026-10-22** (see §5 "Lock / login").
+6. **Phone app = Island Link** (started 2026-10-28) — full notes: `Md_File/ISLAND-LINK.md`.
+   Repos `~/Documents/Code/island-link/{island-link-android,island-link-pc}` (public GitHub; push only when the owner says,
+   Conventional Commits, no Claude credit, README screenshots on push). Pixel 9 phone; PC helper `island-link-pc serve`
+   on TLS :47800 (firewalld port + mDNS opened). Files sent from the phone land in `~/Downloads/Island Link/`.
+   Not wired into Island yet: next = Phone Link card (QR + status) and starting the helper at login.
 
 ## 9. Quick commands
 
@@ -251,4 +258,5 @@ pgrep -ax qs                   # exactly one Island?
 qs -c island ipc call island phone settingsQuick   # open a phone page
 hyprctl configerrors           # Hyprland config errors
 dotfiles-sync "message"        # commit + push configs
+~/Documents/Code/island-link/island-link-pc/island-link-pc pair     # Island Link: one-time pairing QR (helper must be running)
 ```

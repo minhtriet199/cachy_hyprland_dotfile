@@ -76,7 +76,7 @@ ShellRoot {
         SequentialAnimation {
             id: slideUp
             NumberAnimation { target: lockCtl; property: "slideT"; from: 0; to: 1; duration: 650; easing.type: Easing.InOutCubic }
-            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false; lockCtl.busy = false; lockCtl.slideT = 0; lockCtl.setXray(false) } }
+            ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false; lockCtl.busy = false; lockCtl.slideT = 0; lockCtl.setXray(false); lockCtl.afterLogin() } }
         }
         SequentialAnimation {
             id: toLockAnim                                   // desktop → lock: close on the desktop, open on the lock screen
@@ -90,17 +90,18 @@ ShellRoot {
         }
         SequentialAnimation {
             id: toDeskAnim                                   // lock → desktop: phone pulled down and gone, then close on the lock screen, open on the desktop
-            ScriptAction { script: lockCtl.leaving = true }
+            // the desktop cover goes up now, hidden under the lock: 0.12 s before the unlock was too short at login
+            // (startup apps launching) → the desktop popped in with no circle opening
+            ScriptAction { script: { lockCtl.leaving = true; lockCtl.deskT = 0; lockCtl.deskWipe = "full" } }
             PauseAnimation { duration: 560 }          // phone gone
             ScriptAction { script: { lockCtl.lockT = 0; lockCtl.lockWipe = "coverL" } }
             NumberAnimation { target: lockCtl; property: "lockT"; from: 0; to: 1; duration: 560 }
-            ScriptAction { script: lockCtl.deskWipe = "full" }
-            PauseAnimation { duration: 120 }          // let the desktop cover appear under the lock screen first
+            PauseAnimation { duration: 120 }
             ScriptAction { script: { sessionLock.locked = false; lockCtl.password = ""; lockCtl.phoneUp = false; lockCtl.leaving = false } }
             PauseAnimation { duration: 300 }          // leaf moment
             ScriptAction { script: { lockCtl.lockWipe = "none"; lockCtl.deskT = 0; lockCtl.deskWipe = "revealR" } }
             NumberAnimation { target: lockCtl; property: "deskT"; from: 0; to: 1; duration: 650 }
-            ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false } }
+            ScriptAction { script: { lockCtl.deskWipe = "none"; lockCtl.busy = false; lockCtl.afterLogin() } }
         }
         // first start: if greetd auto-logged in (island-greeter `island-session autologin` leaves $XDG_RUNTIME_DIR/isla-autologin
         // until the first unlock), Island starts LOCKED — the lock screen is the login screen, and that unlock runs
@@ -131,6 +132,8 @@ ShellRoot {
             if (Prefs.wipeStyle === "slide") { slideT = 1; setXray(true, () => { sessionLock.locked = true; shell.whenWallReady(lockCtl, () => slideDown.restart()) }) }
             else toLockAnim.restart()
         }
+        // the login unlock: shortcuts + startup apps once the scene change is over (launching them during it starved the reveal)
+        function afterLogin() { if (bootLock) { bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) } }
         function tryUnlock() { if (busy || password === "") return; busy = true; failed = false; if (!pam.start()) { busy = false; failed = true } }
         PamContext {
             id: pam
@@ -139,7 +142,6 @@ ShellRoot {
             onCompleted: result => {
                 if (result === PamResult.Success) {
                     lockTestTimer.stop(); (Prefs.wipeStyle === "slide" ? toDeskSlide : toDeskAnim).restart()      // busy until the desktop is back
-                    if (lockCtl.bootLock) { lockCtl.bootLock = false; Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"~/.config/hypr/scripts/after-unlock.sh\")"]) }
                 }
                 else { lockCtl.busy = false; lockCtl.failed = true; lockCtl.password = "" }
             }
