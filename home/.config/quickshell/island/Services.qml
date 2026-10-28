@@ -277,7 +277,8 @@ Singleton {
     // volume + mic come from PipeWire events below; warp-cli only runs while the WARP service is up
     Process { id: status; command: ["bash", "-c", [
             "g=$(nmcli -t -f WIFI,STATE,CONNECTIVITY g 2>/dev/null); echo wifi=${g%%:*}; g=${g#*:}; echo nm=${g%:*}; echo conn=${g##*:}",
-            "a=$(nmcli -t -f ACTIVE,SIGNAL,SSID dev wifi 2>/dev/null | grep -m1 '^yes'); a=${a#yes:}; echo sig=${a%%:*}; echo ssid=${a#*:}",
+            // --rescan no: the default (auto) made each refresh a Wi-Fi scan → ~3 s ping spikes in games every half minute
+            "a=$(nmcli -t -f ACTIVE,SIGNAL,SSID dev wifi list --rescan no 2>/dev/null | grep -m1 '^yes'); a=${a#yes:}; echo sig=${a%%:*}; echo ssid=${a#*:}",
             "if [ -S /run/cloudflare-warp/warp_service ] && warp-cli --accept-tos status 2>/dev/null | grep -q 'Status update: Connected'; then echo warp=on; else echo warp=off; fi",
             "for d in /sys/class/backlight/*; do read -r c 2>/dev/null < $d/brightness && read -r m 2>/dev/null < $d/max_brightness && [ \"$m\" -gt 0 ] && echo bri=$(( (c * 100 + m / 2) / m )); break; done",
             "for d in /sys/class/power_supply/BAT*; do read -r x 2>/dev/null < $d/capacity && echo bat=$x; read -r x 2>/dev/null < $d/status && echo batst=$x; e=; for f in energy_now energy_full energy_full_design power_now; do read -r y 2>/dev/null < $d/$f && e=\"$e $y\"; done; echo energy=$e; break; done",
