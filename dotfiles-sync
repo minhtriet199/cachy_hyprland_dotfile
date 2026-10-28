@@ -46,6 +46,10 @@ cp -a "$HOME/Pictures/Wallpapers/island-default.png" "home/Pictures/Wallpapers/"
 mkdir -p home/.config/pipewire/pipewire.conf.d
 rsync -a --delete "$HOME/.config/pipewire/pipewire.conf.d/" "home/.config/pipewire/pipewire.conf.d/"
 
+# --- XDG autostart overrides: fcitx5's system entry hidden (autostart.lua starts it; two copies broke Ctrl+Shift) ---
+mkdir -p home/.config/autostart
+rsync -a --delete "$HOME/.config/autostart/" "home/.config/autostart/"
+
 # --- user D-Bus service override: keyring starts via systemd (no second gnome-keyring-daemon) ---
 mkdir -p home/.local/share/dbus-1/services
 cp -a "$HOME/.local/share/dbus-1/services/org.freedesktop.secrets.service" home/.local/share/dbus-1/services/ 2>/dev/null

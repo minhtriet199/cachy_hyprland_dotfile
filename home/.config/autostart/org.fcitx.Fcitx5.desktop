@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Fcitx 5
+# Disabled: Hyprland autostart.lua starts fcitx5 (two copies raced at login, Ctrl+Shift died)
+Hidden=true

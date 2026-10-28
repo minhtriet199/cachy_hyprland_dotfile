@@ -34,6 +34,12 @@ for t in jq nmcli brightnessctl hyprsunset wl-paste wl-copy notify-send hyprlock
     pkg=$(pacman -Qqo "$p" 2>/dev/null)
     [ -n "$pkg" ] && echo "$deps" | grep -qx "$pkg" && say "$t ($pkg) is installed only as a dependency — an orphan cleanup could remove it: sudo pacman -D --asexplicit $pkg"
 done
+# autostart.lua starts fcitx5; a second start from XDG autostart races it at login and Ctrl+Shift (EN/VI) stops working
+for f in /etc/xdg/autostart/*.desktop; do
+    grep -q '^Exec=.*fcitx5' "$f" 2>/dev/null || continue
+    grep -qx 'Hidden=true' "$HOME/.config/autostart/${f##*/}" 2>/dev/null ||
+        say "fcitx5 also autostarts from $f — hide it: ~/.config/autostart/${f##*/} with Hidden=true"
+done
 
 [ -n "$ver" ] && [ "$ver" != "$last" ] && head="Hyprland ${last:-?} → $ver. " || head=""
 if [ -z "$bad" ]; then
