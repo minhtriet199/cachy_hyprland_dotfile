@@ -1,0 +1,15 @@
+[Hotkey]
+# Enumerate when holding the trigger key
+EnumerateWithTriggerKeys=True
+
+[Hotkey/TriggerKeys]
+0=Control+Alt+Shift_L
+1=Control+Alt+Shift_R
+2=Control+Shift+Alt_L
+3=Control+Shift+Alt_R
+4=Alt+Shift+Control_L
+5=Alt+Shift+Control_R
+
+[Behavior]
+# One EN/VI state for all windows (default "No" = each window remembers its own, looked like it switched by itself)
+ShareInputState=All

@@ -50,6 +50,9 @@ rsync -a --delete "$HOME/.config/pipewire/pipewire.conf.d/" "home/.config/pipewi
 mkdir -p home/.config/autostart
 rsync -a --delete "$HOME/.config/autostart/" "home/.config/autostart/"
 
+# --- fcitx5: EN/VI toggle = Ctrl+Alt+Shift (Ctrl+Shift fired by accident in games), bamboo profile ---
+mkdir -p home/.config/fcitx5 && cp -a "$HOME/.config/fcitx5/config" "$HOME/.config/fcitx5/profile" home/.config/fcitx5/
+
 # --- user D-Bus service override: keyring starts via systemd (no second gnome-keyring-daemon) ---
 mkdir -p home/.local/share/dbus-1/services
 cp -a "$HOME/.local/share/dbus-1/services/org.freedesktop.secrets.service" home/.local/share/dbus-1/services/ 2>/dev/null
