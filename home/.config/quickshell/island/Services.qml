@@ -149,7 +149,7 @@ Singleton {
     readonly property var _hyprEvents: ["openwindow", "closewindow", "movewindow", "movewindowv2", "workspace", "workspacev2", "createworkspace", "createworkspacev2",
         "destroyworkspace", "destroyworkspacev2", "moveworkspace", "moveworkspacev2", "renameworkspace", "focusedmon", "focusedmonv2", "monitoradded", "monitoraddedv2",
         "monitorremoved", "monitorremovedv2", "activespecial", "activespecialv2", "changefloatingmode", "fullscreen", "pin"]
-    Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name === "openwindow") s.busyDone("app"); if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (ev.name.startsWith("monitoradded") || ev.name.startsWith("monitorremoved")) s.loadScreens(); if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
+    Connections { target: Hyprland; function onRawEvent(ev) { if (ev.name === "openwindow") { openFocus.stop(); s.busyDone("app") } if (ev.name.startsWith("monitorremoved")) s._rehome = true; if (ev.name.startsWith("monitoradded") || ev.name.startsWith("monitorremoved")) s.loadScreens(); if (s._hyprEvents.includes(ev.name)) refreshSoon.restart() } }
     Timer { interval: 60000; running: true; repeat: true; onTriggered: hyprQuery.running = true }   // safety net only
     function monInfo(name) {
         if (monitorNames[name]) return monitorNames[name]
@@ -950,7 +950,11 @@ Singleton {
     // ── apps + search ──
     readonly property var entries: DesktopEntries.applications.values.filter(e => !e.noDisplay)
     function launch(a) { if (a.entry) { launchEntry(a); return } if (a.internal) return; if (a.toggle) toggle(a.toggle); else if (a.cmd) app(a.cmd) }
-    function launchEntry(a) { if (a.entry) { busy("app"); if (lua && Hyprland.focusedMonitor) run(["hyprctl", "eval", "if IslandLaunch then IslandLaunch(" + JSON.stringify(Hyprland.focusedMonitor.name) + ") end"]); if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
+    function launchEntry(a) { if (a.entry) { busy("app"); if (windowsOf(a.entry).length) { _openEntry = a.entry; openFocus.restart() } else openFocus.stop(); if (lua && Hyprland.focusedMonitor) run(["hyprctl", "eval", "if IslandLaunch then IslandLaunch(" + JSON.stringify(Hyprland.focusedMonitor.name) + ") end"]); if (a.entry.id) app([a.entry.id.replace(/\.desktop$/, "") + ".desktop"]); else a.entry.execute() } }
+    // already open: a launch may add no window (Steam) → after a moment drop the spinner and go to the open one; a new window (kitty) cancels this
+    property var _openEntry: null
+    function windowsOf(e) { const k = [e.startupClass, e.id].map(x => (x || "").replace(/\.desktop$/, "").toLowerCase()); return ToplevelManager.toplevels.values.filter(t => t.appId && k.includes(t.appId.toLowerCase())) }
+    Timer { id: openFocus; interval: 1500; onTriggered: { s.busyDone("app"); const w = s.windowsOf(s._openEntry)[0]; if (w) w.activate() } }
     function runAction(a) { if (a.toggle) toggle(a.toggle); else if (a.tool) tool(a.tool); else if (a.cmd) run(a.cmd) }
     function score(text, q) { const t = (text || "").toLowerCase(); if (t.startsWith(q)) return 3; if (t.includes(" " + q)) return 2; if (t.includes(q)) return 1; return 0 }
     function math(q) {
