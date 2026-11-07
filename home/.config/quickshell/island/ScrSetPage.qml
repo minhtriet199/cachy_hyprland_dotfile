@@ -30,7 +30,7 @@ Item {
         privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry],
         diskmap: ["Disk map", "What fills your drive", "chart", Theme.gSun],
         recovery: ["Recovery", "Snapshots, roll back", "undo", Theme.gLilac],
-        link: ["Phone Link", "Pair, status, terminal", "phone", Theme.gSea],
+        link: ["Phone Link", "Pair, status, screen, terminal", "phone", Theme.gSea],
         shell: ["Shell", "Bar, dock, look, phone", "barIcon", Theme.gSettings]
     })[kind] || ["", "", "gear", Theme.gOn]
 

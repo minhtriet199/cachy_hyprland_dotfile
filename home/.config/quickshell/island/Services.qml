@@ -982,7 +982,7 @@ Singleton {
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
         ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
         ["Recovery", "settingsRecovery", "undo", "#7C83F0", "recovery snapshot backup restore rollback roll back undo"],
-        ["Phone Link", "settingsLink", "phone", "#55BFC6", "phone link island pair qr pixel android terminal"],
+        ["Phone Link", "settingsLink", "phone", "#55BFC6", "phone link island pair qr pixel android terminal screen mirror scrcpy remote"],
         ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale gamma night light warm text size font"],
         ["Shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],
@@ -1048,6 +1048,7 @@ Singleton {
     property var toasts: []                 // on screen, newest first
     property var toastQueue: []
     property bool toastHover: false
+    property real _toastHold: 0             // hovering keeps every bubble until this time
     property int _toastKey: 0
     function pushToast(item) { toastQueue = toastQueue.concat([item]); pumpToasts() }
     // slow starts (an app opening, the recorder, WARP): a spinner follows the pointer (shell.qml) until the thing is up,
@@ -1075,8 +1076,10 @@ Singleton {
     function dropToast(key) { toasts = toasts.filter(t => t.key !== key); pumpToasts() }
     Timer { interval: 250; repeat: true; running: s.toasts.length > 0; onTriggered: {
         const now = Date.now();
-        if (s.toastHover) { s.toasts = s.toasts.map(t => Object.assign({}, t, { until: Math.max(t.until, now + 1500) })); return }
-        if (s.toasts.some(t => !t.pinned && t.until <= now)) { s.toasts = s.toasts.filter(t => t.pinned || t.until > now); s.pumpToasts() }
+        // hovered: hold them all (one number, the list itself isn't rebuilt: that recreated the bubbles 4×/s and closed an opened ↓)
+        if (s.toastHover) { s._toastHold = now + 1500; return }
+        const gone = t => !t.pinned && Math.max(t.until, s._toastHold) <= now;
+        if (s.toasts.some(gone)) { s.toasts = s.toasts.filter(t => !gone(t)); s.pumpToasts() }
     } }
     NotificationServer {
         id: server

@@ -1,6 +1,8 @@
 import QtQuick
+import Quickshell
 
-// Phone Link page: the paired phone, its pairing QR, and whether it may open a Terminal here. The link itself is
+// Phone Link page: the paired phone, its pairing QR, its screen in a window here (scrcpy), and whether it may open a
+// Terminal here. The link itself is
 // island-link-pc (SvcLink.qml talks to it).
 Column {
     id: pl
@@ -58,6 +60,14 @@ Column {
             UiText { width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 11; w: 800; color: Theme.textSoft
                 text: "Same Wi-Fi as this PC. It works once, for " + pl.timeLeft() + "." }
         }
+    }
+
+    // the phone's screen in a window here, controlled with the mouse (tools/phone-screen.sh: scrcpy over Wi-Fi adb)
+    Label { text: "PHONE SCREEN" }
+    UiRow {
+        width: parent.width; height: 52; glyph: "display"; title: "Show phone screen"; pressable: true
+        sub: "Needs Wireless debugging on the phone"
+        onClicked: pl.svc.run(["sh", Quickshell.shellDir + "/tools/phone-screen.sh"])
     }
 
     // terminal: off until you say so
