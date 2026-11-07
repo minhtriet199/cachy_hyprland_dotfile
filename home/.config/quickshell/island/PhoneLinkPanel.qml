@@ -66,7 +66,7 @@ Column {
     Label { text: "PHONE SCREEN" }
     UiRow {
         width: parent.width; height: 52; glyph: "display"; title: "Show phone screen"; pressable: true
-        sub: "Needs Wireless debugging on the phone"
+        sub: "Wireless debugging once after each phone restart"
         onClicked: pl.svc.run(["sh", Quickshell.shellDir + "/tools/phone-screen.sh"])
     }
 
