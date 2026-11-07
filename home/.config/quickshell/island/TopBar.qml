@@ -18,6 +18,9 @@ Item {
     signal openPower()
     function drop(which, pill) { openDropdown(which, pill.mapToItem(bar, pill.width / 2, 0).x) }
     height: 50
+    // narrow screen (laptop: ~2120 design px, the monitor ~2360): no empty workspaces, short weather, no visualizer,
+    // no net speed, no colour picker (Super+P) — the same pills, just less in them
+    readonly property bool compact: width < 2250
 
     // ── left: places & weather & music ──
     Row {
@@ -39,7 +42,8 @@ Item {
                     readonly property bool cur: modelData.kind === "current"
                     readonly property bool empty: modelData.kind === "empty"
                     anchors.verticalCenter: parent.verticalCenter
-                    width: cur ? 46 : 42; height: width
+                    visible: !(bar.compact && empty)
+                    width: (cur ? 46 : 42) - (bar.compact ? 4 : 0); height: width
                     bw: empty ? 2 : 2.5; drop: empty ? 0 : 4          // empty: thin smooth outline, flat (no shadow)
                     ink: Theme.ink                                              // solid outline (dashed when empty)
                     fill: empty ? Theme.cream : (cur ? Theme.gActive : Theme.gChip)   // solid, so the wallpaper can't make it muddy
@@ -54,10 +58,10 @@ Item {
         }
         BarPill {
             id: wxPill
-            fill: Theme.gSun; pressable: true
+            fill: Theme.gSun; pressable: true; padL: bar.compact ? 12 : 16; padR: padL
             onClicked: bar.drop("weather", wxPill)
             Glyph { name: bar.svc.weather.glyph; size: 20; stroke: 2.3 }
-            UiText { text: bar.svc.weather.temp; px: 16; w: 600 }
+            UiText { text: bar.compact ? bar.svc.weather.temp.replace("C", "") : bar.svc.weather.temp; px: 16; w: 600 }
         }
         // music: spinning cover with a progress ring · title / artist · mirrored visualizer · ⏮ ⏯ ⏭
         BarPill {
@@ -98,14 +102,15 @@ Item {
             Column {
                 id: musicText
                 spacing: 1
-                UiMarquee { text: musicPill.med ? musicPill.med.title : ""; px: 14; w: 700; width: 128; height: 16 }
-                UiMarquee { visible: !musicHover.hovered; text: musicPill.med ? musicPill.med.artist : ""; fam: "n"; px: 11; w: 800; color: Theme.textSoft; width: 128; height: 13 }
+                UiMarquee { text: musicPill.med ? musicPill.med.title : ""; px: 14; w: 700; width: bar.compact ? 100 : 128; height: 16 }
+                UiMarquee { visible: !musicHover.hovered; text: musicPill.med ? musicPill.med.artist : ""; fam: "n"; px: 11; w: 800; color: Theme.textSoft; width: bar.compact ? 100 : 128; height: 13 }
                 UiText { visible: musicHover.hovered; height: 13; fam: "n"; px: 11; w: 900; color: bar.svc.artAccent
                     text: musicPill.med ? bar.svc.mmss(musicPill.med.position) + " / " + bar.svc.mmss(musicPill.med.length) : "" }
                 TapHandler { onTapped: bar.drop("music", musicText) }
             }
             // visualizer: mirrored bars from the middle line
             Row {
+                visible: !bar.compact
                 Layout.preferredHeight: 28
                 spacing: 2
                 Repeater {
@@ -202,6 +207,7 @@ Item {
             }
             // network: download / upload speed (Services measures it with the status check, no extra polling)
             Row {
+                visible: !bar.compact
                 spacing: 5
                 Glyph { anchors.verticalCenter: parent.verticalCenter; name: "updown"; size: 18; stroke: 2.2 }
                 Column {
@@ -210,6 +216,15 @@ Item {
                     UiText { width: parent.width; text: "↑ " + bar.svc.netUp.replace("/s", ""); fam: "n"; px: 10.5; w: 900; height: 12; color: Theme.textSoft }
                 }
             }
+        }
+        // the phone's kitty window is open (Island Link): always visible, click closes it
+        BarPill {
+            visible: bar.svc.link.termOpen
+            fill: Theme.gBerry; pressable: true
+            onClicked: bar.svc.link.closeTerm()
+            Glyph { name: "terminal"; size: 18; stroke: 2.3 }
+            UiText { text: "Phone is typing in kitty"; px: 14; w: 600 }
+            Glyph { name: "close"; size: 14; stroke: 3 }
         }
         // apps running in the background (system tray: Steam, Discord, WARP…)
         // fcitx5 is left out: the EN/VI button already shows it
@@ -252,8 +267,12 @@ Item {
         }
         BarPill {
             fill: Theme.gLilac; padL: 6; padR: 6; gap: 6
-            BarToggle { name: "dropper"; on: false; onClicked: bar.svc.tool("picker") }   // colour picker
-            BarToggle { id: palT; name: "palette"; on: false; onClicked: bar.drop("palette", palT) }   // palette card (colours → theme)
+            BarToggle { visible: !bar.compact; name: "dropper"; on: false; onClicked: bar.svc.tool("picker") }   // colour picker
+            BarToggle {
+                name: "phone"; onClicked: bar.openPhone("settingsLink")   // Phone Link; green dot = phone connected
+                Rectangle { visible: bar.svc.link.online; x: parent.width - 11; y: 1; width: 9; height: 9; radius: 5
+                    color: Theme.leaf; border.width: 1.5; border.color: Theme.ink }
+            }
             BarToggle { id: todoT; name: "check"; on: bar.svc.todo.pinned; onClicked: bar.drop("todo", todoT) }   // to-do card
             BarToggle {
                 id: bellT
@@ -296,7 +315,7 @@ Item {
             fill: Theme.gLeaf; pressable: true
             onClicked: bar.drop("battery", batPill)
             BarBattery { level: bar.svc.battery.percent / 100; charging: bar.svc.battery.charging; plugged: bar.svc.battery.plugged }
-            UiText { text: bar.svc.battery.percent + "%"; px: 16; w: 600 }
+            UiText { text: bar.svc.battery.percent + "%" + (bar.svc.sysmon.ok ? " | " + Math.round(bar.svc.sysmon.powerW) + "W" : ""); px: 16; w: 600 }   // + power in use (System dropdown's figure)
         }
         UiCandy {
             width: 42; height: 42

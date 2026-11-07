@@ -103,14 +103,14 @@ Item {
     property real tilt: lite ? 0 : 1
     Behavior on tilt { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
     property real texScale: lite ? (big ? 2 : 1.4) : (big ? 4 : 2.2)          // phone face is drawn flat at this sharpness, then tilted
-    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
+    readonly property var landScreens: ["settings", "settingsQuick", "wallpapers", "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery", "settingsLink"]
     // orientation never changes by itself: every screen opens the way the phone is held; only ↻ turns it.
     // A fresh phone opens upright.
     property string orient: "portrait"
     function landFor(scr) { return orient === "landscape" }
     readonly property bool wantLand: landFor(screen)
     readonly property var allScreens: ["home", "quick", "islands", "clipboard", "clipHidden", "profile", "calc", "settings", "settingsQuick", "wallpapers",
-                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery"]
+                                       "settingsWifi", "settingsBt", "settingsSound", "settingsPower", "settingsDisplays", "settingsKeys", "settingsTime", "settingsSystem", "settingsWindows", "settingsTimeLang", "settingsMouse", "settingsApps", "settingsPrivacy", "settingsDiskMap", "settingsRecovery", "settingsLink"]
     readonly property var tallScreens: ["quick", "clipboard", "clipHidden", "profile", "calc"]       // upright layouts that scroll on the short sideways phone
     // the screens you open most are built in the background after start (one every 0.4 s), so their first open is
     // instant too; every screen stays built once opened (owner wants smooth over RAM, 2026-10-26)
@@ -545,7 +545,7 @@ Item {
     Component { id: cSettings; ScrSettings { svc: stage.svc; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
     // Wi-Fi / Bluetooth / Sound / Power pages (kind comes from the screen name: settingsWifi → wifi)
     Component { id: cSetPage; ScrSetPage { svc: stage.svc; prefs: stage.prefs
-        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap", settingsRecovery: "recovery", settingsQuick: "shell" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
+        kind: ({ settingsWifi: "wifi", settingsBt: "bt", settingsSound: "sound", settingsPower: "power", settingsDisplays: "displays", settingsKeys: "keys", settingsTime: "time", settingsSystem: "system", settingsWindows: "windows", settingsTimeLang: "timelang", settingsMouse: "mouse", settingsApps: "apps", settingsPrivacy: "privacy", settingsDiskMap: "diskmap", settingsRecovery: "recovery", settingsLink: "link", settingsQuick: "shell" })[parent ? parent.modelData : "settingsWifi"] || "wifi"
         onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back() } }
     Component { id: cWallpapers; ScrWallpapers { svc: stage.svc; prefs: stage.prefs; onGo: s => stage.go(s); onClose: stage.close(); onBack: stage.back(); onSoon: w => stage.soon(w) } }
 

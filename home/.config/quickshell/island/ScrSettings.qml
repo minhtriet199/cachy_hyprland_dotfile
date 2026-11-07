@@ -29,7 +29,8 @@ Item {
         ["13", "Mouse & touchpad", "Speed, tap, cursor size", "#8E7BE6", "crosshair", "settingsMouse"],
         ["14", "Apps", "Installed, default, startup", "#F7A982", "box", "settingsApps"],
         ["15", "Privacy & location", "Mic, camera, location", "#EE7D9C", "shield", "settingsPrivacy"],
-        ["16", "Recovery", "Snapshots, roll back", "#7C83F0", "undo", "settingsRecovery"]
+        ["16", "Recovery", "Snapshots, roll back", "#7C83F0", "undo", "settingsRecovery"],
+        ["17", "Phone Link", "Pair, status, terminal", "#55BFC6", "phone", "settingsLink"]
     ]
     function openCat(c) { st.go(c[5]) }
     // header

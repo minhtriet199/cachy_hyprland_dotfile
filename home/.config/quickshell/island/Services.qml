@@ -722,6 +722,9 @@ Singleton {
     // ── Download mode (SvcDownload.qml): dim screens + Silent while something downloads ──
     SvcDownload { id: dlPart; svc: s }
     readonly property var download: dlPart
+    // ── Island Link (SvcLink.qml): the phone ──
+    SvcLink { id: linkPart; svc: s }
+    readonly property var link: linkPart
     property alias sysmon: sysmonPart.sysmon
     property alias cpuHist: sysmonPart.cpuHist
     property alias ramHist: sysmonPart.ramHist
@@ -979,6 +982,7 @@ Singleton {
         ["Privacy & location", "settingsPrivacy", "shield", "#EE7D9C", "privacy location gps weather city mic microphone camera screen sharing recording in use"],
         ["Disk map", "settingsDiskMap", "chart", "#FFC23C", "disk map storage space drive full big folders clean cache treemap"],
         ["Recovery", "settingsRecovery", "undo", "#7C83F0", "recovery snapshot backup restore rollback roll back undo"],
+        ["Phone Link", "settingsLink", "phone", "#55BFC6", "phone link island pair qr pixel android terminal"],
         ["Displays", "settingsDisplays", "monitor", "#8E7BE6", "display screen monitor resolution refresh hdr brightness scale gamma night light warm text size font"],
         ["Shortcuts", "settingsKeys", "keyboard", "#F7A982", "keyboard shortcut keybind hotkey keys"],
         ["Screen time", "settingsTime", "chart", "#2F9EAB", "screen time usage hours apps"],

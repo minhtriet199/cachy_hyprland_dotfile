@@ -5,12 +5,15 @@
 #   snapshot.py create [name] [auto]
 #   snapshot.py restore <id>         saves the current setup first ("Before restore"), puts the snapshot back, restarts Island
 #   snapshot.py delete <id>
+#   snapshot.py btrfs                JSON: Snapper snapshots (CachyOS / Home) and the Home schedule, via the root helper
+#   snapshot.py root <args>          passes a change on to the helper (tools/snapper-if.src)
 # Not included: clipboard history/pins, wallpapers, caches.
 import glob, json, os, shutil, subprocess, sys, tarfile, time
 
 H = os.path.expanduser("~")
 DIR = os.path.join(H, ".local/state/island-snapshots")
 KEEP_AUTO = 10
+HELPER = "/usr/local/bin/island-snapper"
 PATHS = [".config/quickshell/island", ".config/quickshell/island-greeter", ".config/hypr", ".config/Kvantum", ".config/qt6ct",
          ".config/kdeglobals", ".config/dolphinrc", ".config/kitty", ".config/systemd/user",
          ".config/gtk-3.0/gtk.css", ".config/gtk-3.0/settings.ini", ".config/gtk-4.0/gtk.css", ".config/gtk-4.0/settings.ini",
@@ -66,6 +69,46 @@ def delete(i):
             pass
 
 
+def root(*args):
+    return subprocess.run(["sudo", "-n", HELPER, *args], capture_output=True, text=True)
+
+
+def rows(raw):
+    posts = {r.get("pre-number"): r["number"] for r in raw if r.get("type") == "post"}
+    out = []
+    for r in raw:
+        n = r["number"]
+        if n == 0 or r.get("type") == "post":          # a pacman pre + post pair is one row
+            continue
+        name = r.get("description", "")
+        out.append({"id": str(n), "nums": [n, posts[n]] if n in posts else [n], "name": "" if name == "timeline" else name,
+                    "time": int(time.mktime(time.strptime(r["date"], "%Y-%m-%d %H:%M:%S"))), "auto": bool(r.get("cleanup"))})
+    return out[::-1]
+
+
+def every(c):
+    if c.get("TIMELINE_CREATE") != "yes":
+        return "off"
+    try:
+        s = open("/etc/systemd/system/snapper-timeline.timer.d/island.conf").read()
+    except OSError:
+        return "1"
+    return "6" if "00/6" in s else "24"
+
+
+def btrfs():
+    c = root("config")
+    if c.returncode:
+        return {"ready": False}
+    c = json.loads(c.stdout)
+    lim = [int(c.get("TIMELINE_LIMIT_" + k, 0)) for k in ("HOURLY", "DAILY", "WEEKLY", "MONTHLY", "YEARLY")]
+    out = {"ready": True, "every": every(c), "keep": str(lim[0]) if lim[0] == lim[1] and not any(lim[2:]) else "",
+           "limits": " · ".join(f"{n} {k}" for n, k in zip(lim, ("hourly", "daily", "weekly", "monthly", "yearly")) if n)}
+    for k in ("home", "root"):
+        out[k] = rows(json.loads(root("list", k).stdout)[k])
+    return out
+
+
 def restore(i):
     f = os.path.join(DIR, os.path.basename(i) + ".tar.gz")
     if not os.path.exists(f):
@@ -98,3 +141,7 @@ if __name__ == "__main__":
         restore(a[1])
     elif a[0] == "delete":
         delete(a[1])
+    elif a[0] == "btrfs":
+        print(json.dumps(btrfs()))
+    elif a[0] == "root":
+        sys.exit(root(*a[1:]).returncode)

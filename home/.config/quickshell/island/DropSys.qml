@@ -11,7 +11,7 @@ DropCard {
     width: 360; height: 84 + 14 + 4 * 92 + 12 + 18 + 4 * 30 + 40 + 16 + 36 + 16
     // power: on battery the battery's drain (= the whole laptop); plugged in only the chips report it (CPU + 680M share one sensor)
     readonly property bool batPower: m.onBattery && m.batW > 0
-    readonly property string powerWatts: Math.round(batPower ? m.batW : m.apuW + m.gpuW) + " W"
+    readonly property string powerWatts: Math.round(m.powerW) + " W"
 
     // top apps: every process's CPU ticks + memory from /proc (one cat, only while this dropdown is open, every 2 s),
     // grouped by program name; CPU = share of the whole machine since the last look, RAM = resident memory

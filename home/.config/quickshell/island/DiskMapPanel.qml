@@ -119,7 +119,7 @@ Item {
         UiText {
             visible: dm.ov.some(o => o.id === "hidden" && o.size > 20e9)
             width: parent.width; wrapMode: Text.Wrap; fam: "n"; px: 10.5; w: 800; color: Theme.textSoft
-            text: "Snapshots & hidden is mostly Btrfs snapshots: old copies of files you changed or deleted (game updates, removed games). The space comes back when old snapshots are removed on the Recovery page."
+            text: "Snapshots & hidden is mostly Btrfs snapshots: old copies of files you changed or deleted (game updates, removed games). The space comes back when old snapshots are removed on the Recovery page (Home tab)."
         }
 
         // ── map ──

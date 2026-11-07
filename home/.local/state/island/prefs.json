@@ -13,6 +13,7 @@
   "lockWallpaper": "/home/gamer/Pictures/Wallpapers/1363442.jpeg",
   "wipeBg": "cream",
   "wipeIcon": "star",
+  "wipeStyle": "circle",
   "idleLock": [
     15,
     5
@@ -65,7 +66,9 @@
     ]
   ],
   "clipPins": [
-    "/home/gamer/Documents/Md_File/"
+    "/home/gamer/Documents/Md_File/",
+    "First read /home/gamer/Documents/Md_File/ISLAND-GUIDE-FOR-QWEN.md and follow it.",
+    "~/Documents/Md_File/qwen-guide/."
   ],
   "clipDays": 15,
   "phoneSpot": "Middle",

@@ -128,6 +128,7 @@ real settings are not touched.
 | GRUB theme | Evangelion (Aleph1-9012, Apache-2.0) in `/usr/local/share/evangelion`, CLI `sudo eva` (set/list/status/rollback/uninstall). Active: Soryu 1440p, gfxmode 2560x1600 (block in /etc/default/grub). Copy in dotfiles `system/usr/local/share/evangelion`; install.sh re-applies it. |
 | To-do | Bar ✓ → `DropTodo.qml` (card) + `TodoBoard.qml` (shared board; big window "Island Todo" at k 1.6) + `SvcTodo.qml` (Services.todo). Boards = Markdown in `~/Documents/Todo/<name>.md` (`- [ ] text`, files as indented `- [name](<path>)`). Prefs.todoLast. Opening a file pins the card (drop window input mask = card only) until the window that opened closes (Hyprland openwindow/closewindow). Ctrl+click = `dolphin --select`. Video thumbs: ffmpegthumbnailer → ~/.cache/island/todo-thumbs. |
 | Recovery | Settings 17 → `tools/snapshot.py` (list/create/restore/delete): tar.gz snapshots of Island, greeter sources, ~/.config/hypr, themes, prefs in `~/.local/state/island-snapshots` (not synced). Restore runs detached, saves an automatic "Before restoring…" snapshot first (newest 10 automatic kept), then `qs kill` → extract → `hyprctl reload` → start Island. |
+| Recovery tabs | Same page, tabs Desktop / CachyOS / Home. Desktop = the row above. CachyOS + Home = Snapper via `tools/snapper-if.src` → `/usr/local/bin/island-snapper` (one-time setup, sudoers NOPASSWD, every argument checked): list, add, delete; Home also has Every (Off/1h/6h/Day, timer drop-in `snapper-timeline.timer.d/island.conf`) and Keep (5/10/20 hourly+daily, no monthly/yearly). Restoring Snapper snapshots stays in Btrfs Assistant. |
 | Brightness per screen | `DropBattery.qml` (DDC or HDR nits) |
 | Double-tap Ctrl rings | `hypr/config/locate.lua` → `ipc locate X Y` → `LocatePointer.qml` |
 | Game mode | Settings → Quick or `ipc gamemode`: animations off, phone light mode, visualizer paused |
@@ -219,18 +220,17 @@ Add, tick or remove wishes THERE; this block is rewritten from it (`island/tools
 - [ ] Right-click empty desktop → menu: Edit Desktop · Wallpapers · Group themes (candy card)
     - [right-click-desktop-menu.png](</home/gamer/Documents/Md_File/todo-refs/right-click-desktop-menu.png>)
 - [ ] Edit Desktop mode: framed preview, tray tabs Widgets / Bar / Theme / Presets, drag with snap guides, Lock all, Done
-- [ ] More widgets: clocks, date, user card, weather, calendar, to-do list, visualizer, music, stats (several styles each)
+- [x] More widgets: clocks, date, user card, weather, calendar, to-do list, visualizer, music, stats (several styles each)
     - [widget-sheet-examples.png](</home/gamer/Documents/Md_File/todo-refs/widget-sheet-examples.png>)
 - [ ] More themes (wait until I pick them): a theme sets UI style + widget style; Presets = saved layouts
 - [x] New lock / login flow
 - [ ] Making Phone app and for this system to connect them light weight when running in the background  connect phone notification to this system  connect let me control this system one the phone
-    - [ISLAND-LINK.md](</home/gamer/Documents/Md_File/ISLAND-LINK.md>) — in progress as Island Link (Flutter app + Go helper): pairing, link, cozy UI, file sharing done
 - [ ] check update diskmap currently it kinda bad
 - [ ] Adding a website display image wallpaper
 - [ ] Check the git install  work for all system  and my fresh system
 - [ ] Island task manager in the System card: top apps grouped (Helium = 1 row), icon, CPU %, RAM (PSS), End button; lazy, only polls while open; keep Open btop for full view; helper in C (7 ms/tick vs Python 32 ms, ~0.35% CPU at 2 s), install.sh compiles it
 - [ ] Phone app link for Download mode: live download progress on my phone (like a progress notification); when a download finishes this PC pushes a notification to my phone; from the phone I can pick Shut down, start the game / program, or open the downloaded file
-    - [ISLAND-LINK.md](</home/gamer/Documents/Md_File/ISLAND-LINK.md>) — planned in Island Link after phone notifications (step 3)
+    - [ISLAND-LINK.md>) — planned in Island Link after phone notifications (step 3](</home/gamer/Documents/Md_File/ISLAND-LINK.md>) — planned in Island Link after phone notifications (step 3>)
 <!-- wishlist:end -->
 
 **Details** (reference notes for the wishes above):

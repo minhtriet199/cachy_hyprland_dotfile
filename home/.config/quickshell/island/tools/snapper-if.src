@@ -1,0 +1,37 @@
+#!/bin/sh
+# Island Recovery page: Snapper actions that need root. Every argument is checked here.
+# Install once (then the page never asks for a password):
+#   sudo install -m 755 -o root ~/.config/quickshell/island/tools/snapper-if.src /usr/local/bin/island-snapper
+#   sudo install -m 440 -o root ~/.config/quickshell/island/tools/snapper-if.sudoers.src /etc/sudoers.d/island-snapper
+#   island-snapper list home|root · config · create home|root [name] · delete home|root <n>… · every off|1|6|24 · keep 5|10|20
+PATH=/usr/bin
+T=/etc/systemd/system/snapper-timeline.timer.d
+usage() { echo "usage: island-snapper list|config|create|delete|every|keep …" >&2; exit 2; }
+cfg() { case "$1" in home|root) ;; *) usage ;; esac; }
+schedule() {        # $1 = systemd calendar, empty = snapper's hourly default
+    rm -f "$T/island.conf"
+    [ -z "$1" ] || { mkdir -p "$T"; printf '[Timer]\nOnCalendar=\nOnCalendar=%s\n' "$1" > "$T/island.conf"; }
+    systemctl daemon-reload && systemctl restart snapper-timeline.timer
+}
+case "$1" in
+    list)   cfg "$2"; exec snapper --jsonout --iso -c "$2" list --disable-used-space ;;
+    config) exec snapper --jsonout -c home get-config ;;
+    create) cfg "$2"
+            exec snapper -c "$2" create --description "$(printf %s "${3:-Manual}" | tr -cd '[:alnum:] ._-' | cut -c1-60)" ;;
+    delete) cfg "$2"; c=$2; shift 2; [ $# -gt 0 ] || usage
+            for n; do case "$n" in ''|0|*[!0-9]*) usage ;; esac; done
+            exec snapper -c "$c" delete "$@" ;;
+    every)  case "$2" in
+                off) snapper -c home set-config TIMELINE_CREATE=no && schedule "" ;;
+                1)   snapper -c home set-config TIMELINE_CREATE=yes && schedule "" ;;
+                6)   snapper -c home set-config TIMELINE_CREATE=yes && schedule "00/6:00" ;;
+                24)  snapper -c home set-config TIMELINE_CREATE=yes && schedule "daily" ;;
+                *)   usage ;;
+            esac ;;
+    keep)   case "$2" in
+                5|10|20) exec snapper -c home set-config "TIMELINE_LIMIT_HOURLY=$2" "TIMELINE_LIMIT_DAILY=$2" \
+                              TIMELINE_LIMIT_WEEKLY=0 TIMELINE_LIMIT_MONTHLY=0 TIMELINE_LIMIT_YEARLY=0 ;;
+                *) usage ;;
+            esac ;;
+    *) usage ;;
+esac

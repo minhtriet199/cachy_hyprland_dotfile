@@ -8,7 +8,7 @@ Scope {
     id: m
     property bool gaming: false
     property var sysmon: ({ cpu: 0, cpuTemp: 0, ram: 0, ramUsed: 0, ramTotal: 0, gpu: 0, gpuTemp: 0, vramUsed: 0, vramTotal: 0, fanCpu: 0, fanGpu: 0,
-                         gpuW: 0, gpuAsleep: false, apuW: 0, batW: 0, onBattery: false, igpu: 0, igpuTemp: 0, igpuVram: 0, igpuVramTotal: 0, igpuShared: 0, ok: false })
+                         gpuW: 0, gpuAsleep: false, apuW: 0, batW: 0, onBattery: false, powerW: 0, igpu: 0, igpuTemp: 0, igpuVram: 0, igpuVramTotal: 0, igpuShared: 0, ok: false })
     property var cpuHist: []
     property var ramHist: []
     property var gpuHist: []
@@ -36,10 +36,12 @@ Scope {
             const memT = parseInt(L[1]) || 1, memA = parseInt(L[2]) || 0;
             for (const l of L.slice(3)) for (const kv of l.split(" ")) { const i = kv.indexOf("="); if (i > 0) v[kv.slice(0, i)] = parseFloat(kv.slice(i + 1)) || 0 }
             const ram = Math.round((1 - memA / memT) * 100);
+            // power in use: on battery its drain (= whole laptop); plugged in only the chips report it (CPU + 680M, gaming GPU)
+            const batW = (v.bw || 0) / 1e6, onBat = v.bd === 1, powerW = onBat && batW > 0 ? batW : (v.iw || 0) / 1e6 + (v.gw || 0) / 1e6;
             m.sysmon = { ok: true, cpu: cpu, cpuTemp: Math.round((v.ct || 0) / 1000), ram: ram, ramUsed: (memT - memA) / 1048576, ramTotal: memT / 1048576,
                          gpu: Math.round(v.gpu || 0), gpuTemp: Math.round((v.gt || 0) / 1000), vramUsed: (v.vu || 0) / 1073741824, vramTotal: (v.vt || 0) / 1073741824,
                          fanCpu: v.fc || 0, fanGpu: v.fg || 0,
-                         gpuW: (v.gw || 0) / 1e6, gpuAsleep: v.gz === 1, apuW: (v.iw || 0) / 1e6, batW: (v.bw || 0) / 1e6, onBattery: v.bd === 1,
+                         gpuW: (v.gw || 0) / 1e6, gpuAsleep: v.gz === 1, apuW: (v.iw || 0) / 1e6, batW: batW, onBattery: onBat, powerW: powerW,
                          igpu: Math.round(v.ib || 0), igpuTemp: Math.round((v.it || 0) / 1000), igpuVram: (v.iv || 0) / 1073741824,
                          igpuVramTotal: (v.ivt || 0) / 1073741824, igpuShared: (v.igtt || 0) / 1073741824 };
             m.cpuHist = m._push(m.cpuHist, cpu); m.ramHist = m._push(m.ramHist, ram); m.gpuHist = m._push(m.gpuHist, Math.round(v.gpu || 0)); m.igpuHist = m._push(m.igpuHist, Math.round(v.ib || 0));

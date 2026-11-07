@@ -14,7 +14,7 @@ cp -a "$HOME/.local/state/noctalia/settings.toml" "home/.local/state/noctalia/" 
 
 # --- Island shell (Quickshell config) + its saved settings ---
 mkdir -p home/.config/quickshell home/.local/state/island
-rsync -a --delete --exclude='*.bak*' --exclude='__pycache__/' "$HOME/.config/quickshell/island/" "home/.config/quickshell/island/"
+rsync -a --delete --exclude='*.bak*' --exclude='*.save' --exclude='__pycache__/' --exclude='.git' "$HOME/.config/quickshell/island/" "home/.config/quickshell/island/"   # .git = Island's own local history
 cp -a "$HOME/.local/state/island/prefs.json" "home/.local/state/island/" 2>/dev/null
 
 # --- Island login screen (greeter) sources; install with: sudo ~/.config/quickshell/island-greeter/install.sh ---

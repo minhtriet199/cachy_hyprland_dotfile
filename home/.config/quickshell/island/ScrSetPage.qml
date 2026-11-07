@@ -30,6 +30,7 @@ Item {
         privacy: ["Privacy & location", "Mic, camera, location", "shield", Theme.gBerry],
         diskmap: ["Disk map", "What fills your drive", "chart", Theme.gSun],
         recovery: ["Recovery", "Snapshots, roll back", "undo", Theme.gLilac],
+        link: ["Phone Link", "Pair, status, terminal", "phone", Theme.gSea],
         shell: ["Shell", "Bar, dock, look, phone", "barIcon", Theme.gSettings]
     })[kind] || ["", "", "gear", Theme.gOn]
 
@@ -61,7 +62,7 @@ Item {
             focus: true
             width: fl.width
             height: item ? item.implicitHeight : 0
-            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap, recovery: crecovery, shell: cshell })[pg.kind] || cWifi
+            sourceComponent: ({ wifi: cWifi, bt: cBt, sound: cSound, power: cPower, displays: cDisplays, keys: cKeys, time: cTime, system: cSystem, windows: cWindows, timelang: ctimelang, mouse: cmouse, apps: capps, privacy: cprivacy, diskmap: cdiskmap, recovery: crecovery, link: clink, shell: cshell })[pg.kind] || cWifi
         }
     }
     Component { id: cWifi; Column { spacing: 18      // networks, then the hotspot (scroll down)
@@ -86,6 +87,7 @@ Item {
     Component { id: cdiskmap; DiskMapPanel { svc: pg.svc; onGo: s => pg.go(s) } }
     Component { id: cshell; ShellPanel { svc: pg.svc; prefs: pg.prefs } }
     Component { id: crecovery; RecoveryPanel { svc: pg.svc } }
+    Component { id: clink; PhoneLinkPanel { svc: pg.svc } }
 
     focus: true
     Keys.onEscapePressed: pg.svc.phoneEsc()          // overlay: close · window: back

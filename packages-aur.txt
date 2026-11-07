@@ -1,4 +1,5 @@
 hyprmod
+lmstudio-bin
 mactahoe-icon-theme-git
 postman-bin
 rider
