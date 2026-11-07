@@ -162,6 +162,7 @@ pacman-contrib
 paru
 pavucontrol
 perl
+piper
 pipewire-alsa
 pipewire-pulse
 pkgfile
@@ -189,6 +190,7 @@ smartmontools
 snapper
 snapshot
 sof-firmware
+solaar
 sudo
 sysfsutils
 texinfo

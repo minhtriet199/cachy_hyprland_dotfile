@@ -6,7 +6,11 @@ DropCard {
     property var svc
     readonly property var items: svc.notifications
     readonly property real rowH: 74
-    readonly property real listH: items.length === 0 ? 110 : Math.min(items.length, 5) * (rowH + 8) - 8 + 5   // +5: last row's border + shadow
+    // one long message can be opened (↓) to read all of it; its extra height grows the card
+    property var openId: null
+    property real openExtra: 0
+    onItemsChanged: if (openId !== null && !items.some(x => x.id === openId)) { openId = null; openExtra = 0 }
+    readonly property real listH: items.length === 0 ? 110 : Math.min(items.length, 5) * (rowH + 8) - 8 + 5 + openExtra   // +5: last row's border + shadow
     width: 360; height: 84 + 14 + listH + 14 + 40 + 16
     headerH: 84
 
@@ -52,15 +56,27 @@ DropCard {
         delegate: UiCandy {
             id: row
             required property var modelData
-            width: list.width; height: d.rowH; radius: 16; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream; pressable: true
+            readonly property bool open: d.openId !== null && d.openId === modelData.id
+            width: list.width; height: open ? Math.max(d.rowH, 33 + body.implicitHeight + 10) : d.rowH
+            radius: 16; bw: 2.5; drop: 3; hi: 0; fill: Theme.cream; pressable: true
+            onHeightChanged: if (open) d.openExtra = height - d.rowH
             onClicked: d.svc.activateNotification(modelData)
             onRightClicked: d.svc.dismissNotification(modelData)
             UiTag { x: 10; y: 9; text: row.modelData.app; fill: row.modelData.tint; ink: Theme.ink; px: 11; padX: 9; tilt: -3 }
-            UiText { x: parent.width - width - 40; y: 10; text: d.ago(row.modelData.time); fam: "n"; px: 10; w: 800; color: Theme.textSoft }
+            UiText { x: parent.width - width - (more.visible ? 70 : 40); y: 10; text: d.ago(row.modelData.time); fam: "n"; px: 10; w: 800; color: Theme.textSoft }
             UiText {
-                x: 12; y: 33; width: parent.width - 24; height: 36
+                id: body
+                x: 12; y: 33; width: parent.width - 24
                 text: row.modelData.body; fam: "n"; px: 12; w: 800
-                wrapMode: Text.Wrap; maximumLineCount: 2; verticalAlignment: Text.AlignTop
+                wrapMode: Text.Wrap; maximumLineCount: row.open ? 10 : 2; elide: Text.ElideRight; verticalAlignment: Text.AlignTop
+            }
+            // ↓ only when the text is cut off: shows the rest of the message (↑ closes it)
+            UiCandy {
+                id: more
+                visible: body.truncated || row.open
+                x: parent.width - 64; y: 8; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
+                onClicked: { d.openExtra = 0; d.openId = row.open ? null : row.modelData.id }
+                Glyph { anchors.centerIn: parent; name: "arrowRight"; size: 12; stroke: 2.8; rotation: row.open ? -90 : 90 }
             }
             UiCandy {
                 x: parent.width - 34; y: 8; width: 24; height: 24; bw: 2; drop: 0; hi: 0; fill: Theme.paper; pressable: true
