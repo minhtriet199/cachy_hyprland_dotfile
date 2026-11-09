@@ -23,6 +23,9 @@ Scope {
     function forget(id) { send("forget " + id) }
     function setTerminal(on) { send("terminal " + (on ? 1 : 0)) }
     function closeTerm() { send("term-close") }
+    // the phone's screen in a window here: island-link-pc asks the phone (a tap + "Start now" there) and opens it
+    property string screenError: ""
+    function showScreen() { screenError = ""; send("screen") }
 
     Socket {
         id: sock
@@ -37,6 +40,7 @@ Scope {
                 else lk.qrError = v.error || "Install qrencode to show the code";
             }
             else if (v.ev === "do") lk.run(v.what);
+            else if (v.ev === "error") lk.screenError = v.error || "";
         } }
     }
     Timer { interval: 15000; repeat: true; running: !sock.connected; onTriggered: { sock.connected = false; sock.connected = true } }

@@ -8,6 +8,7 @@ import Quickshell.Io
 // for OBS, Discord, the browser…). Live previews of every screen and window; click one, or Esc to cancel.
 // Loaded only while asked (shell.qml LazyLoader).
 PanelWindow {
+    CornerGuard {}
     id: sp
     property string listFile                        // XDPH's window list: id[HC>]class[HT>]title[HE>]address[HA>]…
     signal done()

@@ -7,6 +7,7 @@ import Quickshell.Widgets
 // ticks for check / radio entries. A submenu opens in place with a "‹ Back" row.
 // Like the bar cards it sits on a see-through layer over the screen: a click anywhere outside, or Esc, closes it.
 PanelWindow {
+    CornerGuard {}
     id: m
     property string monitor
     property real k: 1                       // bar scale (design px → screen px)

@@ -34,7 +34,6 @@
   "h24": false,
   "location": false,
   "weatherAuto": true,
-  "city": "Ho Chi Minh City",
   "autoTz": false,
   "dndGaming": false,
   "theme": "island",
@@ -43,40 +42,12 @@
   "dark": false,
   "appsDark": true,
   "gameMode": false,
-  "calcHistory": [
-    [
-      "12×(3+4)",
-      "84"
-    ],
-    [
-      "12×(3+4)",
-      "84"
-    ],
-    [
-      "12×(3+4)",
-      "84"
-    ],
-    [
-      "952+36",
-      "988"
-    ],
-    [
-      "99+63+6289+3",
-      "6454"
-    ]
-  ],
-  "clipPins": [
-    "/home/gamer/Documents/Md_File/",
-    "First read /home/gamer/Documents/Md_File/ISLAND-GUIDE-FOR-QWEN.md and follow it.",
-    "~/Documents/Md_File/qwen-guide/."
-  ],
   "clipDays": 15,
   "phoneSpot": "Middle",
   "wipeAuto": [
     "#ebd6d6",
     "#dcb7b7"
   ],
-  "todoLast": "/home/gamer/Documents/Todo/Rice wish list.md",
   "phoneRemember": false,
   "phoneWinLast": true,
   "phoneBigLast": false,

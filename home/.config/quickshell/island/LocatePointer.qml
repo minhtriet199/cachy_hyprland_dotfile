@@ -5,6 +5,7 @@ import Quickshell.Wayland
 // "Where's my mouse?" (double-tap Ctrl → hypr/config/locate.lua → `ipc call island locate X Y`): candy rings shrink onto
 // the pointer, then it closes. Click-through, no keyboard; loaded only while showing (shell.qml LazyLoader).
 PanelWindow {
+    CornerGuard {}
     id: lp
     property point at                             // pointer, in this screen's logical px
     signal done()

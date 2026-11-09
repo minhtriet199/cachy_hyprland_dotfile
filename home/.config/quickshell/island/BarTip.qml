@@ -4,6 +4,7 @@ import Quickshell
 // Sticker tooltip for a bar icon, in its own little window (the bar window is only as tall as the bar).
 // Shows while `target.hovered`; under the icon, or above it when the bar is at the bottom.
 PopupWindow {
+    CornerGuard {}
     id: tp
     property Item target
     property string text: ""

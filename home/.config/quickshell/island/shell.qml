@@ -152,6 +152,7 @@ ShellRoot {
         WlSessionLock {
             id: sessionLock
             WlSessionLockSurface {
+                CornerGuard {}
                 id: lockSurf
                 color: lockCtl.slideT > 0 ? "transparent" : "#A3D0E1"     // see-through only while the slide transition plays
                 LockScreen { anchors.fill: parent; svc: Services; lock: lockCtl; Component.onCompleted: forceActiveFocus() }
@@ -337,6 +338,7 @@ ShellRoot {
     LazyLoader {
         active: Services.todo.bigOpen
         FloatingWindow {
+            CornerGuard {}
             title: "Island Todo"
             implicitWidth: 760; implicitHeight: 900
             color: Theme.paper
@@ -359,6 +361,7 @@ ShellRoot {
     LazyLoader {
         active: shell.phoneWinLive
         FloatingWindow {
+            CornerGuard {}
             id: phoneApp
             readonly property real sc: (screen ? screen.height : 1080) / 1080 * Prefs.size     // the screen it's on (Hyprland places it)
             title: "Island Phone"
@@ -470,6 +473,7 @@ ShellRoot {
 
                 // ── scene change overlay (lock / unlock / first start / preview) ──
                 PanelWindow {
+                    CornerGuard {}
                     visible: lockCtl.deskWipe !== "none"
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -482,6 +486,7 @@ ShellRoot {
 
                 // ── wallpaper ──
                 PanelWindow {
+                    CornerGuard {}
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
                     exclusionMode: ExclusionMode.Ignore
@@ -497,6 +502,7 @@ ShellRoot {
                 LazyLoader {
                     active: Services.wallPreview !== "" && Services.wallPreviewFor === "Lockscreen"
                     PanelWindow {
+                        CornerGuard {}
                         screen: scr.modelData
                         anchors { top: true; bottom: true; left: true; right: true }
                         exclusionMode: ExclusionMode.Ignore
@@ -516,6 +522,7 @@ ShellRoot {
                 LazyLoader {
                     active: lockPreviewCtl.sliding
                     PanelWindow {
+                        CornerGuard {}
                         screen: scr.modelData
                         anchors { top: true; bottom: true; left: true; right: true }
                         exclusionMode: ExclusionMode.Ignore
@@ -529,6 +536,7 @@ ShellRoot {
 
                 // ── top bar ──
                 PanelWindow {
+                    CornerGuard {}
                     visible: Prefs.bar
                     screen: scr.modelData
                     anchors { top: scr.barTop; bottom: !scr.barTop; left: true; right: true }
@@ -556,6 +564,7 @@ ShellRoot {
 
                 // ── bar dropdowns (battery · calendar · weather) ──
                 PanelWindow {
+                    CornerGuard {}
                     visible: scr.drop !== ""
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -608,6 +617,7 @@ ShellRoot {
 
                 // ── power menu ──
                 PanelWindow {
+                    CornerGuard {}
                     id: powerWin
                     property bool show: false
                     visible: show
@@ -649,6 +659,7 @@ ShellRoot {
 
                 // ── dock (auto-hides; touch the bottom edge to show it) ──
                 PanelWindow {
+                    CornerGuard {}
                     id: dockWin
                     readonly property real k: scr.sc * Services.dockSize
                     readonly property real boxH: dock.height + 8                  // dock + its drop shadow + 2 px gap
@@ -681,6 +692,7 @@ ShellRoot {
                     }
                     // hover tooltip with live window previews
                     PopupWindow {
+                        CornerGuard {}
                         visible: dockWin.shown && dock.hoverKey !== ""
                         color: "transparent"
                         anchor.window: dockWin
@@ -702,6 +714,7 @@ ShellRoot {
 
                 // ── big sticker clock (every monitor) ──
                 PanelWindow {
+                    CornerGuard {}
                     screen: scr.modelData
                     anchors { top: true; right: true }
                     margins.top: Math.round((370 - 30) * scr.sc)
@@ -722,6 +735,7 @@ ShellRoot {
 
                 // ── notification bubbles (main monitor): up to 3 stacked under the bar, more wait in a queue ──
                 PanelWindow {
+                    CornerGuard {}
                     id: toastWin
                     visible: scr.isMain && (Services.toasts.length > 0 || stack.height > 1)
                     screen: scr.modelData
@@ -764,6 +778,7 @@ ShellRoot {
                 LazyLoader {
                     active: !!shell.askMon.authFlow && shell.askHere(shell.askMon.authFlow, scr.name, scr.isMain)
                     PanelWindow {
+                        CornerGuard {}
                         screen: scr.modelData
                         anchors.top: true
                         margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
@@ -782,6 +797,7 @@ ShellRoot {
                 LazyLoader {
                     active: !!shell.askMon.keyAsk && shell.askHere(shell.askMon.keyAsk, scr.name, scr.isMain)
                     PanelWindow {
+                        CornerGuard {}
                         screen: scr.modelData
                         anchors.top: true
                         margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
@@ -800,6 +816,7 @@ ShellRoot {
                 LazyLoader {
                     active: !!shell.askMon.btAsk && shell.askHere(shell.askMon.btAsk, scr.name, scr.isMain)
                     PanelWindow {
+                        CornerGuard {}
                         screen: scr.modelData
                         anchors.top: true
                         margins.top: scr.barTop && Prefs.bar ? Math.round((scr.band + 6) * scr.sc) : Math.round(12 * scr.sc)
@@ -815,6 +832,7 @@ ShellRoot {
 
                 // ── an app is opening: a spinner next to the pointer (click-through, only while Services.launching) ──
                 PanelWindow {
+                    CornerGuard {}
                     id: spinWin
                     readonly property point at: Qt.point(Services.cursor.x - scr.modelData.x, Services.cursor.y - scr.modelData.y)
                     visible: Services.launching && at.x >= 0 && at.y >= 0 && at.x < scr.modelData.width && at.y < scr.modelData.height
@@ -835,6 +853,7 @@ ShellRoot {
 
                 // ── Download mode (SvcDownload.qml): the dim download screen on one screen (the others are off) ──
                 PanelWindow {
+                    CornerGuard {}
                     visible: Services.download.on && Services.download.dim && Services.download.aodScreen === scr.name
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -852,6 +871,7 @@ ShellRoot {
                 }
                 // before it starts: shut down or keep using when it's done (DownloadAsk.qml), on the screen you're on
                 PanelWindow {
+                    CornerGuard {}
                     visible: Services.download.choosing && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name === scr.name
                     onVisibleChanged: if (visible) shell.phoneClose()      // the phone sits above it
                     screen: scr.modelData
@@ -866,6 +886,7 @@ ShellRoot {
                 }
                 // … and when it's done: "Downloads finished" + 2 min to shut down, on the screen you're on
                 PanelWindow {
+                    CornerGuard {}
                     visible: Services.download.asking && Hyprland.focusedMonitor && Hyprland.focusedMonitor.name === scr.name
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -881,6 +902,7 @@ ShellRoot {
                 // ── overlay phone open on ANOTHER screen: a see-through catcher here, a click closes the phone
                 //    (the phone keeps the keyboard, so without this this screen could be clicked but not typed in) ──
                 PanelWindow {
+                    CornerGuard {}
                     visible: shell.phoneOpen && !Prefs.phoneWindow && shell.phoneMon !== "" && shell.phoneMon !== scr.name
                     screen: scr.modelData
                     anchors { top: true; bottom: true; left: true; right: true }
@@ -904,6 +926,7 @@ ShellRoot {
                 LazyLoader {
                 active: scr.phoneLive
                 PanelWindow {
+                    CornerGuard {}
                     id: phoneWin
                     screen: scr.modelData
                     visible: stage.shown || stage.visibleAmount > 0.001

@@ -1,7 +1,6 @@
 import QtQuick
-import Quickshell
 
-// Phone Link page: the paired phone, its pairing QR, its screen in a window here (scrcpy), and whether it may open a
+// Phone Link page: the paired phone, its pairing QR, its screen in a window here, and whether it may open a
 // Terminal here. The link itself is
 // island-link-pc (SvcLink.qml talks to it).
 Column {
@@ -62,12 +61,14 @@ Column {
         }
     }
 
-    // the phone's screen in a window here, controlled with the mouse (tools/phone-screen.sh: scrcpy over Wi-Fi adb)
-    Label { text: "PHONE SCREEN" }
+    // the phone's screen in a window here, controlled with the mouse (island-link-pc screen.go + the app's Screen
+    // share; no adb or Developer options). Android asks "Start now" on the phone each time.
+    Label { visible: pl.lk.up; text: "PHONE SCREEN" }
     UiRow {
+        visible: pl.lk.up
         width: parent.width; height: 52; glyph: "display"; title: "Show phone screen"; pressable: true
-        sub: "Wireless debugging once after each phone restart"
-        onClicked: pl.svc.run(["sh", Quickshell.shellDir + "/tools/phone-screen.sh"])
+        sub: pl.lk.screenError !== "" ? "⚠ " + pl.lk.screenError : "Then tap the notification on the phone and Start now"
+        onClicked: { pl.lk.showScreen(); pl.svc.appOpened() }   // a window opens: the phone steps aside like for apps
     }
 
     // terminal: off until you say so

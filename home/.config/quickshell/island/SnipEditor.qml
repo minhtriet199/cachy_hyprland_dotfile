@@ -9,6 +9,7 @@ import Quickshell.Io
 // move it, Delete removes it. Marks are kept in device px from the FIRST cut's corner (dx/dy = how far it moved).
 // Loaded only while snipping (shell.qml LazyLoader); hypr/scripts/snip.sh hands over the files.
 PanelWindow {
+    CornerGuard {}
     id: sn
     property string crop                          // the cut (device px png)
     property string shot                          // whole screen behind it ("" = none)
