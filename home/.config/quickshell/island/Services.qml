@@ -499,14 +499,17 @@ Singleton {
 
     // ── idle timers (Settings → Power): lock, screens off, sleep — plugged-in / battery values from Prefs ──
     readonly property int _ix: battery.plugged ? 0 : 1
+    // held off while a game is focused too: a controller isn't Wayland input (Hyprland never sees it) and Proton/SDL
+    // games ask for "no screensaver" over D-Bus, which nobody serves here → the screens went off mid-game
+    readonly property bool _idleHold: keepAwake || dlPart.on || gaming
     function _mins(a) { return a && a.length > _ix ? Number(a[_ix]) || 0 : 0 }
     // the first key / mouse move after any of them turns the screens back on: Hyprland's own wake-on-input is off
     // (it would also light the laptop panel under a closed lid), so without this the screens stayed black
-    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleLock); onBack: s.screensOn()
+    IdleTimer { minutes: s._idleHold ? 0 : s._mins(Prefs.idleLock); onBack: s.screensOn()
         onIdle: { s.powerLog("idle → lock"); s.lockRequested() } }
-    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
+    IdleTimer { minutes: s._idleHold ? 0 : s._mins(Prefs.idleScreen); onBack: { s.powerLog("input → screens on"); s.screensOn() }
         onIdle: { s.powerLog("idle → screens off"); s.run(["sh", Quickshell.shellDir + "/tools/screen-off.sh"]) } }
-    IdleTimer { minutes: s.keepAwake || dlPart.on ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
+    IdleTimer { minutes: s._idleHold ? 0 : s._mins(Prefs.idleSleep); onIdle: s.sleepNow("idle"); onBack: s.screensOn() }
     // "Hibernate" (Prefs keys still say sleep) = hibernate, or screens off if it isn't set up (tools/sleep.sh) — never suspend: this laptop can't wake from it
     function sleepNow(why) { if (download.on) download.stop(); powerLog(why + " → hibernate"); lockRequested(); run(["sh", Quickshell.shellDir + "/tools/sleep.sh"]) }
     // timeline of idle / lid / sleep events: ~/.local/state/island/power.log (to check what happened while you were away)
